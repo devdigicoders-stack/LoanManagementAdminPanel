@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@utility scrollbar-hide {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@theme {
+  --color-dark-bg: #0A0E17;
+  --color-dark-surface: #121824;
+  --color-dark-border: #232B3A;
+  --color-gold: #D2A054;
+  --color-gold-light: #F1CD7D;
+  --color-gold-dark: #C89446;
+}
