@@ -1,154 +1,136 @@
-import { NavLink } from 'react-router-dom';
-import { 
-  LayoutDashboard, Users, UserCog, ClipboardList, FileText, 
-  CheckSquare, UserCheck, Activity, FileStack, Files, 
-  FileCheck, FileQuestion, Bell, BarChart3, Shield, 
-  MessageSquareWarning, Settings, History, User, Lock, 
-  LogOut, ChevronRight, HelpCircle
-} from 'lucide-react';
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  UserCog,
+  FileText,
+  Activity,
+  BarChart3,
+  Settings,
+  LogOut,
+  AlertCircle
+} from "lucide-react";
 
 const navGroups = [
   {
-    title: '',
-    items: [
-      { name: 'Dashboard', icon: LayoutDashboard, path: '/' }
-    ]
+    title: "",
+    items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }],
   },
   {
-    title: 'USER MANAGEMENT',
+    title: "EMPLOYEE MANAGEMENT",
     items: [
-      { name: 'Manage Users', icon: Users, path: '/users' },
-      { name: 'Manage Employees', icon: UserCog, path: '/employees' }
-    ]
+      { name: "Manage Employee", icon: UserCog, path: "/employees" },
+    ],
   },
   {
-    title: 'LEAD MANAGEMENT',
+    title: "USER MANAGEMENT",
     items: [
-      { name: 'Lead Management', icon: ClipboardList, path: '/leads' }
-    ]
+      { name: "Manage Users", icon: Users, path: "/users" },
+    ],
   },
   {
-    title: 'LOAN MANAGEMENT',
+    title: "LEAD MANAGEMENT",
     items: [
-      { name: 'Loan Applications', icon: FileText, path: '/loans' },
-      { name: 'Approve / Reject / Hold', icon: CheckSquare, path: '/loans/action' },
-      { name: 'Assign Lead to Employee', icon: UserCheck, path: '/loans/assign' },
-      { name: 'Status Management', icon: Activity, path: '/loans/status' }
-    ]
+      { name: "Lead Management", icon: Activity, path: "/leads" },
+    ],
   },
   {
-    title: 'DOCUMENT MANAGEMENT',
+    title: "LOAN MANAGEMENT",
     items: [
-      { name: 'Documents', icon: FileStack, path: '/docs' },
-      { name: 'View All Documents', icon: Files, path: '/docs/all' },
-      { name: 'Verify Documents', icon: FileCheck, path: '/docs/verify' },
-      { name: 'Request Additional Docs', icon: FileQuestion, path: '/docs/request' }
-    ]
+      { name: "Loan Application Management", icon: FileText, path: "/loans" },
+    ],
   },
   {
-    title: 'COMMUNICATION & ALERTS',
+    title: "SYSTEM & REPORTS",
     items: [
-      { name: 'Notification Management', icon: Bell, path: '/notifications' }
-    ]
+      { name: "Reports & Analytics", icon: BarChart3, path: "/reports" },
+      { name: "Manage Complaints", icon: AlertCircle, path: "/complaints" },
+      { name: "Settings", icon: Settings, path: "/settings" },
+    ],
   },
-  {
-    title: 'REPORTS & ANALYTICS',
-    items: [
-      { name: 'Reports & Analytics', icon: BarChart3, path: '/reports' }
-    ]
-  },
-  {
-    title: 'OTHER MANAGEMENT',
-    items: [
-      { name: 'Permission Management', icon: Shield, path: '/permissions' },
-      { name: 'Manage Complaints', icon: MessageSquareWarning, path: '/complaints' }
-    ]
-  },
-  {
-    title: 'SYSTEM',
-    items: [
-      { name: 'Settings', icon: Settings, path: '/settings' },
-      { name: 'Audit Logs', icon: History, path: '/audit' }
-    ]
-  },
-  {
-    title: 'MY ACCOUNT',
-    items: [
-      { name: 'My Profile', icon: User, path: '/profile' },
-      { name: 'Change Password', icon: Lock, path: '/password' }
-    ]
-  }
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ isOpen, setIsOpen }) {
+  const location = useLocation();
+
   return (
-    <div className="w-[280px] h-screen bg-[#070B14] border-r border-[#1C2538] flex flex-col overflow-hidden shrink-0">
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden" 
+          onClick={() => setIsOpen(false)}
+        />
+      )}
       
+      {/* Sidebar Content */}
+      <div className={`fixed lg:static inset-y-0 left-0 z-50 w-[280px] h-screen bg-white border-r border-slate-200 flex flex-col overflow-hidden shrink-0 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
       {/* Header / Logo */}
-      <div className="p-6 shrink-0 flex items-center gap-3">
-        <div className="w-10 h-10 bg-[#D2A054]/10 rounded-lg border border-[#D2A054] flex items-center justify-center transform rotate-45 shadow-sm shrink-0">
-          <div className="w-5 h-5 bg-[#D2A054] transform -rotate-45" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'}}></div>
-        </div>
-        <div>
-          <h1 className="text-xl font-bold text-[#D2A054] leading-tight tracking-wide">LoanPro</h1>
-          <p className="text-[11px] text-slate-400 font-medium tracking-wider">Admin Panel</p>
-        </div>
+      <div className="p-6 pb-2 shrink-0 flex items-center justify-center">
+        <img
+          src="/loanlogo.png"
+          alt="NGM Logo"
+          className="h-[60px] object-contain"
+        />
       </div>
 
       {/* Navigation Links */}
-      <div className="flex-1 overflow-y-auto px-4 pb-6 scrollbar-hide">
+      <div className="flex-1 overflow-y-auto px-4 pb-6 no-scrollbar">
         {navGroups.map((group, idx) => (
-          <div key={idx} className={idx !== 0 ? "mt-6" : ""}>
+          <div key={idx} className={group.title ? "mt-6" : "mt-2"}>
             {group.title && (
-              <h4 className="text-[10px] font-bold text-slate-500 mb-2 px-2 tracking-widest uppercase">
+              <h3 className="px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 {group.title}
-              </h4>
+              </h3>
             )}
-            <ul className="space-y-1">
-              {group.items.map((item, itemIdx) => (
-                <li key={itemIdx}>
+            <div className="space-y-1">
+              {group.items.map((item, itemIdx) => {
+                const Icon = item.icon;
+                const isActive =
+                  location.pathname === item.path ||
+                  (location.pathname === "/" && item.path === "/");
+
+                return (
                   <NavLink
+                    key={itemIdx}
                     to={item.path}
-                    className={({ isActive }) => 
-                      `flex items-center justify-between px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                        isActive 
-                          ? 'bg-[#D2A054]/10 text-[#D2A054] border border-[#D2A054]/20 shadow-sm' 
-                          : 'text-slate-300 hover:bg-[#121824] hover:text-white'
-                      }`
-                    }
+                    onClick={() => setIsOpen && setIsOpen(false)}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group ${
+                      isActive
+                        ? "bg-[#489b0d] text-white shadow-md shadow-[#489b0d]/20"
+                        : "text-slate-600 hover:bg-slate-50 hover:text-[#489b0d]"
+                    }`}
                   >
-                    <div className="flex items-center gap-3">
-                      <item.icon size={18} className="opacity-80" />
-                      <span>{item.name}</span>
-                    </div>
-                    {item.name !== 'Dashboard' && item.name !== 'Logout' && (
-                      <ChevronRight size={14} className="opacity-40" />
-                    )}
+                    <Icon
+                      size={18}
+                      strokeWidth={isActive ? 2.5 : 2}
+                      className={`shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-[#489b0d]"}`}
+                    />
+                    <span
+                      className={`text-[13px] font-semibold tracking-wide truncate ${isActive ? "text-white" : ""}`}
+                    >
+                      {item.name}
+                    </span>
                   </NavLink>
-                </li>
-              ))}
-            </ul>
+                );
+              })}
+            </div>
           </div>
         ))}
       </div>
 
-      {/* Footer Area */}
-      <div className="p-4 shrink-0 border-t border-[#1C2538] bg-[#070B14]">
-        <NavLink 
-          to="/login" 
-          className="flex items-center justify-center gap-2.5 w-full py-3 rounded-xl bg-[#121824] border border-[#1C2538] text-slate-300 hover:bg-[#ef4444] hover:text-white hover:border-[#ef4444] transition-all text-[13px] font-bold group shadow-sm"
+      {/* Bottom Actions & Copyright */}
+      <div className="p-4 shrink-0 bg-white border-t border-slate-100">
+        {/* Logout Button */}
+        <NavLink
+          to="/login"
+          className="w-full flex items-center justify-center gap-2 py-2.5 mb-4 bg-red-50 hover:bg-red-100 text-red-600 text-[13px] font-bold rounded-md transition-colors border border-red-100"
         >
-          <LogOut size={18} className="group-hover:-translate-x-1 transition-transform" />
-          <span>Logout Securely</span>
+          <LogOut size={16} strokeWidth={2.5} />
+          Logout
         </NavLink>
-
-        {/* <div className="mt-5 text-center">
-          <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
-            © 2025 LoanPro Admin<br/>All rights reserved.
-          </p>
-        </div> */}
       </div>
-      
     </div>
+    </>
   );
 }

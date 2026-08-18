@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, Globe, Activity, Users, FileText } from 'lucide-react';
+import { useState } from 'react';
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, Users, BarChart3, FileCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const LoginPage = () => {
@@ -12,90 +12,86 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="h-screen w-full flex flex-col lg:flex-row bg-slate-50 text-slate-900 font-sans selection:bg-[#D2A054]/30 overflow-hidden">
+    <div className="h-screen w-full flex flex-col lg:flex-row bg-[#F8FAFC] text-slate-900 font-sans selection:bg-[#51A500]/30 overflow-hidden relative">
       
-      {/* Left Section - Dark Theme */}
-      <div className="hidden lg:flex w-1/2 relative flex-col justify-start p-10 xl:p-14 border-r border-[#232B3A] bg-[#0A0E17]">
+      {/* Background Wave - slightly wider than 50% to go behind the login form, fixed small height */}
+      <div 
+        className="absolute bottom-0 left-[-5%] w-[70%] h-[35%] lg:h-[40%] pointer-events-none z-0 hidden lg:block"
+        style={{
+          backgroundImage: "url('/backLoan.png')",
+          backgroundSize: '100% 100%',
+          backgroundRepeat: 'no-repeat'
+        }}
+      ></div>
+
+      {/* Left Section - Content */}
+      <div className="hidden lg:flex w-1/2 relative flex-col justify-center px-12 xl:px-24 pb-20 z-10 h-full">
         
-        {/* Full height login_back.png */}
-        <div 
-          className="absolute inset-0 z-0 pointer-events-none"
-          style={{
-            backgroundImage: "url('/images/login_back.png')",
-            backgroundSize: '100% 100%',
-            backgroundPosition: 'center',
-            backgroundRepeat: 'no-repeat'
-          }}
-        ></div>
+        {/* Logo */}
+        <div className="mb-10">
+          <img src="/loanlogo.png" alt="Loan Management System Logo" className="h-[90px] xl:h-[100px] object-contain" />
+        </div>
 
-        <div className="relative z-10 flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 bg-[#D2A054]/10 rounded-lg border border-[#D2A054] flex items-center justify-center transform rotate-45 shadow-sm">
-              <div className="w-5 h-5 bg-[#D2A054] transform -rotate-45" style={{ clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'}}></div>
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-[#D2A054] leading-tight">LoanPro</h1>
-              <p className="text-xs text-slate-300 font-medium">Admin Panel</p>
-            </div>
+        <div className="max-w-[460px]">
+          <h2 className="text-[34px] xl:text-[38px] font-bold mb-3 leading-[1.2] text-[#1E293B] tracking-tight">
+            Welcome to <br />
+            <span className="text-[#489b0d]">Loan Management</span><br/>
+            System
+          </h2>
+          
+          {/* Decorative Line */}
+          <div className="flex gap-1.5 mb-5">
+            <div className="h-1 w-10 bg-[#489b0d] rounded-full"></div>
+            <div className="h-1 w-5 bg-[#FBBF24] rounded-full"></div>
           </div>
+          
+          <p className="text-slate-500 text-[13.5px] max-w-[380px] mb-8 leading-relaxed">
+            Securely manage applications, users and loans with speed, accuracy and complete control.
+          </p>
 
-          <div className="max-w-xl">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-[#D2A054]/30 bg-[#D2A054]/10 text-[#D2A054] text-[10px] font-bold mb-6 uppercase tracking-wider">
-              WELCOME BACK! <span>👋</span>
+          {/* Features Grid */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+            {/* Feature 1 */}
+            <div className="flex gap-3.5 items-start">
+              <div className="shrink-0 w-11 h-11 rounded-[14px] bg-[#F0FDF4] flex items-center justify-center text-[#489b0d]">
+                <ShieldCheck size={20} strokeWidth={2} />
+              </div>
+              <div className="pt-0.5">
+                <h4 className="text-[13px] font-semibold text-[#1E293B] mb-0.5">Secure & Reliable</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">Bank-grade security<br/>to protect your data</p>
+              </div>
             </div>
             
-            <h2 className="text-4xl xl:text-5xl font-bold mb-4 leading-tight text-white">
-              Welcome to <br />
-              <span className="text-[#D2A054]">Loan Management<br/>System</span>
-            </h2>
-            
-            <p className="text-slate-400 text-sm max-w-sm mb-10 leading-relaxed font-medium">
-              Securely manage applications, users, employees and grow your lending business with ease.
-            </p>
-
-            <div className="h-px w-12 bg-[#D2A054] mb-8"></div>
-
-            {/* Features Grid */}
-            <div className="grid grid-cols-2 gap-x-6 gap-y-6">
-              <div className="flex gap-3 items-start">
-                <div className="shrink-0 w-10 h-10 rounded-full border border-[#232B3A] bg-[#121824] shadow-sm flex items-center justify-center text-[#D2A054]">
-                  <ShieldCheck size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white mb-0.5">Secure & Reliable</h4>
-                  <p className="text-[11px] text-slate-400 leading-snug font-medium">Bank-grade security<br/>to protect your data</p>
-                </div>
+            {/* Feature 2 */}
+            <div className="flex gap-3.5 items-start">
+              <div className="shrink-0 w-11 h-11 rounded-[14px] bg-[#F0FDF4] flex items-center justify-center text-[#489b0d]">
+                <BarChart3 size={20} strokeWidth={2} />
               </div>
-              
-              <div className="flex gap-3 items-start">
-                <div className="shrink-0 w-10 h-10 rounded-full border border-[#232B3A] bg-[#121824] shadow-sm flex items-center justify-center text-[#D2A054]">
-                  <Activity size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white mb-0.5">Smart Analytics</h4>
-                  <p className="text-[11px] text-slate-400 leading-snug font-medium">Real-time insights<br/>for better decisions</p>
-                </div>
+              <div className="pt-0.5">
+                <h4 className="text-[13px] font-semibold text-[#1E293B] mb-0.5">Smart Analytics</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">Real-time insights<br/>for better decisions</p>
               </div>
+            </div>
 
-              <div className="flex gap-3 items-start">
-                <div className="shrink-0 w-10 h-10 rounded-full border border-[#232B3A] bg-[#121824] shadow-sm flex items-center justify-center text-[#D2A054]">
-                  <Users size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white mb-0.5">User Management</h4>
-                  <p className="text-[11px] text-slate-400 leading-snug font-medium">Manage users, roles<br/>and permissions</p>
-                </div>
+            {/* Feature 3 */}
+            <div className="flex gap-3.5 items-start">
+              <div className="shrink-0 w-11 h-11 rounded-[14px] bg-[#F0FDF4] flex items-center justify-center text-[#489b0d]">
+                <Users size={20} strokeWidth={2} />
               </div>
+              <div className="pt-0.5">
+                <h4 className="text-[13px] font-semibold text-[#1E293B] mb-0.5">User Management</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">Manage users, roles<br/>and permissions</p>
+              </div>
+            </div>
 
-              <div className="flex gap-3 items-start">
-                <div className="shrink-0 w-10 h-10 rounded-full border border-[#232B3A] bg-[#121824] shadow-sm flex items-center justify-center text-[#D2A054]">
-                  <FileText size={20} />
-                </div>
-                <div>
-                  <h4 className="text-xs font-bold text-white mb-0.5">Easy Workflow</h4>
-                  <p className="text-[11px] text-slate-400 leading-snug font-medium">Streamlined loan<br/>management process</p>
-                </div>
+            {/* Feature 4 */}
+            <div className="flex gap-3.5 items-start">
+              <div className="shrink-0 w-11 h-11 rounded-[14px] bg-[#F0FDF4] flex items-center justify-center text-[#489b0d]">
+                <FileCheck size={20} strokeWidth={2} />
+              </div>
+              <div className="pt-0.5">
+                <h4 className="text-[13px] font-semibold text-[#1E293B] mb-0.5">Easy Workflow</h4>
+                <p className="text-[11px] text-slate-500 leading-relaxed">Streamlined loan<br/>management process</p>
               </div>
             </div>
           </div>
@@ -103,43 +99,48 @@ const LoginPage = () => {
       </div>
 
       {/* Right Section - Login Form */}
-      <div className="w-full lg:w-1/2 h-full flex flex-col relative bg-slate-50 overflow-y-auto">
+      <div className="w-full lg:w-1/2 h-full flex flex-col relative z-10 bg-white lg:bg-transparent overflow-y-auto no-scrollbar">
         
         {/* Language selector */}
         {/* <div className="absolute top-6 right-6 lg:top-8 lg:right-8 z-20">
-          <button className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-slate-200 bg-white text-xs text-slate-600 hover:text-slate-900 shadow-sm transition-colors">
-            <Globe size={14} />
-            <span className="font-medium">English</span>
-            <svg className="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+          <button className="flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-slate-200 bg-white text-[13px] text-slate-700 hover:bg-slate-50 shadow-sm transition-colors font-semibold">
+            <Globe size={15} />
+            <span>English</span>
+            <ChevronDown size={14} className="text-slate-400" />
           </button>
         </div> */}
 
+        {/* Mobile Logo */}
+        <div className="lg:hidden w-full flex justify-center pt-16 pb-6">
+          <img src="/loanlogo.png" alt="Loan Management System Logo" className="h-[80px] object-contain" />
+        </div>
+
         {/* Form Container */}
-        <div className="flex-1 flex items-center justify-center p-6 sm:p-12 z-10 w-full h-full relative">
+        <div className="flex-1 flex items-start lg:items-center justify-center px-6 pb-6 pt-2 lg:p-6 w-full relative">
           
-          <div className="w-full max-w-[400px] rounded-2xl border border-slate-100 bg-white p-8 sm:p-10 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)] relative">
+          <div className="w-full max-w-[460px] rounded-lg bg-white px-1 py-4 sm:p-10 lg:p-12 shadow-none lg:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.15)] border-0 lg:border lg:border-slate-100 relative lg:min-h-[480px] flex flex-col justify-center">
              
             <div className="flex items-center gap-4 mb-8">
-              <div className="w-12 h-12 rounded-xl bg-[#D2A054]/10 border border-[#D2A054]/20 flex items-center justify-center">
-                <User size={24} className="text-[#D2A054]" />
+              <div className="w-14 h-14 rounded-lg bg-[#F0FDF4] flex items-center justify-center shrink-0">
+                <User size={28} className="text-[#489b0d]" strokeWidth={2} />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-slate-900 tracking-tight">Admin <span className="text-[#D2A054]">Login</span></h3>
-                <p className="text-[13px] text-slate-500 mt-1 font-medium">Please sign in to your account</p>
+                <h3 className="text-[24px] font-bold text-[#1E293B] tracking-tight">Admin <span className="text-[#489b0d]">Login</span></h3>
+                <p className="text-[13px] text-slate-500 mt-1">Please sign in to continue to your account</p>
               </div>
             </div>
 
-            <form className="space-y-6" onSubmit={handleLogin}>
+            <form className="space-y-5" onSubmit={handleLogin}>
               {/* Email Input */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Email Address</label>
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-semibold text-[#1E293B]">Email Address</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#D2A054] transition-colors">
-                    <Mail size={18} />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#489b0d] transition-colors">
+                    <Mail size={16} />
                   </div>
                   <input 
                     type="email" 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#D2A054] focus:ring-1 focus:ring-[#D2A054] focus:bg-white transition-all font-medium"
+                    className="w-full bg-white border border-slate-200 rounded-[10px] py-3 pl-11 pr-4 text-[13px] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#489b0d] focus:ring-1 focus:ring-[#489b0d] transition-all"
                     placeholder="Enter your email"
                     required
                   />
@@ -147,15 +148,15 @@ const LoginPage = () => {
               </div>
 
               {/* Password Input */}
-              <div className="space-y-2">
-                <label className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Password</label>
+              <div className="space-y-1.5">
+                <label className="text-[13px] font-semibold text-[#1E293B]">Password</label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#D2A054] transition-colors">
-                    <Lock size={18} />
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#489b0d] transition-colors">
+                    <Lock size={16} />
                   </div>
                   <input 
                     type={showPassword ? "text" : "password"} 
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl py-3 pl-11 pr-11 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#D2A054] focus:ring-1 focus:ring-[#D2A054] focus:bg-white transition-all font-medium"
+                    className="w-full bg-white border border-slate-200 rounded-[10px] py-3 pl-11 pr-11 text-[13px] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#489b0d] focus:ring-1 focus:ring-[#489b0d] transition-all"
                     placeholder="Enter your password"
                     required
                   />
@@ -164,25 +165,24 @@ const LoginPage = () => {
                     className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 transition-colors"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
                   </button>
                 </div>
               </div>
 
               {/* Options */}
-              {/* <div className="flex items-center justify-between pt-1">
+              <div className="flex items-center justify-between pt-1 pb-1">
                 <label className="flex items-center gap-2 cursor-pointer group">
-                  <div className="w-4 h-4 rounded border border-slate-300 bg-slate-50 group-hover:border-[#D2A054]/50 flex items-center justify-center transition-colors">
-                  </div>
-                  <span className="text-[13px] text-slate-500 font-medium group-hover:text-slate-700 transition-colors">Remember me</span>
+                  <input type="checkbox" className="w-3.5 h-3.5 rounded border-slate-300 text-blue-600 focus:ring-blue-600 cursor-pointer" />
+                  <span className="text-[12.5px] text-slate-500 group-hover:text-slate-800 transition-colors">Remember me</span>
                 </label>
-                <a href="#" className="text-[13px] text-[#D2A054] font-medium hover:text-[#C89446] transition-colors">Forgot Password?</a>
-              </div> */}
+                <a href="#" className="text-[12.5px] text-[#489b0d] font-semibold hover:text-[#3e850b] transition-colors">Forgot Password?</a>
+              </div>
 
               {/* Submit Button */}
               <button 
                 type="submit" 
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-[#D2A054] to-[#C89446] text-white font-bold text-[13px] tracking-wide uppercase flex items-center justify-center gap-2 hover:opacity-90 transition-all mt-4 shadow-[0_8px_20px_rgba(210,160,84,0.3)] hover:shadow-[0_10px_25px_rgba(210,160,84,0.4)] hover:-translate-y-0.5"
+                className="w-full py-3 rounded-[10px] bg-[#489b0d] hover:bg-[#3e850b] text-white font-semibold text-[14px] flex items-center justify-center gap-2 transition-all shadow-[0_4px_12px_rgba(72,155,13,0.2)] hover:shadow-[0_6px_16px_rgba(72,155,13,0.3)]"
               >
                 Sign In
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
@@ -190,17 +190,17 @@ const LoginPage = () => {
 
               {/* Divider */}
               {/* <div className="relative py-1 flex items-center">
-                <div className="flex-grow border-t border-slate-200"></div>
-                <span className="flex-shrink-0 mx-4 text-[11px] text-slate-400 font-bold uppercase tracking-widest">OR</span>
-                <div className="flex-grow border-t border-slate-200"></div>
+                <div className="flex-grow border-t border-slate-100"></div>
+                <span className="flex-shrink-0 mx-4 text-[11px] text-slate-400 font-bold uppercase tracking-wider">OR</span>
+                <div className="flex-grow border-t border-slate-100"></div>
               </div> */}
 
               {/* OTP Login */}
               {/* <button 
                 type="button" 
-                className="w-full py-3.5 rounded-2xl border border-slate-200 bg-white text-slate-700 font-bold text-sm flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors shadow-sm hover:shadow"
+                className="w-full py-3 rounded-md border border-slate-200 bg-white text-slate-700 font-bold text-[14px] flex items-center justify-center gap-2 hover:bg-slate-50 transition-colors shadow-sm"
               >
-                <ShieldCheck size={16} className="text-[#D2A054]" />
+                <ShieldCheck size={18} className="text-[#489b0d]" />
                 Login with OTP
               </button> */}
             </form>
@@ -209,12 +209,12 @@ const LoginPage = () => {
         </div>
 
         {/* Footer info */}
-        <div className="py-4 text-center z-10 w-full absolute bottom-0">
-          <p className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium">
-            <Lock size={10} />
+        {/* <div className="pb-8 text-center w-full mt-auto">
+          <p className="flex items-center justify-center gap-1.5 text-[12px] text-slate-500 font-medium">
+            <Lock size={12} className="text-slate-400" />
             Secure login protected by advanced encryption
           </p>
-        </div>
+        </div> */}
 
       </div>
 
