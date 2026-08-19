@@ -4,7 +4,7 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 
 export default function DashboardLayout() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   return (
     <div className="flex h-screen bg-white overflow-hidden font-sans text-slate-900">
@@ -12,7 +12,7 @@ export default function DashboardLayout() {
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-[#fafbfa] relative">
         {/* Fixed Header */}
         <div className="sticky top-0 z-20 w-full">
-          <Header toggleSidebar={() => setIsSidebarOpen(true)} />
+          <Header toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)} />
         </div>
         
         {/* Scrollable Page Content */}

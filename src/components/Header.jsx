@@ -27,10 +27,10 @@ export default function Header({ toggleSidebar }) {
     <div className="w-full bg-white/80 backdrop-blur-md border-b border-slate-100 px-4 md:px-8 py-4 flex items-center justify-between z-10">
       
       <div className="flex items-center gap-4">
-        {/* Hamburger Menu (Mobile Only) */}
+        {/* Hamburger Menu Toggle */}
         <button 
           onClick={toggleSidebar}
-          className="lg:hidden p-2 -ml-2 text-slate-500 hover:text-slate-800 transition-colors rounded-md hover:bg-slate-50"
+          className="p-2 -ml-2 text-slate-500 hover:text-slate-800 transition-colors rounded-md hover:bg-slate-50"
         >
           <Menu size={24} />
         </button>

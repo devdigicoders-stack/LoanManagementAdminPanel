@@ -78,7 +78,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       )}
       
       {/* Sidebar Content */}
-      <div className={`fixed lg:static inset-y-0 left-0 z-50 w-[280px] h-screen bg-white border-r border-slate-200 flex flex-col overflow-hidden shrink-0 transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+      <div className={`fixed lg:static inset-y-0 left-0 z-50 h-screen bg-white flex flex-col overflow-hidden shrink-0 transition-all duration-300 ${isOpen ? 'w-[240px] translate-x-0 border-r border-slate-200' : 'w-[240px] -translate-x-full lg:w-0 lg:border-r-0'}`}>
       {/* Header / Logo */}
       <div className="p-6 pb-2 shrink-0 flex items-center justify-center">
         <img
