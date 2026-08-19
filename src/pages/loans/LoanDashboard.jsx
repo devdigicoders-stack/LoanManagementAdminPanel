@@ -52,6 +52,10 @@ export default function LoanDashboard() {
               </div>
               <select className="h-8 px-2 rounded-lg border border-slate-200 text-[11px] font-semibold text-slate-600 focus:outline-none bg-slate-50">
                 <option>All Branches</option>
+            <option>Mumbai Branch</option>
+            <option>Delhi Branch</option>
+            <option>Bangalore Branch</option>
+            <option>Chennai Branch</option>
               </select>
             </div>
 

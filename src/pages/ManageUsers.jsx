@@ -1,4 +1,5 @@
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
+import Swal from "sweetalert2";
 import {
   ChevronRight,
   Users,
@@ -25,13 +26,16 @@ import {
   Eye,
   Edit,
   Ban,
+  Unlock,
   Clock,
   X,
+  Search,
+  Trash2,
 } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // --- Mock Data ---
-const mockUsers = [
+export const mockUsers = [
   {
     id: "USR-10245",
     name: "Ravi Kumar",
@@ -52,6 +56,24 @@ const mockUsers = [
     creditScore: 742,
     creditStatus: "Good",
     avatar: "https://i.pravatar.cc/150?u=1",
+    // Expanded Fields
+    maritalStatus: "Married",
+    nationality: "Indian",
+    alternatePhone: "+91 9123456789",
+    currentAddress: "123, Green Park Society, Sector 45, Gurugram, Haryana - 122003",
+    permanentAddress: "Vill. Rampur, Post - Bazar, District - Patna, Bihar - 800001",
+    preferredCommunication: "Email",
+    source: "Google Ads",
+    occupation: "Salaried",
+    annualIncome: "₹ 12,00,000",
+    education: "B.Tech (Computer Science)",
+    gstRegistered: "No",
+    registeredOn: "12 May 2025, 10:30 AM",
+    lastLogin: "31 May 2025, 04:45 PM",
+    approvedApplications: 1,
+    underReviewApplications: 1,
+    rejectedApplications: 1,
+    totalUploadedDocuments: 12,
   },
   {
     id: "USR-10246",
@@ -73,6 +95,23 @@ const mockUsers = [
     creditScore: 780,
     creditStatus: "Excellent",
     avatar: "https://i.pravatar.cc/150?u=2",
+    maritalStatus: "Single",
+    nationality: "Indian",
+    alternatePhone: "+91 9123456711",
+    currentAddress: "45, Civil Lines, Kanpur, Uttar Pradesh - 208001",
+    permanentAddress: "45, Civil Lines, Kanpur, Uttar Pradesh - 208001",
+    preferredCommunication: "WhatsApp",
+    source: "Referral",
+    occupation: "Self-Employed",
+    annualIncome: "₹ 15,50,000",
+    education: "MBA",
+    gstRegistered: "Yes",
+    registeredOn: "01 Feb 2025, 11:15 AM",
+    lastLogin: "18 May 2025, 09:20 AM",
+    approvedApplications: 2,
+    underReviewApplications: 1,
+    rejectedApplications: 1,
+    totalUploadedDocuments: 8,
   },
   {
     id: "USR-10247",
@@ -94,6 +133,23 @@ const mockUsers = [
     creditScore: 650,
     creditStatus: "Fair",
     avatar: "https://i.pravatar.cc/150?u=3",
+    maritalStatus: "Single",
+    nationality: "Indian",
+    alternatePhone: "N/A",
+    currentAddress: "12, MG Road, Agra, Uttar Pradesh - 282001",
+    permanentAddress: "12, MG Road, Agra, Uttar Pradesh - 282001",
+    preferredCommunication: "SMS",
+    source: "Organic Search",
+    occupation: "Salaried",
+    annualIncome: "₹ 5,00,000",
+    education: "B.Sc",
+    gstRegistered: "No",
+    registeredOn: "15 May 2025, 02:30 PM",
+    lastLogin: "16 May 2025, 10:10 AM",
+    approvedApplications: 0,
+    underReviewApplications: 1,
+    rejectedApplications: 0,
+    totalUploadedDocuments: 2,
   },
   {
     id: "USR-10248",
@@ -115,6 +171,23 @@ const mockUsers = [
     creditScore: 710,
     creditStatus: "Good",
     avatar: "https://i.pravatar.cc/150?u=4",
+    maritalStatus: "Married",
+    nationality: "Indian",
+    alternatePhone: "+91 9876543299",
+    currentAddress: "88, Gomti Nagar, Lucknow, Uttar Pradesh - 226010",
+    permanentAddress: "Varanasi, Uttar Pradesh",
+    preferredCommunication: "Email",
+    source: "Facebook Ads",
+    occupation: "Salaried",
+    annualIncome: "₹ 8,50,000",
+    education: "B.Com",
+    gstRegistered: "No",
+    registeredOn: "20 Mar 2025, 04:00 PM",
+    lastLogin: "18 May 2025, 12:45 PM",
+    approvedApplications: 1,
+    underReviewApplications: 0,
+    rejectedApplications: 0,
+    totalUploadedDocuments: 5,
   },
   {
     id: "USR-10249",
@@ -136,6 +209,23 @@ const mockUsers = [
     creditScore: 680,
     creditStatus: "Fair",
     avatar: "https://i.pravatar.cc/150?u=5",
+    maritalStatus: "Married",
+    nationality: "Indian",
+    alternatePhone: "+91 9876543288",
+    currentAddress: "Sector 62, Noida, Uttar Pradesh - 201309",
+    permanentAddress: "Surat, Gujarat",
+    preferredCommunication: "Phone Call",
+    source: "Direct",
+    occupation: "Business",
+    annualIncome: "₹ 20,00,000",
+    education: "12th Pass",
+    gstRegistered: "Yes",
+    registeredOn: "10 Apr 2025, 09:30 AM",
+    lastLogin: "17 May 2025, 03:20 PM",
+    approvedApplications: 0,
+    underReviewApplications: 2,
+    rejectedApplications: 0,
+    totalUploadedDocuments: 3,
   },
   {
     id: "USR-10250",
@@ -157,6 +247,23 @@ const mockUsers = [
     creditScore: 810,
     creditStatus: "Excellent",
     avatar: "https://i.pravatar.cc/150?u=6",
+    maritalStatus: "Single",
+    nationality: "NRI",
+    alternatePhone: "+1 555 1234567",
+    currentAddress: "DLF Phase 3, Gurgaon, Haryana - 122002",
+    permanentAddress: "California, USA",
+    preferredCommunication: "Email",
+    source: "LinkedIn",
+    occupation: "Salaried",
+    annualIncome: "₹ 45,00,000",
+    education: "MS Computer Science",
+    gstRegistered: "No",
+    registeredOn: "15 Jan 2024, 08:00 AM",
+    lastLogin: "19 May 2025, 08:30 AM",
+    approvedApplications: 5,
+    underReviewApplications: 0,
+    rejectedApplications: 0,
+    totalUploadedDocuments: 15,
   },
   {
     id: "USR-10251",
@@ -178,6 +285,23 @@ const mockUsers = [
     creditScore: 760,
     creditStatus: "Good",
     avatar: "https://i.pravatar.cc/150?u=7",
+    maritalStatus: "Married",
+    nationality: "Indian",
+    alternatePhone: "N/A",
+    currentAddress: "Vasant Kunj, New Delhi - 110070",
+    permanentAddress: "Vasant Kunj, New Delhi - 110070",
+    preferredCommunication: "WhatsApp",
+    source: "Referral",
+    occupation: "Freelancer",
+    annualIncome: "₹ 9,00,000",
+    education: "BFA",
+    gstRegistered: "No",
+    registeredOn: "22 Aug 2024, 11:45 AM",
+    lastLogin: "01 Mar 2025, 02:15 PM",
+    approvedApplications: 2,
+    underReviewApplications: 0,
+    rejectedApplications: 0,
+    totalUploadedDocuments: 6,
   },
   {
     id: "USR-10252",
@@ -199,6 +323,23 @@ const mockUsers = [
     creditScore: 540,
     creditStatus: "Poor",
     avatar: "https://i.pravatar.cc/150?u=8",
+    maritalStatus: "Divorced",
+    nationality: "Indian",
+    alternatePhone: "+91 9876543211",
+    currentAddress: "Connaught Place, New Delhi - 110001",
+    permanentAddress: "Mumbai, Maharashtra",
+    preferredCommunication: "Email",
+    source: "Google Ads",
+    occupation: "Unemployed",
+    annualIncome: "₹ 2,00,000",
+    education: "B.A",
+    gstRegistered: "No",
+    registeredOn: "05 Jun 2024, 01:20 PM",
+    lastLogin: "10 Feb 2025, 10:00 AM",
+    approvedApplications: 1,
+    underReviewApplications: 0,
+    rejectedApplications: 2,
+    totalUploadedDocuments: 4,
   },
 ];
 
@@ -260,38 +401,144 @@ const topKpis = [
 ];
 
 export default function ManageUsers() {
-  const [selectedUserId, setSelectedUserId] = useState(null);
-  const [activeTab, setActiveTab] = useState("Overview");
-  const selectedUser = selectedUserId
-    ? mockUsers.find((u) => u.id === selectedUserId)
-    : null;
+  const navigate = useNavigate();
+  const [users, setUsers] = useState(mockUsers);
+  
+  // Filters state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("All Status");
+  const [kycFilter, setKycFilter] = useState("All KYC Status");
+  const [selectedListTab, setSelectedListTab] = useState("All Users"); // Main table tabs
+  
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+
+  // Filter Logic
+  const filteredUsers = useMemo(() => {
+    return users.filter(user => {
+      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            user.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                            user.phone.includes(searchTerm);
+      const matchesStatus = statusFilter === 'All Status' || user.status === statusFilter;
+      const matchesKyc = kycFilter === 'All KYC Status' || user.kycStatus === kycFilter;
+      const matchesTab = selectedListTab === "All Users" ||
+                         (selectedListTab === "Active" && user.status === "Active") ||
+                         (selectedListTab === "Inactive" && user.status === "Inactive") ||
+                         (selectedListTab === "KYC Pending" && user.kycStatus === "Pending") ||
+                         (selectedListTab === "KYC Verified" && user.kycStatus === "Verified") ||
+                         (selectedListTab === "Blocked" && user.status === "Blocked");
+      
+      return matchesSearch && matchesStatus && matchesKyc && matchesTab;
+    });
+  }, [users, searchTerm, statusFilter, kycFilter, selectedListTab]);
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
+  const currentItems = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // Dynamic KPIs
+  const activeCount = users.filter(u => u.status === 'Active').length;
+  const inactiveCount = users.filter(u => u.status === 'Inactive').length;
+  const kycPendingCount = users.filter(u => u.kycStatus === 'Pending').length;
+  const kycVerifiedCount = users.filter(u => u.kycStatus === 'Verified').length;
+  const blockedCount = users.filter(u => u.status === 'Blocked').length;
+
+  const dynamicTopKpis = [
+    { label: "Total Users", value: users.length, change: "+12.5%", isUp: true, icon: Users, color: "text-[#489b0d]", bg: "bg-[#489b0d]/10" },
+    { label: "Active Users", value: activeCount, change: "+9.8%", isUp: true, icon: UserCheck, color: "text-orange-500", bg: "bg-orange-50" },
+    { label: "Inactive Users", value: inactiveCount, change: "-4.3%", isUp: false, icon: UserMinus, color: "text-red-500", bg: "bg-red-50" },
+    { label: "KYC Pending", value: kycPendingCount, change: "+8.2%", isUp: true, icon: ShieldAlert, color: "text-blue-500", bg: "bg-blue-50" },
+    { label: "KYC Verified", value: kycVerifiedCount, change: "+14.6%", isUp: true, icon: ShieldCheck, color: "text-[#489b0d]", bg: "bg-[#489b0d]/10" },
+    { label: "Blocked Users", value: blockedCount, change: "-2.1%", isUp: false, icon: UserX, color: "text-purple-500", bg: "bg-purple-50" },
+  ];
+
+  const handleDelete = (e, id) => {
+    e.stopPropagation();
+    Swal.fire({
+      title: 'Are you sure?',
+      text: "You won't be able to revert this!",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const updated = users.filter(u => u.id !== id);
+        setUsers(updated);
+        const newTotalPages = Math.ceil(updated.length / itemsPerPage) || 1;
+        if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
+        Swal.fire('Deleted!', 'User has been deleted.', 'success');
+      }
+    });
+  };
+
+  const handleToggleBlock = (e, id, currentStatus) => {
+    e.stopPropagation();
+    const newStatus = currentStatus === "Blocked" ? "Active" : "Blocked";
+    const confirmMsg = currentStatus === "Blocked" ? "Are you sure you want to unblock this user?" : "Are you sure you want to block this user?";
+    Swal.fire({
+      title: 'Confirmation',
+      text: confirmMsg,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#489b0d',
+      cancelButtonColor: '#d33',
+      confirmButtonText: 'Yes, proceed!'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u));
+        Swal.fire('Updated!', `User status changed to ${newStatus}.`, 'success');
+      }
+    });
+  };
+
+  // Reset page when filters change
+  useMemo(() => { setCurrentPage(1); }, [searchTerm, statusFilter, kycFilter, selectedListTab]);
 
   return (
     <div className="w-full space-y-6 pb-10">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-slate-800 mb-1">
-          User Management
-        </h1>
-        <div className="flex items-center text-[12px] font-medium text-slate-500">
-          <Link to="/" className="hover:text-[#489b0d] transition-colors">
-            Dashboard
-          </Link>
-          <ChevronRight size={14} className="mx-1" />
-          <span className="hover:text-[#489b0d] transition-colors cursor-pointer">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-800 mb-1">
             User Management
-          </span>
-          <ChevronRight size={14} className="mx-1" />
-          <span className="text-[#489b0d] font-bold">Manage Users</span>
+          </h1>
+          <div className="flex items-center text-[12px] font-medium text-slate-500">
+            <Link to="/" className="hover:text-[#489b0d] transition-colors">
+              Dashboard
+            </Link>
+            <ChevronRight size={14} className="mx-1" />
+            <span className="hover:text-[#489b0d] transition-colors cursor-pointer">
+              User Management
+            </span>
+            <ChevronRight size={14} className="mx-1" />
+            <span className="text-[#489b0d] font-bold">Manage Users</span>
+          </div>
+        </div>
+        <div className="relative w-full md:w-80">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+          <input 
+            type="text" 
+            placeholder="Search users, email, phone..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-9 pr-16 py-2.5 bg-white border border-slate-200 rounded-md text-[13px] font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all"
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 opacity-80">
+            <span className="text-[10px] font-bold text-slate-400">Ctrl + K</span>
+          </div>
         </div>
       </div>
 
       {/* Top KPIs Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-        {topKpis.map((kpi, idx) => (
+        {dynamicTopKpis.map((kpi, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-md border border-slate-100 p-4 shadow-sm flex flex-col justify-between min-h-[110px] hover:shadow-md transition-shadow"
+            className="bg-white rounded-md border border-slate-100 p-4 shadow-sm flex flex-col justify-between min-h-[110px] hover:shadow-md transition-shadow cursor-pointer"
           >
             <div className="flex items-start justify-between mb-2">
               <p className="text-[12px] font-semibold text-slate-500 tracking-wide">
@@ -332,22 +579,23 @@ export default function ManageUsers() {
           {/* Tabs */}
           <div className="flex items-center border-b border-slate-100 px-6 pt-4 gap-6 overflow-x-auto no-scrollbar">
             {[
-              "All Users (2,547)",
-              "Active (2,187)",
-              "Inactive (218)",
-              "KYC Pending (142)",
-              "KYC Verified (1,945)",
-              "Blocked (56)",
-            ].map((tab, i) => (
+              { id: "All Users", count: users.length },
+              { id: "Active", count: activeCount },
+              { id: "Inactive", count: inactiveCount },
+              { id: "KYC Pending", count: kycPendingCount },
+              { id: "KYC Verified", count: kycVerifiedCount },
+              { id: "Blocked", count: blockedCount },
+            ].map((tab) => (
               <button
-                key={i}
-                className={`pb-3 text-[12px] font-bold whitespace-nowrap border-b-2 transition-colors ${
-                  i === 0
+                key={tab.id}
+                onClick={() => setSelectedListTab(tab.id)}
+                className={`cursor-pointer pb-3 text-[12px] font-bold whitespace-nowrap border-b-2 transition-colors ${
+                  selectedListTab === tab.id
                     ? "border-[#489b0d] text-[#489b0d]"
                     : "border-transparent text-slate-500 hover:text-slate-700"
                 }`}
               >
-                {tab}
+                {tab.id} ({tab.count})
               </button>
             ))}
           </div>
@@ -355,14 +603,17 @@ export default function ManageUsers() {
           {/* Filters & Actions */}
           <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50">
             <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
-              <select className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0">
-                <option>All Branches</option>
+              <select value={kycFilter} onChange={(e) => setKycFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0 cursor-pointer">
+                <option value="All KYC Status">All KYC Status</option>
+                <option value="Verified">Verified</option>
+                <option value="Pending">Pending</option>
+                <option value="Blocked">Blocked</option>
               </select>
-              <select className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0">
-                <option>All Roles</option>
-              </select>
-              <select className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0">
-                <option>All Status</option>
+              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0 cursor-pointer">
+                <option value="All Status">All Status</option>
+                <option value="Active">Active</option>
+                <option value="Inactive">Inactive</option>
+                <option value="Blocked">Blocked</option>
               </select>
               <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 cursor-pointer shrink-0">
                 <Calendar size={14} className="text-slate-400 shrink-0" />
@@ -415,11 +666,11 @@ export default function ManageUsers() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {mockUsers.map((user) => (
+                {currentItems.length > 0 ? currentItems.map((user) => (
                   <tr
                     key={user.id}
-                    onClick={() => setSelectedUserId(user.id)}
-                    className={`cursor-pointer transition-colors ${selectedUserId === user.id ? "bg-[#489b0d]/5 border-l-2 border-l-[#489b0d]" : "hover:bg-slate-50 border-l-2 border-l-transparent"}`}
+                    onClick={() => navigate(`/user-profile/${user.id}`)}
+                    className="cursor-pointer transition-colors hover:bg-slate-50 border-l-2 border-l-transparent"
                   >
                     <td
                       className="py-3 px-4"
@@ -507,15 +758,43 @@ export default function ManageUsers() {
                       )}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <button
-                        className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-md transition-colors"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <MoreVertical size={16} />
-                      </button>
+                      <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={(e) => handleToggleBlock(e, user.id, user.status)}
+                          className={`p-1.5 rounded-md transition-colors ${
+                            user.status === "Blocked" 
+                              ? "text-orange-500 hover:text-orange-600 hover:bg-orange-50" 
+                              : "text-slate-400 hover:text-red-600 hover:bg-red-50"
+                          }`}
+                          title={user.status === "Blocked" ? "Unblock User" : "Block User"}
+                        >
+                          {user.status === "Blocked" ? <Unlock size={16} /> : <Ban size={16} />}
+                        </button>
+                        <Link 
+                          to={`/user-profile/${user.id}`} 
+                          className="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                          onClick={(e) => e.stopPropagation()}
+                          title="View Profile"
+                        >
+                          <Eye size={16} />
+                        </Link>
+                        <button
+                          onClick={(e) => handleDelete(e, user.id)}
+                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          title="Delete User"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
-                ))}
+                )) : (
+                  <tr>
+                    <td colSpan="8" className="py-8 text-center text-slate-500 text-sm">
+                      No users found matching your filters.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
@@ -523,441 +802,41 @@ export default function ManageUsers() {
           {/* Pagination */}
           <div className="p-4 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 mt-auto bg-white">
             <p className="text-[12px] font-medium text-slate-500 text-center md:text-left w-full md:w-auto">
-              Showing 1 to 8 of 2,547 entries
+              Showing {filteredUsers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} entries
             </p>
             <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 w-full md:w-auto">
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50">
+              <button 
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
                 <ChevronRight size={14} className="rotate-180" />
               </button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#489b0d] text-white font-bold text-[13px] shadow-sm">
-                1
-              </button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-                2
-              </button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-                3
-              </button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-                4
-              </button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-                5
-              </button>
-              <span className="px-1 text-slate-400 text-[13px]">...</span>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-                255
-              </button>
-              <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button 
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 flex items-center justify-center rounded-lg font-medium text-[13px] transition-colors ${
+                    currentPage === page 
+                      ? 'bg-[#489b0d] text-white shadow-sm' 
+                      : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button 
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+              >
                 <ChevronRight size={14} />
               </button>
             </div>
           </div>
         </div>
-
-        {/* RIGHT PANE: User Details Slide-over Drawer */}
-        {selectedUser && (
-          <>
-            {/* Backdrop */}
-            <div
-              className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity"
-              onClick={() => setSelectedUserId(null)}
-            ></div>
-
-            {/* Drawer */}
-            <div className="fixed top-0 right-0 h-screen w-full max-w-[600px] bg-white z-50 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out border-l border-slate-100">
-              <div className="flex justify-between items-center p-6 border-b border-slate-100 shrink-0 bg-white">
-                <h3 className="text-lg font-bold text-slate-800">
-                  User Details
-                </h3>
-                <button
-                  onClick={() => setSelectedUserId(null)}
-                  className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-                >
-                  <X size={20} />
-                </button>
-              </div>
-
-              {/* Profile Header */}
-              <div className="p-6 pb-0 flex items-start gap-4">
-                <img
-                  src={selectedUser.avatar}
-                  alt={selectedUser.name}
-                  className="w-16 h-16 rounded-full object-cover border-2 border-slate-50 shadow-sm shrink-0"
-                />
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-[18px] font-extrabold text-slate-800 leading-none">
-                      {selectedUser.name}
-                    </h2>
-                    {selectedUser.status === "Active" && (
-                      <span className="bg-[#489b0d]/10 text-[#489b0d] px-2 py-0.5 rounded-md text-[10px] font-bold">
-                        Active
-                      </span>
-                    )}
-                    {selectedUser.status === "Inactive" && (
-                      <span className="bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                        Inactive
-                      </span>
-                    )}
-                    {selectedUser.status === "Blocked" && (
-                      <span className="bg-red-100 text-red-600 px-2 py-0.5 rounded-md text-[10px] font-bold">
-                        Blocked
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[12px] font-medium text-slate-500 mb-2">
-                    {selectedUser.id}
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <span className="flex items-center gap-1 bg-green-50 text-green-600 px-2 py-1 rounded-md text-[10px] font-bold border border-green-100">
-                      <ShieldCheck size={12} /> KYC Verified
-                    </span>
-                    <span className="flex items-center gap-1 bg-blue-50 text-blue-600 px-2 py-1 rounded-md text-[10px] font-bold border border-blue-100">
-                      <User size={12} /> Loan Customer
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Inner Tabs */}
-              <div className="flex items-center gap-6 px-6 mt-6 border-b border-slate-100 overflow-x-auto no-scrollbar shrink-0">
-                {[
-                  { id: "Overview", icon: Eye },
-                  { id: "Personal", icon: User },
-                  { id: "KYC & Docs", icon: ShieldCheck },
-                  { id: "Loans", icon: Briefcase },
-                  { id: "Activity", icon: Clock },
-                  { id: "Notes", icon: FileText },
-                ].map((tab) => (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex flex-col items-center gap-1 pb-3 border-b-2 min-w-max transition-colors ${activeTab === tab.id ? "border-[#489b0d] text-[#489b0d]" : "border-transparent text-slate-400 hover:text-slate-600"}`}
-                  >
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center mb-1 ${activeTab === tab.id ? "bg-[#489b0d] text-white" : ""}`}
-                    >
-                      <tab.icon size={activeTab === tab.id ? 14 : 18} />
-                    </div>
-                    <span className="text-[10px] font-bold">{tab.id}</span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Detail Content (Scrollable) */}
-              <div className="p-6 flex-1 overflow-y-auto no-scrollbar">
-                {activeTab === "Overview" && (
-                  <div className="space-y-4">
-                    {/* Contact Box */}
-                    <div className="border border-slate-100 rounded-md p-4 bg-slate-50/30 space-y-4">
-                      <div className="flex items-start gap-3">
-                        <Mail
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Email
-                          </p>
-                          <p className="text-[12px] font-bold text-slate-800">
-                            {selectedUser.email}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <Phone
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Phone
-                          </p>
-                          <p className="text-[12px] font-bold text-slate-800">
-                            {selectedUser.phone}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <CreditCard
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            PAN Number
-                          </p>
-                          <p className="text-[12px] font-bold text-slate-800">
-                            {selectedUser.pan}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <CreditCard
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Aadhaar Number
-                          </p>
-                          <p className="text-[12px] font-bold text-slate-800">
-                            {selectedUser.aadhaar}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <Calendar
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Date of Birth
-                          </p>
-                          <p className="text-[12px] font-bold text-slate-800">
-                            {selectedUser.dob}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <User
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Gender
-                          </p>
-                          <p className="text-[12px] font-bold text-slate-800">
-                            {selectedUser.gender}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-start gap-3">
-                        <MapPin
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Address
-                          </p>
-                          <p className="text-[12px] font-bold text-slate-800 leading-relaxed">
-                            {selectedUser.address}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Financial Stats Box */}
-                    <div className="border border-slate-100 rounded-md p-4 bg-slate-50/30 space-y-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
-                          <Briefcase size={14} />
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500">
-                            Total Loan Amount
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedUser.totalLoanAmount}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
-                          <Bell size={14} />
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500">
-                            Outstanding Amount
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedUser.outstandingAmount}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
-                          <Calendar size={14} />
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500">
-                            Active Loans
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedUser.activeLoans}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
-                          <FileText size={14} />
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500">
-                            Closed Loans
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedUser.closedLoans}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center text-slate-500 shrink-0">
-                          <FileText size={14} />
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500">
-                            Total Applications
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedUser.totalApplications}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 pt-2">
-                        <div className="w-10 h-10 rounded-full border-4 border-[#489b0d] flex items-center justify-center shrink-0">
-                          <span className="text-[11px] font-bold text-[#489b0d]">
-                            {selectedUser.creditScore}
-                          </span>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500">
-                            Credit Score
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedUser.creditStatus}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === "Loans" && (
-                  <div className="flex flex-col gap-4">
-                    <div className="bg-white rounded-md border border-slate-100 p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md bg-green-50 text-[#489b0d] flex items-center justify-center shrink-0">
-                          <FileText size={20} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                            Total Applications
-                          </p>
-                          <h3 className="text-lg font-extrabold text-slate-800 leading-none mt-0.5">
-                            3
-                          </h3>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-md border border-slate-100 p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                          <Briefcase size={20} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                            Active Loans
-                          </p>
-                          <h3 className="text-lg font-extrabold text-slate-800 leading-none mt-0.5">
-                            1
-                          </h3>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-md border border-slate-100 p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md bg-purple-50 text-purple-500 flex items-center justify-center shrink-0">
-                          <CreditCard size={20} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                            Total Disbursed
-                          </p>
-                          <h3 className="text-lg font-extrabold text-slate-800 leading-none mt-0.5">
-                            ₹5,00,000
-                          </h3>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-md border border-slate-100 p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
-                          <Clock size={20} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                            EMI Due
-                          </p>
-                          <h3 className="text-lg font-extrabold text-slate-800 leading-none mt-0.5">
-                            ₹12,500
-                          </h3>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-md border border-slate-100 p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md bg-indigo-50 text-indigo-500 flex items-center justify-center shrink-0">
-                          <Calendar size={20} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                            Last Payment
-                          </p>
-                          <h3 className="text-lg font-extrabold text-slate-800 leading-none mt-0.5">
-                            10 May 2025
-                          </h3>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-white rounded-md border border-slate-100 p-4 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-md bg-amber-50 text-amber-500 flex items-center justify-center shrink-0">
-                          <AlertCircle size={20} />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wide">
-                            Next EMI Due
-                          </p>
-                          <h3 className="text-lg font-extrabold text-slate-800 leading-none mt-0.5">
-                            10 Jun 2025
-                          </h3>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab !== "Overview" && activeTab !== "Loans" && (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-400 py-10">
-                    <p className="text-[13px] font-bold">
-                      Section under construction
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {/* Action Buttons */}
-              <div className="p-4 sm:p-6 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0 bg-white mt-auto">
-                <button className="w-full sm:flex-1 flex items-center justify-center gap-2 py-3 bg-[#489b0d] text-white rounded-md text-[13px] font-bold shadow-sm hover:bg-[#3e850b] transition-colors">
-                  <Eye size={16} className="shrink-0" /> <span className="whitespace-nowrap">View Full Profile</span>
-                </button>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                  <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-0 sm:px-5 py-3 border border-[#489b0d]/20 bg-[#489b0d]/5 text-[#489b0d] rounded-md text-[13px] font-bold hover:bg-[#489b0d]/10 transition-colors">
-                    <Edit size={16} className="shrink-0" /> <span className="whitespace-nowrap">Edit User</span>
-                  </button>
-                  <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-0 sm:px-5 py-3 border border-red-200 bg-red-50 text-red-600 rounded-md text-[13px] font-bold hover:bg-red-100 transition-colors">
-                    <Ban size={16} className="shrink-0" /> <span className="whitespace-nowrap">Block User</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
       </div>
     </div>
   );

@@ -36,8 +36,7 @@ const navGroups = [
     items: [
       { name: "Lead Management", icon: Target, path: "/leads" },
       { name: "Loan Application Management", icon: FileText, path: "/loans" },
-      { name: "View Complete User Profile", icon: UserCheck, path: "/user-profile" },
-      { name: "View All Uploaded Documents", icon: FolderOpen, path: "/documents" },
+      { name: "View All Uploaded Documents", icon: FolderOpen, path: "/loans/documents" },
       { name: "Verify Documents", icon: ShieldCheck, path: "/verify-documents" },
     ],
   },
@@ -46,11 +45,10 @@ const navGroups = [
     items: [
       { name: "Approve / Reject / Hold Application", icon: CheckCircle2, path: "/application-decision" },
       { name: "Request Additional Documents", icon: FilePlus, path: "/request-documents" },
-      { name: "Assign Lead to Employee", icon: ClipboardList, path: "/assign-lead" },
-      { name: "Status Management", icon: Activity, path: "/status-management" },
+      { name: "Assign Lead to Employee", icon: ClipboardList, path: "/leads/assignment" },
       { name: "Notification Management", icon: Bell, path: "/notifications" },
       { name: "Reports & Analytics", icon: BarChart3, path: "/reports" },
-      { name: "Permission Management", icon: Lock, path: "/permissions" },
+      { name: "Permission Management", icon: Lock, path: "/users/roles" },
       { name: "Manage Complaints", icon: MessageSquare, path: "/complaints" },
     ],
   },
@@ -78,9 +76,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       )}
       
       {/* Sidebar Content */}
-      <div className={`fixed lg:static inset-y-0 left-0 z-50 h-screen bg-white flex flex-col overflow-hidden shrink-0 transition-all duration-300 ${isOpen ? 'w-[240px] translate-x-0 border-r border-slate-200' : 'w-[240px] -translate-x-full lg:w-0 lg:border-r-0'}`}>
+      <div className={`fixed lg:static inset-y-0 left-0 z-50 h-screen bg-white flex flex-col overflow-hidden shrink-0 transition-all duration-300 border-r border-slate-200 ${isOpen ? 'w-[240px] translate-x-0' : 'w-[240px] -translate-x-full lg:w-[80px] lg:translate-x-0'}`}>
       {/* Header / Logo */}
-      <div className="p-6 pb-2 shrink-0 flex items-center justify-center">
+      <div className={`py-6 pb-2 shrink-0 flex items-center justify-center transition-all duration-300 ${isOpen ? 'px-6' : 'px-2'}`}>
         <img
           src="/loanlogo.png"
           alt="NGM Logo"
@@ -93,7 +91,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         {navGroups.map((group, idx) => (
           <div key={idx} className={group.title ? "mt-6" : "mt-2"}>
             {group.title && (
-              <h3 className="px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+              <h3 className={`px-3 mb-2 text-[10px] font-bold text-slate-400 uppercase tracking-wider transition-all duration-300 whitespace-nowrap ${isOpen ? 'opacity-100' : 'opacity-0 w-0 h-0 overflow-hidden m-0 p-0'}`}>
                 {group.title}
               </h3>
             )}
@@ -105,23 +103,28 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                   (location.pathname === "/" && item.path === "/");
 
                 return (
-                  <NavLink
-                    key={itemIdx}
-                    to={item.path}
-                    onClick={() => setIsOpen && setIsOpen(false)}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-all duration-200 group ${
-                      isActive
-                        ? "bg-[#489b0d] text-white shadow-md shadow-[#489b0d]/20"
-                        : "text-slate-600 hover:bg-slate-50 hover:text-[#489b0d]"
-                    }`}
-                  >
+                    <NavLink
+                      key={itemIdx}
+                      to={item.path}
+                      onClick={() => {
+                        if (window.innerWidth < 1024) setIsOpen && setIsOpen(false);
+                      }}
+                      title={!isOpen ? item.name : undefined}
+                      className={`flex items-center px-3 py-2.5 rounded-md transition-all duration-200 group ${
+                        isOpen ? 'gap-3' : 'justify-center'
+                      } ${
+                        isActive
+                          ? "bg-[#489b0d] text-white shadow-md shadow-[#489b0d]/20"
+                          : "text-slate-600 hover:bg-slate-50 hover:text-[#489b0d]"
+                      }`}
+                    >
                     <Icon
                       size={18}
                       strokeWidth={isActive ? 2.5 : 2}
                       className={`shrink-0 ${isActive ? "text-white" : item.isDanger ? "text-red-500 group-hover:text-red-600" : "text-slate-400 group-hover:text-[#489b0d]"}`}
                     />
                     <span
-                      className={`text-[13px] font-semibold tracking-wide truncate ${isActive ? "text-white" : item.isDanger ? "text-red-500 group-hover:text-red-600" : ""}`}
+                      className={`text-[13px] font-semibold tracking-wide truncate transition-all duration-300 ${isOpen ? 'opacity-100 w-auto ml-1' : 'opacity-0 w-0 hidden'} ${isActive ? "text-white" : item.isDanger ? "text-red-500 group-hover:text-red-600" : ""}`}
                     >
                       {item.name}
                     </span>

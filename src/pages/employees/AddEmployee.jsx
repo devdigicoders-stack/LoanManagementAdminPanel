@@ -1,8 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ChevronRight, Upload, Eye, EyeOff } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function AddEmployee() {
+  const navigate = useNavigate();
+  
+  const handleSave = () => {
+    toast.success('Employee added successfully!');
+    navigate('/employees');
+  };
+
   return (
     <div className="w-full max-w-6xl mx-auto space-y-6 pb-10">
       
@@ -169,7 +177,7 @@ export default function AddEmployee() {
         <Link to="/employees" className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-md text-[13px] font-bold hover:bg-slate-50 transition-colors bg-white shadow-sm">
           Cancel
         </Link>
-        <button className="px-6 py-2.5 bg-[#489b0d] text-white rounded-md text-[13px] font-bold hover:bg-[#3e850b] transition-colors shadow-sm">
+        <button onClick={handleSave} className="px-6 py-2.5 bg-[#489b0d] text-white rounded-md text-[13px] font-bold hover:bg-[#3e850b] transition-colors shadow-sm">
           Save Employee
         </button>
       </div>

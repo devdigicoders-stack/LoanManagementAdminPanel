@@ -16,7 +16,7 @@ const LoginPage = () => {
       
       {/* Background Wave - slightly wider than 50% to go behind the login form, fixed small height */}
       <div 
-        className="absolute bottom-0 left-[-5%] w-[70%] h-[35%] lg:h-[40%] pointer-events-none z-0 hidden lg:block"
+        className="absolute bottom-0 left-[-5%] w-[70%] h-[35%] lg:h-[40%] pointer-events-none z-0 hidden lg:block opacity-80"
         style={{
           backgroundImage: "url('/backLoan.png')",
           backgroundSize: '100% 100%',
@@ -25,7 +25,7 @@ const LoginPage = () => {
       ></div>
 
       {/* Left Section - Content */}
-      <div className="hidden lg:flex w-1/2 relative flex-col justify-center px-12 xl:px-24 pb-20 z-10 h-full">
+      <div className="hidden lg:flex w-1/2 relative flex-col justify-center px-12 xl:px-24 z-10 h-full">
         
         {/* Logo */}
         <div className="mb-10">
@@ -50,7 +50,7 @@ const LoginPage = () => {
           </p>
 
           {/* Features Grid */}
-          <div className="grid grid-cols-2 gap-x-6 gap-y-6">
+          <div className="grid grid-cols-2 gap-x-6 gap-y-6 bg-white/70 backdrop-blur-md p-6 rounded-2xl border border-white/50 shadow-sm relative z-20">
             {/* Feature 1 */}
             <div className="flex gap-3.5 items-start">
               <div className="shrink-0 w-11 h-11 rounded-[14px] bg-[#F0FDF4] flex items-center justify-center text-[#489b0d]">

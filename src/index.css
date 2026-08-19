@@ -9,3 +9,16 @@
     scrollbar-width: none;
   }
 }
+
+/* Global Cursor Pointer for Interactive Elements */
+@layer base {
+  button, 
+  select, 
+  label,
+  input[type="submit"], 
+  input[type="button"], 
+  input[type="checkbox"], 
+  input[type="radio"] {
+    cursor: pointer;
+  }
+}

@@ -1,20 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   TrendingUp, TrendingDown, FileText, CheckCircle, XCircle, Clock, 
   CreditCard, Users, User, Briefcase, FileCheck, ArrowRight, UserPlus, 
-  UserCheck, AlertCircle, ChevronDown
+  UserCheck, AlertCircle, ChevronDown, X
 } from 'lucide-react';
 import Highcharts from 'highcharts';
 import { HighchartsReact } from 'highcharts-react-official';
+import { useNavigate } from 'react-router-dom';
+import { mockUsers } from './ManageUsers';
 
-// --- Sample Data ---
-const recentApplications = [
-  { id: 'APP-2025-1250', name: 'Ravi Kumar', type: 'Personal Loan', amount: '₹2,50,000', status: 'Pending', date: '10 May 2025' },
-  { id: 'APP-2025-1249', name: 'Priya Sharma', type: 'Home Loan', amount: '₹12,00,000', status: 'Approved', date: '09 May 2025' },
-  { id: 'APP-2025-1248', name: 'Amit Verma', type: 'Business Loan', amount: '₹5,00,000', status: 'Pending', date: '09 May 2025' },
-  { id: 'APP-2025-1247', name: 'Neha Singh', type: 'Education Loan', amount: '₹1,50,000', status: 'Rejected', date: '08 May 2025' },
-  { id: 'APP-2025-1246', name: 'Suresh Patel', type: 'Personal Loan', amount: '₹1,00,000', status: 'Approved', date: '08 May 2025' },
-];
+// Disable accessibility module warning
+Highcharts.setOptions({ accessibility: { enabled: false } });
+
+// --- Computed Data ---
+const totalApps = mockUsers.reduce((sum, u) => sum + (u.totalApplications || 0), 0);
+const approvedApps = mockUsers.reduce((sum, u) => sum + (u.approvedApplications || 0), 0);
+const pendingApps = mockUsers.reduce((sum, u) => sum + (u.underReviewApplications || 0), 0);
+const rejectedApps = mockUsers.reduce((sum, u) => sum + (u.rejectedApplications || 0), 0);
+
+const recentApplications = mockUsers.slice(0, 5).map((user, idx) => ({
+  id: `APP-2025-10${idx}`,
+  userId: user.id,
+  name: user.name,
+  type: ['Personal Loan', 'Home Loan', 'Business Loan', 'Education Loan'][idx % 4],
+  amount: `₹${(idx + 1) * 2},50,000`,
+  status: ['Pending', 'Approved', 'Pending', 'Rejected', 'Approved'][idx % 5],
+  date: `1${idx} May 2025`
+}));
 
 const topLoanTypes = [
   { name: 'Personal Loan', percentage: 40, color: 'bg-[#489b0d]' },
@@ -24,134 +36,13 @@ const topLoanTypes = [
 ];
 
 const quickActions = [
-  { title: 'Add New User', subtitle: 'Create a new system user', icon: UserPlus, color: 'text-[#489b0d]' },
-  { title: 'New Loan Application', subtitle: 'Add a new loan application', icon: FileText, color: 'text-[#489b0d]' },
-  { title: 'Assign Lead', subtitle: 'Assign lead to employee', icon: UserCheck, color: 'text-[#489b0d]' },
-  { title: 'Request Documents', subtitle: 'Request documents from applicant', icon: FileCheck, color: 'text-[#489b0d]' },
+  { title: 'Add New User', subtitle: 'Create a new system user', icon: UserPlus, color: 'text-[#489b0d]', action: 'addUser' },
+  { title: 'New Loan Application', subtitle: 'Add a new loan application', icon: FileText, color: 'text-[#489b0d]', action: 'newLoan' },
+  { title: 'Assign Lead', subtitle: 'Assign lead to employee', icon: UserCheck, color: 'text-[#489b0d]', action: 'assignLead' },
+  { title: 'Request Documents', subtitle: 'Request documents from applicant', icon: FileCheck, color: 'text-[#489b0d]', action: 'reqDoc' },
 ];
 
-// --- Highcharts Options ---
-
-const lineChartOptions = {
-  chart: { type: 'spline', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 300 },
-  title: { text: null },
-  xAxis: { 
-    categories: ['01 May', '04 May', '07 May', '10 May', '13 May', '16 May', '19 May', '22 May', '25 May', '28 May', '31 May'],
-    labels: { style: { color: '#64748b', fontSize: '10px' } },
-    lineColor: '#f1f5f9',
-    tickColor: '#f1f5f9'
-  },
-  yAxis: { 
-    title: { text: null },
-    labels: { style: { color: '#64748b', fontSize: '10px' } },
-    gridLineColor: '#f1f5f9',
-    min: 0,
-    max: 100
-  },
-  legend: {
-    itemStyle: { color: '#475569', fontWeight: '600', fontSize: '11px' },
-    symbolRadius: 4,
-    margin: 10,
-    padding: 5
-  },
-  credits: { enabled: false },
-  tooltip: { shared: true },
-  plotOptions: { 
-    spline: { marker: { radius: 3, symbol: 'circle' }, lineWidth: 2 } 
-  },
-  series: [
-    { name: 'Total', data: [20, 50, 40, 55, 45, 70, 55, 80, 65, 85, 75], color: '#489b0d' },
-    { name: 'Approved', data: [10, 30, 20, 35, 25, 45, 35, 60, 55, 70, 55], color: '#3b82f6' },
-    { name: 'Pending', data: [5, 15, 10, 25, 15, 30, 20, 40, 35, 40, 30], color: '#f97316' },
-    { name: 'Rejected', data: [2, 5, 8, 10, 12, 15, 10, 18, 20, 25, 20], color: '#ef4444' }
-  ]
-};
-
-const donutChartOptions = {
-  chart: { type: 'pie', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 200, margin: [0, 0, 0, 0] },
-  title: { 
-    text: '1,248<br/><span style="font-size:11px;color:#64748b;font-weight:normal">Total</span>', 
-    align: 'center', verticalAlign: 'middle', y: 12,
-    style: { fontSize: '22px', fontWeight: 'bold', color: '#0f172a' } 
-  },
-  credits: { enabled: false },
-  plotOptions: { 
-    pie: { 
-      innerSize: '75%', dataLabels: { enabled: false }, showInLegend: false,
-      borderWidth: 0,
-      colors: ['#489b0d', '#f97316', '#ef4444'],
-      size: '100%'
-    } 
-  },
-  series: [{
-    name: 'Applications',
-    data: [
-      { name: 'Approved', y: 684 },
-      { name: 'Pending', y: 268 },
-      { name: 'Rejected', y: 296 }
-    ]
-  }]
-};
-
-const areaChartOptions = {
-  chart: { type: 'area', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 220, margin: [0,0,30,0] },
-  title: { text: null },
-  xAxis: { 
-    categories: ['01 May', '07 May', '13 May', '19 May', '25 May', '31 May'],
-    labels: { style: { color: '#64748b', fontSize: '9px' }, y: 20 },
-    lineWidth: 0,
-    tickWidth: 0
-  },
-  yAxis: { visible: false, min: 0 },
-  legend: { enabled: false },
-  credits: { enabled: false },
-  plotOptions: { 
-    area: { 
-      fillColor: {
-        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-        stops: [ [0, 'rgba(72, 155, 13, 0.2)'], [1, 'rgba(72, 155, 13, 0)'] ]
-      },
-      marker: { radius: 0 },
-      lineWidth: 2,
-      lineColor: '#489b0d',
-      states: { hover: { lineWidth: 2 } },
-      threshold: null
-    } 
-  },
-  series: [{ name: 'Amount', data: [10, 20, 15, 30, 25, 40] }]
-};
-
-const barChartOptions = {
-  chart: { type: 'column', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 300 },
-  title: { text: null },
-  xAxis: { 
-    categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-    labels: { style: { color: '#64748b', fontSize: '10px' } },
-    lineColor: '#f1f5f9',
-    tickColor: '#f1f5f9'
-  },
-  yAxis: { 
-    title: { text: null },
-    labels: { style: { color: '#64748b', fontSize: '10px' } },
-    gridLineColor: '#f1f5f9',
-  },
-  legend: {
-    itemStyle: { color: '#475569', fontWeight: '600', fontSize: '11px' },
-    verticalAlign: 'top',
-    symbolRadius: 2,
-    itemDistance: 15
-  },
-  credits: { enabled: false },
-  plotOptions: { 
-    column: { borderRadius: 2, borderWidth: 0, pointPadding: 0.1 } 
-  },
-  series: [
-    { name: 'Total', data: [800, 950, 1100, 1050, 1200, 1350, 1250, 1400, 1300, 1150, 1250, 1450], color: '#489b0d' },
-    { name: 'Approved', data: [400, 500, 600, 550, 700, 800, 750, 850, 800, 700, 800, 950], color: '#3b82f6' },
-    { name: 'Pending', data: [300, 350, 300, 350, 300, 350, 300, 350, 300, 250, 250, 300], color: '#f97316' },
-    { name: 'Rejected', data: [100, 100, 200, 150, 200, 200, 200, 200, 200, 200, 200, 200], color: '#ef4444' }
-  ]
-};
+// Chart configurations moved inside the component to react to state changes
 
 // --- Helper Components ---
 const Card = ({ children, className = "" }) => (
@@ -168,6 +59,123 @@ const Trend = ({ value, isUp }) => (
 );
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const [modalType, setModalType] = useState(null);
+  const [timeFilter, setTimeFilter] = useState('This Month');
+
+  // Dynamic Chart Options based on timeFilter
+  const getDynamicData = (filter) => {
+    switch(filter) {
+      case 'This Year':
+        return {
+          categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+          total: [80, 95, 110, 105, 120, 135, 125, 140, 130, 115, 125, 145],
+          approved: [40, 50, 60, 55, 70, 80, 75, 85, 80, 70, 80, 95],
+          pending: [30, 35, 30, 35, 30, 35, 30, 35, 30, 25, 25, 30],
+          rejected: [10, 10, 20, 15, 20, 20, 20, 20, 20, 20, 20, 20],
+          areaData: [100, 200, 150, 300, 250, 400, 350, 450, 400, 500, 450, 600]
+        };
+      case 'Last Month':
+        return {
+          categories: ['01 Apr', '06 Apr', '11 Apr', '16 Apr', '21 Apr', '26 Apr', '30 Apr'],
+          total: [30, 40, 35, 50, 45, 60, 55],
+          approved: [15, 20, 18, 25, 22, 30, 28],
+          pending: [10, 15, 12, 18, 15, 20, 18],
+          rejected: [5, 5, 5, 7, 8, 10, 9],
+          areaData: [15, 25, 20, 35, 30, 45, 40]
+        };
+      case 'All Time':
+        return {
+          categories: ['2020', '2021', '2022', '2023', '2024', '2025'],
+          total: [500, 800, 1200, 1500, 2000, 1350],
+          approved: [250, 400, 600, 800, 1200, 800],
+          pending: [150, 200, 400, 400, 500, 350],
+          rejected: [100, 200, 200, 300, 300, 200],
+          areaData: [500, 800, 1200, 1500, 2000, 1350]
+        };
+      default: // This Month
+        return {
+          categories: ['01 May', '04 May', '07 May', '10 May', '13 May', '16 May', '19 May', '22 May', '25 May', '28 May', '31 May'],
+          total: [20, 50, 40, 55, 45, 70, 55, 80, 65, 85, 75],
+          approved: [10, 30, 20, 35, 25, 45, 35, 60, 55, 70, 55],
+          pending: [5, 15, 10, 25, 15, 30, 20, 40, 35, 40, 30],
+          rejected: [2, 5, 8, 10, 12, 15, 10, 18, 20, 25, 20],
+          areaData: [10, 20, 15, 30, 25, 40, 35, 50, 45, 60, 55]
+        };
+    }
+  };
+
+  const dynamicData = getDynamicData(timeFilter);
+
+  const lineChartOptions = {
+    chart: { type: 'spline', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 300 },
+    title: { text: null },
+    xAxis: { categories: dynamicData.categories, labels: { style: { color: '#64748b', fontSize: '10px' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    yAxis: { title: { text: null }, labels: { style: { color: '#64748b', fontSize: '10px' } }, gridLineColor: '#f1f5f9', min: 0 },
+    legend: { itemStyle: { color: '#475569', fontWeight: '600', fontSize: '11px' }, symbolRadius: 4, margin: 10, padding: 5 },
+    credits: { enabled: false }, tooltip: { shared: true },
+    plotOptions: { spline: { marker: { radius: 3, symbol: 'circle' }, lineWidth: 2 } },
+    series: [
+      { name: 'Total', data: dynamicData.total, color: '#489b0d' },
+      { name: 'Approved', data: dynamicData.approved, color: '#3b82f6' },
+      { name: 'Pending', data: dynamicData.pending, color: '#f97316' },
+      { name: 'Rejected', data: dynamicData.rejected, color: '#ef4444' }
+    ]
+  };
+
+  const areaChartOptions = {
+    chart: { type: 'area', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 220, margin: [0,0,30,0] },
+    title: { text: null },
+    xAxis: { categories: dynamicData.categories.slice(0, 6), labels: { style: { color: '#64748b', fontSize: '9px' }, y: 20 }, lineWidth: 0, tickWidth: 0 },
+    yAxis: { visible: false, min: 0 }, legend: { enabled: false }, credits: { enabled: false },
+    plotOptions: { 
+      area: { 
+        fillColor: { linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 }, stops: [ [0, 'rgba(72, 155, 13, 0.2)'], [1, 'rgba(72, 155, 13, 0)'] ] },
+        marker: { radius: 0 }, lineWidth: 2, lineColor: '#489b0d', states: { hover: { lineWidth: 2 } }, threshold: null
+      } 
+    },
+    series: [{ name: 'Amount', data: dynamicData.areaData.slice(0, 6) }]
+  };
+
+  const barChartOptions = {
+    chart: { type: 'column', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 300 },
+    title: { text: null },
+    xAxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], labels: { style: { color: '#64748b', fontSize: '10px' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    yAxis: { title: { text: null }, labels: { style: { color: '#64748b', fontSize: '10px' } }, gridLineColor: '#f1f5f9', },
+    legend: { itemStyle: { color: '#475569', fontWeight: '600', fontSize: '11px' }, verticalAlign: 'top', symbolRadius: 2, itemDistance: 15 },
+    credits: { enabled: false }, plotOptions: { column: { borderRadius: 2, borderWidth: 0, pointPadding: 0.1 } },
+    series: [
+      { name: 'Total', data: [800, 950, 1100, 1050, 1200, 1350, 1250, 1400, 1300, 1150, 1250, 1450], color: '#489b0d' },
+      { name: 'Approved', data: [400, 500, 600, 550, 700, 800, 750, 850, 800, 700, 800, 950], color: '#3b82f6' },
+      { name: 'Pending', data: [300, 350, 300, 350, 300, 350, 300, 350, 300, 250, 250, 300], color: '#f97316' },
+      { name: 'Rejected', data: [100, 100, 200, 150, 200, 200, 200, 200, 200, 200, 200, 200], color: '#ef4444' }
+    ]
+  };
+
+  const donutChartOptions = {
+    chart: { type: 'pie', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 200, margin: [0, 0, 0, 0] },
+    title: { 
+      text: `${totalApps}<br/><span style="font-size:11px;color:#64748b;font-weight:normal">Total</span>`, 
+      align: 'center', verticalAlign: 'middle', y: 12,
+      style: { fontSize: '22px', fontWeight: 'bold', color: '#0f172a' } 
+    },
+    credits: { enabled: false },
+    plotOptions: { 
+      pie: { 
+        innerSize: '75%', dataLabels: { enabled: false }, showInLegend: false,
+        borderWidth: 0, colors: ['#489b0d', '#f97316', '#ef4444'], size: '100%'
+      } 
+    },
+    series: [{
+      name: 'Applications',
+      data: [
+        { name: 'Approved', y: approvedApps },
+        { name: 'Pending', y: pendingApps },
+        { name: 'Rejected', y: rejectedApps }
+      ]
+    }]
+  };
+
   return (
     <div className="w-full space-y-6 pb-10">
       {/* Title Section */}
@@ -188,7 +196,7 @@ export default function Dashboard() {
           </div>
           <div className="min-w-0">
             <p className="text-[12px] font-bold text-slate-500 mb-0.5 whitespace-nowrap truncate">Total Applications</p>
-            <h3 className="text-[22px] font-bold text-slate-800 mb-1 leading-none">1,248</h3>
+            <h3 className="text-[22px] font-bold text-slate-800 mb-1 leading-none">{totalApps}</h3>
             <Trend value="12.5%" isUp={true} />
           </div>
         </Card>
@@ -199,7 +207,7 @@ export default function Dashboard() {
           </div>
           <div className="min-w-0">
             <p className="text-[12px] font-bold text-slate-500 mb-0.5 whitespace-nowrap truncate">Pending Applications</p>
-            <h3 className="text-[22px] font-bold text-slate-800 mb-1 leading-none">268</h3>
+            <h3 className="text-[22px] font-bold text-slate-800 mb-1 leading-none">{pendingApps}</h3>
             <Trend value="8.2%" isUp={true} />
           </div>
         </Card>
@@ -210,7 +218,7 @@ export default function Dashboard() {
           </div>
           <div className="min-w-0">
             <p className="text-[12px] font-bold text-slate-500 mb-0.5 whitespace-nowrap truncate">Approved Applications</p>
-            <h3 className="text-[22px] font-bold text-slate-800 mb-1 leading-none">684</h3>
+            <h3 className="text-[22px] font-bold text-slate-800 mb-1 leading-none">{approvedApps}</h3>
             <Trend value="15.3%" isUp={true} />
           </div>
         </Card>
@@ -221,7 +229,7 @@ export default function Dashboard() {
           </div>
           <div className="min-w-0">
             <p className="text-[12px] font-bold text-slate-500 mb-0.5 whitespace-nowrap truncate">Rejected Applications</p>
-            <h3 className="text-[22px] font-bold text-slate-800 mb-1 leading-none">296</h3>
+            <h3 className="text-[22px] font-bold text-slate-800 mb-1 leading-none">{rejectedApps}</h3>
             <Trend value="5.1%" isUp={false} />
           </div>
         </Card>
@@ -246,9 +254,16 @@ export default function Dashboard() {
         <Card className="xl:col-span-2">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-[15px] font-bold text-slate-800">Application Overview</h3>
-            <button className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-600 hover:bg-slate-50">
-              This Month <ChevronDown size={14} />
-            </button>
+            <select 
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value)}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-[11px] font-bold text-slate-600 hover:bg-slate-50 focus:outline-none focus:border-[#489b0d] cursor-pointer"
+            >
+              <option>This Month</option>
+              <option>Last Month</option>
+              <option>This Year</option>
+              <option>All Time</option>
+            </select>
           </div>
           <HighchartsReact highcharts={Highcharts} options={lineChartOptions} />
         </Card>
@@ -341,7 +356,10 @@ export default function Dashboard() {
                     </td>
                     <td className="py-3.5 px-4 text-[12px] font-semibold text-slate-500 whitespace-nowrap">{app.date}</td>
                     <td className="py-3.5 pl-4 whitespace-nowrap">
-                      <button className="text-[11px] font-bold text-slate-500 border border-slate-200 px-2.5 py-1 rounded hover:bg-slate-50 hover:text-slate-800 transition-colors">
+                      <button 
+                        onClick={() => navigate('/user-profile/' + app.userId)} 
+                        className="text-[11px] font-bold text-slate-500 border border-slate-200 px-2.5 py-1 rounded hover:bg-slate-50 hover:text-slate-800 transition-colors cursor-pointer"
+                      >
                         View
                       </button>
                     </td>
@@ -357,9 +375,16 @@ export default function Dashboard() {
           <div>
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-[15px] font-bold text-slate-800 pr-2">Disbursed Amount Overview</h3>
-              <button className="flex items-center gap-1.5 px-2 py-1 rounded border border-slate-200 text-[10px] font-bold text-slate-600 hover:bg-slate-50 shrink-0 whitespace-nowrap">
-                This Month <ChevronDown size={12} />
-              </button>
+              <select 
+                value={timeFilter}
+                onChange={(e) => setTimeFilter(e.target.value)}
+                className="px-2 py-1 rounded border border-slate-200 text-[10px] font-bold text-slate-600 hover:bg-slate-50 focus:outline-none focus:border-[#489b0d] cursor-pointer"
+              >
+                <option>This Month</option>
+                <option>Last Month</option>
+                <option>This Year</option>
+                <option>All Time</option>
+              </select>
             </div>
             <p className="text-[11px] font-bold text-slate-500 mb-1">Total Disbursed Amount</p>
             <h2 className="text-[22px] 2xl:text-[26px] font-bold text-slate-800 mb-1 leading-tight">₹24,75,00,000</h2>
@@ -375,7 +400,12 @@ export default function Dashboard() {
           <h3 className="text-[15px] font-bold text-slate-800 mb-6">Quick Actions</h3>
           <div className="space-y-4">
             {quickActions.map((action, idx) => (
-              <button key={idx} className="w-full flex items-center justify-between p-3 rounded-md border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition-all text-left group">
+              <button key={idx} onClick={() => {
+                if (action.action === 'addUser') navigate('/users');
+                else if (action.action === 'newLoan') navigate('/loans');
+                else if (action.action === 'assignLead') navigate('/leads');
+                else navigate('/users');
+              }} className="w-full flex items-center justify-between p-3 rounded-md border border-slate-100 hover:border-slate-300 hover:bg-slate-50 transition-all text-left group cursor-pointer">
                 <div className="flex items-center gap-3 min-w-0 pr-2">
                   <div className={`w-9 h-9 rounded-lg bg-[#F0FDF4] flex items-center justify-center shrink-0 ${action.color}`}>
                     <action.icon size={18} strokeWidth={2.5} />
@@ -600,6 +630,8 @@ export default function Dashboard() {
         </Card>
 
       </div>
+
+
     </div>
   );
 }

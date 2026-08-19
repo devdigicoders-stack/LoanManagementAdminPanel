@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import LoginPage from "./pages/Login";
 import DashboardLayout from "./layouts/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
@@ -48,6 +49,9 @@ import ForeclosureRequests from './pages/loans/ForeclosureRequests';
 import TopUpRequests from './pages/loans/TopUpRequests';
 import LoanClosure from './pages/loans/LoanClosure';
 import DocumentCenter from './pages/loans/DocumentCenter';
+import VerifyDocuments from './pages/loans/VerifyDocuments';
+import ApplicationDecision from './pages/loans/ApplicationDecision';
+import RequestDocuments from './pages/loans/RequestDocuments';
 
 // System Imports
 import Settings from './pages/system/Settings';
@@ -56,10 +60,14 @@ import ReportsAnalytics from './pages/system/ReportsAnalytics';
 import ManageComplaints from './pages/system/ManageComplaints';
 import AdminProfile from './pages/system/AdminProfile';
 import Notifications from './pages/system/Notifications';
+import UnderConstruction from './pages/UnderConstruction';
+import UserProfile from './pages/UserProfile';
+import ChangePassword from './pages/ChangePassword';
 
 function App() {
   return (
     <BrowserRouter>
+      <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<DashboardLayout />}>
@@ -120,6 +128,13 @@ function App() {
           <Route path="complaints" element={<ManageComplaints />} />
           <Route path="profile" element={<AdminProfile />} />
           <Route path="notifications" element={<Notifications />} />
+          
+          {/* Placeholder Routes for missing pages */}
+          <Route path="user-profile/:id" element={<UserProfile />} />
+          <Route path="verify-documents" element={<VerifyDocuments />} />
+          <Route path="application-decision" element={<ApplicationDecision />} />
+          <Route path="request-documents" element={<RequestDocuments />} />
+          <Route path="change-password" element={<ChangePassword />} />
         </Route>
       </Routes>
     </BrowserRouter>

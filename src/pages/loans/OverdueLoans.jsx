@@ -101,6 +101,10 @@ export default function OverdueLoans() {
           </div>
           <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white min-w-[120px]">
             <option>All Branches</option>
+            <option>Mumbai Branch</option>
+            <option>Delhi Branch</option>
+            <option>Bangalore Branch</option>
+            <option>Chennai Branch</option>
           </select>
           <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white min-w-[120px]">
             <option>All Loan Types</option>

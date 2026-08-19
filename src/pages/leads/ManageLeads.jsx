@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import toast from 'react-hot-toast';
 import { Link } from "react-router-dom";
 import {
   ChevronRight,
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   XCircle,
   MessageSquare,
+  Edit,
 } from "lucide-react";
 
 // --- Mock Data ---
@@ -147,12 +149,27 @@ const mockLeads = [
 ];
 
 export default function ManageLeads() {
+  const [leadsList, setLeadsList] = useState(mockLeads);
   const [selectedLeadId, setSelectedLeadId] = useState(null);
   const [activeTab, setActiveTab] = useState("Overview");
+  
+  const [filterSource, setFilterSource] = useState("All Sources");
+  const [filterStatus, setFilterStatus] = useState("All Status");
+
+  const filteredLeads = leadsList.filter(lead => {
+    const matchSource = filterSource === "All Sources" || lead.source === filterSource;
+    const matchStatus = filterStatus === "All Status" || lead.status === filterStatus;
+    return matchSource && matchStatus;
+  });
 
   const selectedLead = selectedLeadId
-    ? mockLeads.find((l) => l.id === selectedLeadId)
+    ? leadsList.find((l) => l.id === selectedLeadId)
     : null;
+
+  const updateLeadStatus = (id, newStatus) => {
+    setLeadsList(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
+    toast.success(`Lead status updated to ${newStatus}`);
+  };
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -214,271 +231,135 @@ export default function ManageLeads() {
         <div className="flex flex-wrap xl:flex-nowrap items-center gap-3 w-full xl:w-auto justify-start xl:justify-end">
           <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white flex-1 xl:flex-none min-w-[120px]">
             <option>All Branches</option>
+            <option>Mumbai Branch</option>
+            <option>Delhi Branch</option>
+            <option>Bangalore Branch</option>
           </select>
-          <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white flex-1 xl:flex-none min-w-[120px]">
+          <select 
+            value={filterSource}
+            onChange={(e) => setFilterSource(e.target.value)}
+            className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white flex-1 xl:flex-none min-w-[120px]"
+          >
             <option>All Sources</option>
+            <option>Website</option>
+            <option>Referral</option>
+            <option>Walk-in</option>
+            <option>Tele Calling</option>
           </select>
-          <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white flex-1 xl:flex-none min-w-[120px]">
+          <select 
+            value={filterStatus}
+            onChange={(e) => setFilterStatus(e.target.value)}
+            className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white flex-1 xl:flex-none min-w-[120px]"
+          >
             <option>All Status</option>
+            <option>New</option>
+            <option>Contacted</option>
+            <option>Qualified</option>
+            <option>Converted</option>
+            <option>Lost</option>
           </select>
-          <div className="h-10 px-3 flex items-center justify-between rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 bg-white flex-1 xl:flex-none min-w-[190px]">
-            <span className="truncate">01 May 2025 - 18 May 2025</span>
-            <Calendar size={14} className="text-slate-400 shrink-0 ml-2" />
-          </div>
-          <div className="flex items-center gap-3 w-full sm:w-auto mt-2 sm:mt-0">
-            <button className="h-10 px-4 flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-slate-600 font-bold text-[13px] hover:bg-slate-50 transition-colors shadow-sm flex-1 sm:flex-none">
-              <Filter size={14} /> Filter
-            </button>
-            <Link to="/leads/add" className="flex-1 sm:flex-none">
-              <button className="h-10 w-full px-4 flex items-center justify-center gap-2 rounded-md bg-[#489b0d] text-white font-bold text-[13px] hover:bg-[#3e850b] transition-colors shadow-sm">
-                <Plus size={16} /> Add Lead
-              </button>
-            </Link>
-          </div>
+
+          <Link to="/leads/add" className="h-10 px-4 flex items-center gap-2 bg-[#489b0d] hover:bg-[#3e850b] text-white rounded-md text-[13px] font-bold transition-colors shadow-sm flex-1 xl:flex-none justify-center">
+            <Plus size={16} /> Add Lead
+          </Link>
         </div>
       </div>
 
-      {/* Leads Table */}
-      <div className="bg-white rounded-lg border border-slate-100 shadow-sm flex flex-col flex-1 overflow-hidden">
-        <div className="overflow-x-auto custom-scrollbar flex-1">
-          <table className="w-full text-left border-collapse min-w-[1000px]">
+      {/* Main Table Content */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 bg-slate-50/50">
-                <th className="py-4 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider w-[40px]">
-                  <input
-                    type="checkbox"
-                    className="rounded border-slate-300 text-[#489b0d] focus:ring-[#489b0d]"
-                  />
-                </th>
-                <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Lead ID
-                </th>
-                <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Mobile
-                </th>
-                <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Source
-                </th>
-                <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Assigned To
-                </th>
-                <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                  Created On
-                </th>
-                <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider whitespace-nowrap">
-                  Next Follow Up
-                </th>
-                <th className="py-4 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">
-                  Action
-                </th>
+              <tr className="bg-slate-50/80 border-b border-slate-200">
+                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Lead ID</th>
+                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Customer</th>
+                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Source</th>
+                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Created</th>
+                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockLeads.map((lead, idx) => (
-                <tr
-                  key={idx}
-                  className={`hover:bg-slate-50/80 transition-colors cursor-pointer ${selectedLeadId === lead.id ? "bg-[#489b0d]/5" : ""}`}
-                  onClick={() => setSelectedLeadId(lead.id)}
-                >
-                  <td
-                    className="py-3 px-6"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="checkbox"
-                      className="rounded border-slate-300 text-[#489b0d] focus:ring-[#489b0d]"
-                    />
-                  </td>
-                  <td className="py-3 px-4 text-[12px] font-semibold text-slate-600">
-                    {lead.id}
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-[13px] font-bold text-slate-800">
-                      {lead.name}
+              {filteredLeads.map((lead) => (
+                <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <td className="py-4 px-6"><span className="text-[13px] font-bold text-slate-700">{lead.id}</span></td>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center gap-3">
+                      <img src={lead.avatar} alt={lead.name} className="w-8 h-8 rounded-full border border-slate-200" />
+                      <div>
+                        <p className="text-[13px] font-bold text-slate-800">{lead.name}</p>
+                        <p className="text-[11px] font-medium text-slate-500">{lead.mobile}</p>
+                      </div>
                     </div>
                   </td>
-                  <td className="py-3 px-4 text-[12px] font-medium text-slate-600 whitespace-nowrap">
-                    {lead.mobile}
+                  <td className="py-4 px-6">
+                    <p className="text-[13px] font-bold text-slate-700">{lead.source}</p>
                   </td>
-                  <td className="py-3 px-4 text-[12px] font-medium text-slate-600">
-                    {lead.source}
+                  <td className="py-4 px-6">
+                    {getStatusBadge(lead.status)}
                   </td>
-                  <td className="py-3 px-4 text-[12px] font-semibold text-slate-700">
-                    {lead.assignedTo}
+                  <td className="py-4 px-6">
+                    <p className="text-[12px] font-semibold text-slate-600">{lead.createdOn}</p>
                   </td>
-                  <td className="py-3 px-4">{getStatusBadge(lead.status)}</td>
-                  <td className="py-3 px-4 text-[12px] font-medium text-slate-500 whitespace-nowrap">
-                    {lead.createdOn}
-                  </td>
-                  <td className="py-3 px-4 text-[12px] font-medium text-slate-500 whitespace-nowrap">
-                    {lead.nextFollowUp}
-                  </td>
-                  <td
-                    className="py-3 px-6 text-center"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button
-                      onClick={() => setSelectedLeadId(lead.id)}
-                      className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded-md transition-colors"
-                    >
-                      <Eye size={16} />
-                    </button>
+                  <td className="py-4 px-6 text-right">
+                    <div className="flex items-center justify-end gap-2 transition-opacity">
+                      <button onClick={() => setSelectedLeadId(lead.id)} className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded transition-colors tooltip-trigger" title="View Details">
+                        <Eye size={16} strokeWidth={2.5} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-
-        {/* Pagination */}
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between mt-auto">
-          <p className="text-[12px] font-medium text-slate-500">
-            Showing 1 to 8 of 1,248 entries
-          </p>
-          <div className="flex items-center gap-1">
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50">
-              <ChevronRight size={14} className="rotate-180" />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#489b0d] text-white font-bold text-[13px] shadow-sm">
-              1
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              2
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              3
-            </button>
-            <span className="px-1 text-slate-400 text-[13px]">...</span>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              125
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
-              <ChevronRight size={14} />
-            </button>
-          </div>
+          {filteredLeads.length === 0 && (
+            <div className="text-center py-10">
+              <p className="text-slate-500 font-medium text-[13px]">No leads found.</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Lead Details Slide-over Drawer */}
+      {/* Modal / Slide-over for Lead Details */}
       {selectedLead && (
         <>
-          {/* Backdrop */}
-          <div
-            className="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity"
-            onClick={() => setSelectedLeadId(null)}
-          ></div>
-
-          {/* Drawer */}
-          <div className="fixed top-0 right-0 h-screen w-full max-w-[800px] bg-white z-50 shadow-2xl flex flex-col transform transition-transform duration-300 ease-in-out border-l border-slate-100 animate-slide-in-right">
-            {/* Drawer Header */}
-            <div className="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center gap-4 p-4 sm:p-6 border-b border-slate-100 shrink-0 bg-white">
-              <div>
-                <h3 className="text-xl font-extrabold text-slate-800">
-                  Lead Details
-                </h3>
-                <div className="flex flex-wrap items-center gap-y-1 text-[11px] font-semibold text-slate-400 mt-1">
-                  <span className="whitespace-nowrap">Lead & Work Management</span>
-                  <ChevronRight size={12} className="mx-1 shrink-0" /> <span className="whitespace-nowrap">All Leads</span>
-                  <ChevronRight size={12} className="mx-1 shrink-0" /> <span className="text-[#489b0d] font-bold whitespace-nowrap">Lead Details</span>
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedLeadId(null)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-bold text-slate-500 hover:text-slate-800 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors shrink-0 w-full sm:w-auto justify-center"
-              >
-                <ArrowRight size={14} className="shrink-0" /> Back to Leads
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity" onClick={() => setSelectedLeadId(null)} />
+          <div className="fixed inset-y-0 right-0 w-full max-w-[600px] bg-slate-50 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col">
+            {/* Modal Header */}
+            <div className="px-6 py-4 bg-white border-b border-slate-100 flex justify-between items-center shrink-0">
+              <h2 className="text-[16px] font-extrabold text-slate-800">Lead Details</h2>
+              <button onClick={() => setSelectedLeadId(null)} className="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-md transition-colors">
+                <X size={18} strokeWidth={2.5} />
               </button>
             </div>
-
-            <div className="flex-1 overflow-y-auto no-scrollbar flex flex-col">
-              {/* Profile Header & Actions Grid */}
-              <div className="p-6 pb-0 grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Left: Profile Info */}
-                <div className="md:col-span-2 w-full min-w-0">
-                  <div className="flex items-center sm:items-start gap-4 sm:gap-5 w-full min-w-0">
-                    <img
-                      src={selectedLead.avatar}
-                      alt={selectedLead.name}
-                      className="w-[60px] h-[60px] sm:w-[80px] sm:h-[80px] rounded-full object-cover border-2 sm:border-4 border-slate-50 shadow-sm shrink-0"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-xl sm:text-2xl font-extrabold text-slate-800 leading-none mb-2 sm:mb-1.5 truncate">
-                        {selectedLead.name}
-                      </h2>
-                      <div className="flex flex-wrap items-center gap-y-1 gap-x-3 sm:gap-4 text-[11px] sm:text-[12px] font-medium text-slate-500 mb-2 sm:mb-4">
-                        <span className="flex items-center gap-1 whitespace-nowrap">
-                          <span className="text-slate-400">Lead ID:</span>{" "}
-                          <span className="font-bold text-slate-700">
-                            {selectedLead.id}
-                          </span>
-                        </span>
-                        <span className="flex items-center gap-1 whitespace-nowrap">
-                          <span className="text-slate-400">Source:</span>{" "}
-                          <span className="font-bold text-slate-700">
-                            {selectedLead.source}
-                          </span>
-                        </span>
-                        <span className="flex items-center gap-1 whitespace-nowrap">
-                          <span className="text-slate-400">Assigned To:</span>{" "}
-                          <span className="font-bold text-slate-700">
-                            {selectedLead.assignedTo}
-                          </span>
-                        </span>
-                      </div>
-
-                      {/* Inner Tabs */}
-                      <div className="flex items-center gap-6 sm:gap-8 border-b border-slate-100 mt-6 overflow-x-auto no-scrollbar pb-1">
-                        {[
-                          "Overview",
-                          "Activity",
-                          "Follow Ups",
-                          "Notes",
-                          "Documents",
-                          "Applications",
-                        ].map((tab) => (
-                          <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`pb-3 text-[12px] font-bold whitespace-nowrap border-b-2 transition-colors ${activeTab === tab ? "border-[#489b0d] text-[#489b0d]" : "border-transparent text-slate-400 hover:text-slate-600"}`}
-                          >
-                            {tab}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
+            
+            {/* Modal Content */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar flex">
+              {/* Sidebar Actions */}
+              <div className="w-[180px] bg-white border-r border-slate-100 p-4 shrink-0 flex flex-col gap-1">
+                <div className="mb-4">
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Update Status</p>
+                  <div className="space-y-1">
+                    <button onClick={() => updateLeadStatus(selectedLead.id, 'New')} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 py-1.5 px-2 w-full rounded hover:bg-slate-50 transition-colors cursor-pointer text-left">
+                      <CheckCircle2 size={14} className="text-[#489b0d]" /> New
+                    </button>
+                    <button onClick={() => updateLeadStatus(selectedLead.id, 'Contacted')} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 py-1.5 px-2 w-full rounded hover:bg-slate-50 transition-colors cursor-pointer text-left">
+                      <CheckCircle2 size={14} className="text-blue-500" /> Contacted
+                    </button>
+                    <button onClick={() => updateLeadStatus(selectedLead.id, 'Qualified')} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 py-1.5 px-2 w-full rounded hover:bg-slate-50 transition-colors cursor-pointer text-left">
+                      <CheckCircle2 size={14} className="text-purple-500" /> Qualified
+                    </button>
+                    <button onClick={() => updateLeadStatus(selectedLead.id, 'Converted')} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 py-1.5 px-2 w-full rounded hover:bg-slate-50 transition-colors cursor-pointer text-left">
+                      <CheckCircle2 size={14} className="text-green-600" /> Converted
+                    </button>
                   </div>
                 </div>
 
-                {/* Right: Actions */}
-                <div className="bg-slate-50/50 rounded-md p-5 border border-slate-100 flex flex-col gap-2">
-                  <h4 className="text-[12px] font-extrabold text-slate-800 uppercase tracking-wider mb-2">
-                    Actions
-                  </h4>
-                  <button className="flex items-center gap-2 text-[12px] font-bold text-slate-600 hover:text-[#489b0d] py-1 transition-colors">
-                    <User size={14} /> Edit Lead
-                  </button>
-                  <button className="flex items-center gap-2 text-[12px] font-bold text-slate-600 hover:text-[#489b0d] py-1 transition-colors">
-                    <UserCheck size={14} /> Assign Lead
-                  </button>
-                  <button className="flex items-center gap-2 text-[12px] font-bold text-slate-600 hover:text-[#489b0d] py-1 transition-colors">
-                    <Calendar size={14} /> Schedule Follow-up
-                  </button>
-                  <button className="flex items-center gap-2 text-[12px] font-bold text-slate-600 hover:text-[#489b0d] py-1 transition-colors">
-                    <Briefcase size={14} /> Convert to Application
-                  </button>
-                  <button className="flex items-center gap-2 text-[12px] font-bold text-[#489b0d] py-1 transition-colors mt-2 border-t border-slate-200 pt-3">
-                    <CheckCircle2 size={14} /> Mark as Qualified
-                  </button>
-                  <button className="flex items-center gap-2 text-[12px] font-bold text-red-500 py-1 transition-colors">
+                <div className="mt-2 pt-4 border-t border-slate-100">
+                  <button onClick={() => updateLeadStatus(selectedLead.id, 'Lost')} className="flex items-center gap-2 text-[12px] font-bold text-red-500 py-1 transition-colors cursor-pointer w-full text-left">
                     <XCircle size={14} /> Mark as Lost
                   </button>
-                  <button className="flex items-center justify-center gap-2 mt-auto w-full py-2.5 border border-[#489b0d]/20 bg-[#489b0d]/5 text-[#489b0d] rounded-lg text-[12px] font-bold hover:bg-[#489b0d]/10 transition-colors">
+                  <button onClick={() => setActiveTab('Notes')} className="flex items-center justify-center gap-2 mt-auto w-full py-2.5 border border-[#489b0d]/20 bg-[#489b0d]/5 text-[#489b0d] rounded-lg text-[12px] font-bold hover:bg-[#489b0d]/10 transition-colors cursor-pointer">
                     <MessageSquare size={14} /> Add Note
                   </button>
                 </div>
@@ -584,11 +465,42 @@ export default function ManageLeads() {
                   </div>
                 )}
 
-                {activeTab !== "Overview" && (
+                {activeTab === "Activity" && (
+                  <div className="space-y-4">
+                    <h4 className="text-[13px] font-extrabold text-slate-800 mb-4 pb-2 border-b border-slate-100">Activity Log</h4>
+                    <div className="pl-2 border-l-2 border-slate-100 space-y-4 relative">
+                      <div className="relative">
+                        <div className="absolute w-2 h-2 bg-[#489b0d] rounded-full -left-[13px] top-1.5 ring-4 ring-white"></div>
+                        <p className="text-[12px] font-bold text-slate-800">Lead assigned to {selectedLead.assignedTo}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{selectedLead.createdOn}</p>
+                      </div>
+                      <div className="relative">
+                        <div className="absolute w-2 h-2 bg-slate-300 rounded-full -left-[13px] top-1.5 ring-4 ring-white"></div>
+                        <p className="text-[12px] font-bold text-slate-800">Lead created from {selectedLead.source}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">{selectedLead.createdOn}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {activeTab === "Notes" && (
+                  <div className="space-y-4">
+                    <h4 className="text-[13px] font-extrabold text-slate-800 mb-4 pb-2 border-b border-slate-100">Notes & Comments</h4>
+                    <textarea rows="3" placeholder="Type a note here..." className="w-full border border-slate-200 rounded p-3 text-[12px] text-slate-700 focus:outline-none focus:border-[#489b0d] resize-none"></textarea>
+                    <button onClick={() => toast.success('Note saved!')} className="px-4 py-2 bg-[#489b0d] text-white rounded font-bold text-[11px] hover:bg-[#3d830b] transition-colors cursor-pointer">Save Note</button>
+                  </div>
+                )}
+                {activeTab === "Follow Ups" && (
+                  <div className="space-y-4">
+                    <h4 className="text-[13px] font-extrabold text-slate-800 mb-4 pb-2 border-b border-slate-100">Follow Ups</h4>
+                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
+                      <p className="text-[12px] font-bold text-blue-800 mb-1">Upcoming Follow-up</p>
+                      <p className="text-[11px] text-blue-600">Scheduled for: {selectedLead.nextFollowUp}</p>
+                    </div>
+                  </div>
+                )}
+                {["Documents", "Applications"].includes(activeTab) && (
                   <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-                    <p className="text-[13px] font-bold">
-                      Section under construction
-                    </p>
+                    <p className="text-[13px] font-bold">No data available for {activeTab}</p>
                   </div>
                 )}
               </div>

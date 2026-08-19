@@ -1,8 +1,16 @@
 import React from 'react';
 import { ChevronRight, ArrowLeft, Upload, Mail, Phone, Briefcase } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 export default function EditEmployee() {
+  const navigate = useNavigate();
+
+  const handleUpdate = () => {
+    toast.success('Employee updated successfully!');
+    navigate('/employees');
+  };
+
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-10">
       
@@ -134,7 +142,7 @@ export default function EditEmployee() {
               <Link to="/employees/EMP-1001" className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-md text-[13px] font-bold hover:bg-slate-50 transition-colors bg-white shadow-sm">
                 Cancel
               </Link>
-              <button className="px-6 py-2.5 bg-[#489b0d] text-white rounded-md text-[13px] font-bold hover:bg-[#3e850b] transition-colors shadow-sm">
+              <button onClick={handleUpdate} className="px-6 py-2.5 bg-[#489b0d] text-white rounded-md text-[13px] font-bold hover:bg-[#3e850b] transition-colors shadow-sm">
                 Update Employee
               </button>
             </div>
