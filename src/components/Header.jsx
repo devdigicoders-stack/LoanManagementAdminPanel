@@ -4,10 +4,23 @@ import { Link } from 'react-router-dom';
 
 export default function Header({ toggleSidebar }) {
   const [time, setTime] = useState(new Date());
+  const [adminName, setAdminName] = useState(localStorage.getItem("adminName") || "Admin User");
+  const [adminPic, setAdminPic] = useState(localStorage.getItem("adminPic") || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc");
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    
+    const handleProfileUpdate = () => {
+      setAdminName(localStorage.getItem("adminName") || "Admin User");
+      setAdminPic(localStorage.getItem("adminPic") || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc");
+    };
+
+    window.addEventListener('profileUpdated', handleProfileUpdate);
+    
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('profileUpdated', handleProfileUpdate);
+    };
   }, []);
 
   const formattedDate = time.toLocaleDateString('en-US', {
@@ -67,10 +80,10 @@ export default function Header({ toggleSidebar }) {
           {/* Profile Dropdown */}
           <Link to="/profile" className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200 shrink-0">
-              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc" alt="Admin" className="w-full h-full object-cover mt-2" />
+              <img src={adminPic} alt="Admin" className="w-full h-full object-cover object-center" />
             </div>
             <div className="hidden sm:block">
-              <p className="text-[13px] font-bold text-slate-800 leading-tight">Admin User</p>
+              <p className="text-[13px] font-bold text-slate-800 leading-tight">{adminName}</p>
               <p className="text-[11px] font-medium text-slate-500 leading-tight mt-0.5">Super Admin</p>
             </div>
           </Link>

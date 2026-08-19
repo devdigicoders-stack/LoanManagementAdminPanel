@@ -1,14 +1,28 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, Users, BarChart3, FileCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const navigate = useNavigate();
+
+  // Clear auth state when login page mounts (acts as a logout mechanism)
+  useEffect(() => {
+    localStorage.removeItem('isAuthenticated');
+  }, []);
 
   const handleLogin = (e) => {
     e.preventDefault();
-    navigate('/');
+    if (email === 'admin@gmail.com' && password === '123456') {
+      localStorage.setItem('isAuthenticated', 'true');
+      toast.success('Login Successful! Welcome back.');
+      navigate('/');
+    } else {
+      toast.error('Invalid email or password. Please try again.');
+    }
   };
 
   return (
@@ -140,6 +154,8 @@ const LoginPage = () => {
                   </div>
                   <input 
                     type="email" 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-[10px] py-3 pl-11 pr-4 text-[13px] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#489b0d] focus:ring-1 focus:ring-[#489b0d] transition-all"
                     placeholder="Enter your email"
                     required
@@ -156,6 +172,8 @@ const LoginPage = () => {
                   </div>
                   <input 
                     type={showPassword ? "text" : "password"} 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="w-full bg-white border border-slate-200 rounded-[10px] py-3 pl-11 pr-11 text-[13px] text-slate-900 placeholder-slate-400 focus:outline-none focus:border-[#489b0d] focus:ring-1 focus:ring-[#489b0d] transition-all"
                     placeholder="Enter your password"
                     required
