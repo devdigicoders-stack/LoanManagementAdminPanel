@@ -1,14 +1,22 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
+  User,
   Users,
-  UserCog,
+  Target,
   FileText,
+  UserCheck,
+  FolderOpen,
+  ShieldCheck,
+  CheckCircle2,
+  FilePlus,
+  ClipboardList,
   Activity,
+  Bell,
   BarChart3,
-  Settings,
-  LogOut,
-  AlertCircle
+  Lock,
+  MessageSquare,
+  LogOut
 } from "lucide-react";
 
 const navGroups = [
@@ -17,37 +25,43 @@ const navGroups = [
     items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }],
   },
   {
-    title: "EMPLOYEE MANAGEMENT",
-    items: [
-      { name: "Manage Employee", icon: UserCog, path: "/employees" },
-    ],
-  },
-  {
     title: "USER MANAGEMENT",
     items: [
+      { name: "Manage Employee", icon: User, path: "/employees" },
       { name: "Manage Users", icon: Users, path: "/users" },
     ],
   },
   {
-    title: "LEAD MANAGEMENT",
+    title: "LEAD & APPLICATION",
     items: [
-      { name: "Lead Management", icon: Activity, path: "/leads" },
-    ],
-  },
-  {
-    title: "LOAN MANAGEMENT",
-    items: [
+      { name: "Lead Management", icon: Target, path: "/leads" },
       { name: "Loan Application Management", icon: FileText, path: "/loans" },
+      { name: "View Complete User Profile", icon: UserCheck, path: "/user-profile" },
+      { name: "View All Uploaded Documents", icon: FolderOpen, path: "/documents" },
+      { name: "Verify Documents", icon: ShieldCheck, path: "/verify-documents" },
     ],
   },
   {
-    title: "SYSTEM & REPORTS",
+    title: "ADMIN PANEL",
     items: [
+      { name: "Approve / Reject / Hold Application", icon: CheckCircle2, path: "/application-decision" },
+      { name: "Request Additional Documents", icon: FilePlus, path: "/request-documents" },
+      { name: "Assign Lead to Employee", icon: ClipboardList, path: "/assign-lead" },
+      { name: "Status Management", icon: Activity, path: "/status-management" },
+      { name: "Notification Management", icon: Bell, path: "/notifications" },
       { name: "Reports & Analytics", icon: BarChart3, path: "/reports" },
-      { name: "Manage Complaints", icon: AlertCircle, path: "/complaints" },
-      { name: "Settings", icon: Settings, path: "/settings" },
+      { name: "Permission Management", icon: Lock, path: "/permissions" },
+      { name: "Manage Complaints", icon: MessageSquare, path: "/complaints" },
     ],
   },
+  {
+    title: "ACCOUNT",
+    items: [
+      { name: "My Profile", icon: User, path: "/profile" },
+      { name: "Change Password", icon: Lock, path: "/change-password" },
+      { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+    ],
+  }
 ];
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -104,10 +118,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                     <Icon
                       size={18}
                       strokeWidth={isActive ? 2.5 : 2}
-                      className={`shrink-0 ${isActive ? "text-white" : "text-slate-400 group-hover:text-[#489b0d]"}`}
+                      className={`shrink-0 ${isActive ? "text-white" : item.isDanger ? "text-red-500 group-hover:text-red-600" : "text-slate-400 group-hover:text-[#489b0d]"}`}
                     />
                     <span
-                      className={`text-[13px] font-semibold tracking-wide truncate ${isActive ? "text-white" : ""}`}
+                      className={`text-[13px] font-semibold tracking-wide truncate ${isActive ? "text-white" : item.isDanger ? "text-red-500 group-hover:text-red-600" : ""}`}
                     >
                       {item.name}
                     </span>
@@ -117,18 +131,6 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             </div>
           </div>
         ))}
-      </div>
-
-      {/* Bottom Actions & Copyright */}
-      <div className="p-4 shrink-0 bg-white border-t border-slate-100">
-        {/* Logout Button */}
-        <NavLink
-          to="/login"
-          className="w-full flex items-center justify-center gap-2 py-2.5 mb-4 bg-red-50 hover:bg-red-100 text-red-600 text-[13px] font-bold rounded-md transition-colors border border-red-100"
-        >
-          <LogOut size={16} strokeWidth={2.5} />
-          Logout
-        </NavLink>
       </div>
     </div>
     </>
