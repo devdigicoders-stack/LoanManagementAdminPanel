@@ -13,7 +13,7 @@ export default function EditEmployee() {
 
   return (
     <div className="w-full max-w-7xl mx-auto space-y-6 pb-10">
-      
+
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
@@ -26,18 +26,18 @@ export default function EditEmployee() {
             <span className="text-[#489b0d] font-bold">Edit Employee</span>
           </div>
         </div>
-        
+
         <Link to="/employees" className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-md text-[12px] font-bold hover:bg-slate-50 transition-colors shadow-sm">
           <ArrowLeft size={14} /> Back to List
         </Link>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        
+
         {/* Left Column - Profile Card Summary */}
         <div className="xl:col-span-1">
           <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden sticky top-24">
-            
+
             <div className="p-6 flex flex-col items-center border-b border-slate-100 text-center">
               <img src="https://i.pravatar.cc/150?u=1" alt="Ravi Kumar" className="w-24 h-24 rounded-full object-cover border-4 border-slate-50 shadow-sm mb-4" />
               <h2 className="text-lg font-extrabold text-slate-800 mb-0.5">Ravi Kumar</h2>
@@ -71,15 +71,14 @@ export default function EditEmployee() {
         {/* Right Column - Form Tabs */}
         <div className="xl:col-span-3">
           <div className="bg-white rounded-lg border border-slate-100 shadow-sm flex flex-col h-full min-h-[600px]">
-            
+
             {/* Tabs */}
             <div className="flex items-center gap-8 px-8 border-b border-slate-100 overflow-x-auto custom-scrollbar pt-2 shrink-0">
               {['Personal', 'Employment', 'Account & Access', 'Role & Permissions', 'Documents', 'Additional'].map((tab, i) => (
-                <button 
+                <button
                   key={i}
-                  className={`py-4 text-[13px] font-bold whitespace-nowrap border-b-2 transition-colors ${
-                    i === 0 ? 'border-[#489b0d] text-[#489b0d]' : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
+                  className={`py-4 text-[13px] font-bold whitespace-nowrap border-b-2 transition-colors ${i === 0 ? 'border-[#489b0d] text-[#489b0d]' : 'border-transparent text-slate-500 hover:text-slate-800'
+                    }`}
                 >
                   {tab}
                 </button>
@@ -89,7 +88,7 @@ export default function EditEmployee() {
             {/* Form Content - Personal */}
             <div className="p-8 flex-1">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
+
                 {/* Form Fields */}
                 <div className="lg:col-span-2 space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -129,7 +128,7 @@ export default function EditEmployee() {
                   <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Profile Photo</label>
                   <div className="border-2 border-dashed border-slate-200 bg-slate-50 rounded-lg p-8 flex flex-col items-center justify-center hover:border-[#489b0d]/50 hover:bg-[#489b0d]/5 transition-colors cursor-pointer mt-2">
                     <img src="https://i.pravatar.cc/150?u=1" alt="Current" className="w-20 h-20 rounded-full object-cover mb-4 border-2 border-white shadow-sm" />
-                    <p className="text-[13px] font-bold text-[#489b0d] mb-1 flex items-center gap-1"><Upload size={14}/> Upload New Photo</p>
+                    <p className="text-[13px] font-bold text-[#489b0d] mb-1 flex items-center gap-1"><Upload size={14} /> Upload New Photo</p>
                     <p className="text-[11px] font-medium text-slate-500">PNG, JPG (Max. 2MB)</p>
                   </div>
                 </div>

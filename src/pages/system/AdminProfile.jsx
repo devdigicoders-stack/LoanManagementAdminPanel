@@ -13,6 +13,7 @@ export default function AdminProfile() {
   // Load initial data from localStorage if exists
   const initialName = localStorage.getItem("adminName") || "Admin User";
   const initialPic = localStorage.getItem("adminPic") || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc";
+  const initialRole = localStorage.getItem("userRole") || "Super Admin";
 
   const [profilePic, setProfilePic] = useState(initialPic);
   const fileInputRef = useRef(null);
@@ -147,7 +148,7 @@ export default function AdminProfile() {
             />
             <h2 className="text-lg font-bold text-slate-800">{profileData.name}</h2>
             <p className="text-[12px] font-semibold text-[#489b0d] mt-1 bg-[#489b0d]/10 px-3 py-1 rounded-md flex items-center gap-1.5 justify-center">
-              <Shield size={12} /> Super Admin
+              <Shield size={12} /> {initialRole}
             </p>
             
             <div className="w-full h-px bg-slate-100 my-5"></div>

@@ -6,6 +6,7 @@ export default function Header({ toggleSidebar }) {
   const [time, setTime] = useState(new Date());
   const [adminName, setAdminName] = useState(localStorage.getItem("adminName") || "Admin User");
   const [adminPic, setAdminPic] = useState(localStorage.getItem("adminPic") || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc");
+  const [adminRole, setAdminRole] = useState(localStorage.getItem("userRole") || "Super Admin");
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
@@ -13,6 +14,7 @@ export default function Header({ toggleSidebar }) {
     const handleProfileUpdate = () => {
       setAdminName(localStorage.getItem("adminName") || "Admin User");
       setAdminPic(localStorage.getItem("adminPic") || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc");
+      setAdminRole(localStorage.getItem("userRole") || "Super Admin");
     };
 
     window.addEventListener('profileUpdated', handleProfileUpdate);
@@ -84,7 +86,7 @@ export default function Header({ toggleSidebar }) {
             </div>
             <div className="hidden sm:block">
               <p className="text-[13px] font-bold text-slate-800 leading-tight">{adminName}</p>
-              <p className="text-[11px] font-medium text-slate-500 leading-tight mt-0.5">Super Admin</p>
+              <p className="text-[11px] font-medium text-slate-500 leading-tight mt-0.5">{adminRole}</p>
             </div>
           </Link>
 

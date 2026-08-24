@@ -1,240 +1,253 @@
-import React from 'react';
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  ChevronRight, ArrowLeft, Edit, MoreVertical, Mail, Phone, MapPin, 
-  Briefcase, Calendar, Hash, CheckCircle2, Award, ClipboardList, CheckSquare, Coins
+  ArrowLeft, User, Phone, Mail, MapPin, Briefcase, 
+  FileText, Calendar, CheckCircle2, ShieldAlert,
+  Activity, Award, Clock
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 export default function EmployeeDetails() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('overview');
+
+  // Mock employee data
+  const employee = {
+    id: id || 'EMP-1001',
+    name: 'Ravi Kumar',
+    department: 'Sales',
+    designation: 'Sales Executive',
+    status: 'Active',
+    joinDate: '15 Jan 2023',
+    email: 'ravi.kumar@ngm.com',
+    phone: '+91 9876543210',
+    manager: 'Anil Desai',
+    location: 'Mumbai HQ'
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'personal', label: 'Personal', icon: User },
+    { id: 'professional', label: 'Professional', icon: Briefcase },
+    { id: 'documents', label: 'Documents', icon: FileText },
+    { id: 'attendance', label: 'Attendance', icon: Clock },
+    { id: 'leave', label: 'Leave', icon: Calendar },
+    { id: 'performance', label: 'Performance', icon: Award },
+    { id: 'history', label: 'Activity History', icon: ShieldAlert },
+  ];
+
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 pb-10">
+    <div className="w-full space-y-6 pb-10 bg-[var(--color-brand-page-bg)] min-h-screen">
       
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex items-center gap-4">
+        <button 
+          onClick={() => navigate('/employees')}
+          className="w-10 h-10 flex items-center justify-center rounded-[12px] border border-[var(--color-brand-border)] bg-white text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-sky-light)] hover:text-[var(--color-brand-blue-dark)] transition-colors shadow-sm"
+        >
+          <ArrowLeft size={18} />
+        </button>
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Employee Details</h1>
-          <div className="flex flex-wrap items-center gap-y-1 text-[12px] font-medium text-slate-500">
-            <Link to="/employees" className="hover:text-[#489b0d] transition-colors whitespace-nowrap">Employee Management</Link>
-            <ChevronRight size={14} className="mx-1 shrink-0" />
-            <Link to="/employees" className="hover:text-[#489b0d] transition-colors whitespace-nowrap">Manage Employees</Link>
-            <ChevronRight size={14} className="mx-1 shrink-0" />
-            <span className="text-[#489b0d] font-bold whitespace-nowrap">Employee Details</span>
-          </div>
-        </div>
-        
-        <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
-          <Link to="/employees" className="flex items-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-md text-[12px] font-bold hover:bg-slate-50 transition-colors shadow-sm shrink-0 whitespace-nowrap">
-            <ArrowLeft size={14} /> Back to List
-          </Link>
-          <Link to="/employees/EMP-1001/edit" className="flex items-center gap-2 px-4 py-2 bg-[#489b0d] text-white rounded-md text-[12px] font-bold hover:bg-[#3e850b] transition-colors shadow-sm shrink-0 whitespace-nowrap">
-            <Edit size={14} /> Edit Employee
-          </Link>
-          <button className="p-2 bg-white border border-slate-200 text-slate-500 rounded-md hover:bg-slate-50 transition-colors shadow-sm shrink-0">
-            <MoreVertical size={16} />
-          </button>
+          <h1 className="text-2xl font-bold text-[var(--color-brand-text)] mb-1">Employee Details</h1>
+          <p className="text-[13px] text-[var(--color-brand-text-secondary)] font-medium">Viewing complete profile for {employee.id}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
-        
-        {/* Left Column - Profile Card */}
-        <div className="xl:col-span-1">
-          <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden sticky top-24">
-            
-            <div className="p-6 flex flex-col items-center border-b border-slate-100 text-center">
-              <div className="relative mb-4">
-                <img src="https://i.pravatar.cc/150?u=1" alt="Ravi Kumar" className="w-24 h-24 rounded-full object-cover border-4 border-slate-50 shadow-sm" />
-                <span className="absolute bottom-1 right-1 w-4 h-4 bg-[#489b0d] border-2 border-white rounded-full"></span>
-              </div>
-              <h2 className="text-lg font-extrabold text-slate-800 mb-0.5">Ravi Kumar</h2>
-              <p className="text-[13px] font-medium text-slate-500 mb-2">Loan Officer</p>
-              <span className="bg-[#489b0d]/10 text-[#489b0d] px-2.5 py-1 rounded-md text-[11px] font-bold">Active</span>
+      {/* Profile Card */}
+      <div className="bg-white rounded-[18px] border border-[var(--color-brand-border)] overflow-hidden shadow-sm">
+        <div className="h-24 bg-[var(--color-brand-sky-pale)]"></div>
+        <div className="px-6 pb-6 relative">
+          <div className="flex flex-col md:flex-row gap-6 items-start md:items-end -mt-10 mb-4">
+            <div className="w-24 h-24 rounded-full border-4 border-white bg-[var(--color-brand-sky-light)] flex items-center justify-center text-[var(--color-brand-blue-dark)] font-bold text-3xl shadow-sm shrink-0">
+              {employee.name.charAt(0)}
             </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Email</p>
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-                  <Mail size={14} className="text-slate-400" /> ravi.kumar@ngm.com
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Phone</p>
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-                  <Phone size={14} className="text-slate-400" /> +91 98765 43210
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Department</p>
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-                  <Briefcase size={14} className="text-slate-400" /> Loan Department
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Branch</p>
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-                  <MapPin size={14} className="text-slate-400" /> Lucknow Branch
-                </div>
-              </div>
-              <div>
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Reporting Manager</p>
-                <div className="flex items-center gap-2 text-[13px] font-semibold text-slate-700">
-                  <img src="https://i.pravatar.cc/150?u=3" alt="Manager" className="w-5 h-5 rounded-full" /> Amit Verma
-                </div>
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Right Column - Details & Tabs */}
-        <div className="xl:col-span-3">
-          <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden">
-            
-            {/* Tabs */}
-            <div className="flex items-center gap-8 px-6 border-b border-slate-100 overflow-x-auto custom-scrollbar pt-2">
-              {['Overview', 'Personal', 'Employment', 'Performance', 'Account & Access', 'Documents', 'Activity'].map((tab, i) => (
-                <button 
-                  key={i}
-                  className={`py-4 text-[13px] font-bold whitespace-nowrap border-b-2 transition-colors ${
-                    i === 0 ? 'border-[#489b0d] text-[#489b0d]' : 'border-transparent text-slate-500 hover:text-slate-800'
-                  }`}
-                >
-                  {tab}
-                </button>
-              ))}
-            </div>
-
-            {/* Content Area */}
-            <div className="p-6">
-              
-              {/* Summary Section */}
-              <h3 className="text-[15px] font-bold text-slate-800 mb-4">Summary</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-                <div className="p-4 rounded-md border border-slate-100 bg-slate-50 flex flex-col gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center">
-                    <Calendar size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500">Joining Date</p>
-                    <p className="text-[13px] font-bold text-slate-800">10 Jan 2025</p>
-                  </div>
-                </div>
-                <div className="p-4 rounded-md border border-slate-100 bg-slate-50 flex flex-col gap-2">
-                  <div className="w-8 h-8 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center">
-                    <Award size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500">Experience</p>
-                    <p className="text-[13px] font-bold text-slate-800">1.4 Years</p>
-                  </div>
-                </div>
-                <div className="p-4 rounded-md border border-slate-100 bg-slate-50 flex flex-col gap-2">
-                  <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-500 flex items-center justify-center">
-                    <Hash size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500">Employee Code</p>
-                    <p className="text-[13px] font-bold text-slate-800">NGM-LO-1001</p>
-                  </div>
-                </div>
-                <div className="p-4 rounded-md border border-slate-100 bg-slate-50 flex flex-col gap-2">
-                  <div className="w-8 h-8 rounded-full bg-green-50 text-[#489b0d] flex items-center justify-center">
-                    <CheckCircle2 size={16} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-semibold text-slate-500">Status</p>
-                    <p className="text-[13px] font-bold text-[#489b0d]">Active</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Middle Row: Contact & Something else? */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                
-                {/* Contact Information */}
+            <div className="flex-1 pb-1">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                  <h3 className="text-[15px] font-bold text-slate-800 mb-4">Contact Information</h3>
-                  <div className="p-5 rounded-md border border-slate-100 bg-white space-y-5">
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                        <Mail size={14} className="text-slate-500" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-semibold text-slate-500 mb-0.5">Email</p>
-                        <p className="text-[13px] font-bold text-slate-800">ravi.kumar@ngm.com</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                        <Phone size={14} className="text-slate-500" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-semibold text-slate-500 mb-0.5">Phone Number</p>
-                        <p className="text-[13px] font-bold text-slate-800">+91 98765 43210</p>
-                      </div>
-                    </div>
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center shrink-0">
-                        <MapPin size={14} className="text-slate-500" />
-                      </div>
-                      <div>
-                        <p className="text-[11px] font-semibold text-slate-500 mb-0.5">Address</p>
-                        <p className="text-[13px] font-bold text-slate-800 leading-relaxed">123, Green Park, Lucknow,<br/>Uttar Pradesh - 226001</p>
-                      </div>
-                    </div>
-                  </div>
+                  <h2 className="text-2xl font-bold text-[var(--color-brand-text)] flex items-center gap-2">
+                    {employee.name}
+                    <span className="bg-emerald-50 text-emerald-600 px-2.5 py-1 rounded-full text-[11px] font-bold tracking-wide uppercase">
+                      {employee.status}
+                    </span>
+                  </h2>
+                  <p className="text-[14px] text-[var(--color-brand-text-secondary)] font-medium mt-1">
+                    {employee.designation} • {employee.department}
+                  </p>
                 </div>
-
-              </div>
-
-              {/* Work Summary */}
-              <h3 className="text-[15px] font-bold text-slate-800 mb-4">Work Summary</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 rounded-md border border-slate-100 bg-white flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-[#489b0d]/10 text-[#489b0d] flex items-center justify-center shrink-0">
-                    <ClipboardList size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Total Leads</p>
-                    <p className="text-xl font-extrabold text-slate-800 leading-none mt-1">128</p>
-                  </div>
-                </div>
-                <div className="p-4 rounded-md border border-slate-100 bg-white flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                    <Briefcase size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Applications Assigned</p>
-                    <p className="text-xl font-extrabold text-slate-800 leading-none mt-1">42</p>
-                  </div>
-                </div>
-                <div className="p-4 rounded-md border border-slate-100 bg-white flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center shrink-0">
-                    <CheckSquare size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Applications Approved</p>
-                    <p className="text-xl font-extrabold text-slate-800 leading-none mt-1">24</p>
-                  </div>
-                </div>
-                <div className="p-4 rounded-md border border-slate-100 bg-white flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-full bg-orange-50 text-orange-500 flex items-center justify-center shrink-0">
-                    <Coins size={18} />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wide">Disbursed Amount</p>
-                    <p className="text-[17px] font-extrabold text-slate-800 leading-none mt-1">₹42,50,000</p>
-                  </div>
+                <div className="flex gap-2">
+                  <button onClick={() => navigate(`/employees/${employee.id}/edit`)} className="px-4 py-2 bg-white border border-[var(--color-brand-border)] rounded-[10px] text-[13px] font-bold text-[var(--color-brand-text)] hover:bg-[var(--color-brand-gray-light)] transition-colors">
+                    Edit Profile
+                  </button>
                 </div>
               </div>
+            </div>
+          </div>
 
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-[var(--color-brand-border)]">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-brand-gray-light)] flex items-center justify-center text-[var(--color-brand-text-secondary)] shrink-0"><Phone size={16}/></div>
+              <div>
+                <p className="text-[11px] font-semibold text-[var(--color-brand-text-secondary)] uppercase tracking-wider">Mobile</p>
+                <p className="text-[13px] font-bold text-[var(--color-brand-text)]">{employee.phone}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-brand-gray-light)] flex items-center justify-center text-[var(--color-brand-text-secondary)] shrink-0"><Mail size={16}/></div>
+              <div>
+                <p className="text-[11px] font-semibold text-[var(--color-brand-text-secondary)] uppercase tracking-wider">Email</p>
+                <p className="text-[13px] font-bold text-[var(--color-brand-text)]">{employee.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-brand-gray-light)] flex items-center justify-center text-[var(--color-brand-text-secondary)] shrink-0"><MapPin size={16}/></div>
+              <div>
+                <p className="text-[11px] font-semibold text-[var(--color-brand-text-secondary)] uppercase tracking-wider">Location</p>
+                <p className="text-[13px] font-bold text-[var(--color-brand-text)]">{employee.location}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-[var(--color-brand-gray-light)] flex items-center justify-center text-[var(--color-brand-text-secondary)] shrink-0"><Calendar size={16}/></div>
+              <div>
+                <p className="text-[11px] font-semibold text-[var(--color-brand-text-secondary)] uppercase tracking-wider">Joined On</p>
+                <p className="text-[13px] font-bold text-[var(--color-brand-text)]">{employee.joinDate}</p>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
 
+      {/* Tabs Layout */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        
+        {/* Sidebar Navigation */}
+        <div className="w-full lg:w-56 shrink-0 space-y-1.5 bg-white p-3 rounded-[18px] border border-[var(--color-brand-border)] shadow-sm h-fit">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`w-full flex items-center gap-3 px-4 py-2.5 rounded-[12px] text-[13px] font-bold transition-all ${
+                activeTab === tab.id 
+                  ? 'bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] shadow-sm border border-[var(--color-brand-border)]' 
+                  : 'text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-gray-light)] hover:text-[var(--color-brand-text)]'
+              }`}
+            >
+              <tab.icon size={18} className={activeTab === tab.id ? 'text-[var(--color-brand-blue-dark)]' : ''} />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab Content */}
+        <div className="flex-1 bg-white rounded-[18px] border border-[var(--color-brand-border)] shadow-sm overflow-hidden min-h-[400px]">
+          <div className="p-5 border-b border-[var(--color-brand-border)] bg-[var(--color-brand-sky-pale)]">
+            <h2 className="text-[16px] font-bold text-[var(--color-brand-text)] capitalize">
+              {tabs.find(t => t.id === activeTab)?.label} Details
+            </h2>
+          </div>
+          
+          <div className="p-6">
+            {activeTab === 'overview' && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-[var(--color-brand-page-bg)] p-5 rounded-[14px] border border-[var(--color-brand-border)]">
+                    <h3 className="text-[14px] font-bold text-[var(--color-brand-text)] mb-4 flex items-center gap-2"><Briefcase size={16} className="text-[var(--color-brand-blue-dark)]"/> Professional Details</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Employee ID</span><span className="text-[13px] font-bold">{employee.id}</span></div>
+                      <div className="flex justify-between"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Department</span><span className="text-[13px] font-bold">{employee.department}</span></div>
+                      <div className="flex justify-between"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Designation</span><span className="text-[13px] font-bold">{employee.designation}</span></div>
+                      <div className="flex justify-between"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Reporting Manager</span><span className="text-[13px] font-bold">{employee.manager}</span></div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-[var(--color-brand-page-bg)] p-5 rounded-[14px] border border-[var(--color-brand-border)]">
+                    <h3 className="text-[14px] font-bold text-[var(--color-brand-text)] mb-4 flex items-center gap-2"><CheckCircle2 size={16} className="text-emerald-600"/> Quick Summary</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Attendance (This Month)</span><span className="text-[13px] font-bold text-emerald-600">96%</span></div>
+                      <div className="flex justify-between"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Leaves Available</span><span className="text-[13px] font-bold text-amber-600">12 Days</span></div>
+                      <div className="flex justify-between"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Pending Documents</span><span className="text-[13px] font-bold text-red-600">0</span></div>
+                      <div className="flex justify-between"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Last Performance</span><span className="text-[13px] font-bold">Excellent</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'documents' && (
+              <div className="space-y-6 animate-in fade-in">
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-[14px] font-bold text-[var(--color-brand-text)]">Uploaded Documents</h3>
+                  <button className="text-[12px] font-bold text-white bg-[var(--color-brand-blue-primary)] px-4 py-2 rounded-lg hover:bg-[var(--color-brand-blue-dark)] transition-colors">
+                    Upload New Document
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {[
+                    { name: 'Aadhaar Card', category: 'Identity Proof', status: 'Verified', date: '2023-01-15' },
+                    { name: 'PAN Card', category: 'Identity Proof', status: 'Verified', date: '2023-01-15' },
+                    { name: 'Degree Certificate', category: 'Educational Documents', status: 'Pending', date: '2023-01-16' },
+                    { name: 'Previous Experience Letter', category: 'Experience Documents', status: 'Rejected', date: '2023-01-16' },
+                    { name: 'Electricity Bill', category: 'Address Proof', status: 'Re-upload Required', date: '2023-01-17' },
+                  ].map((doc, idx) => (
+                    <div key={idx} className="bg-[var(--color-brand-page-bg)] p-4 rounded-[14px] border border-[var(--color-brand-border)] flex items-start gap-4">
+                      <div className="w-10 h-10 rounded-[10px] bg-white border border-[var(--color-brand-border)] flex items-center justify-center shrink-0 text-[var(--color-brand-blue-dark)]">
+                        <FileText size={18} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-1">
+                          <h4 className="text-[13px] font-bold text-[var(--color-brand-text)]">{doc.name}</h4>
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                            doc.status === 'Verified' ? 'bg-emerald-50 text-emerald-600' :
+                            doc.status === 'Rejected' ? 'bg-red-50 text-red-600' :
+                            doc.status === 'Pending' ? 'bg-amber-50 text-amber-600' :
+                            'bg-slate-100 text-slate-600'
+                          }`}>
+                            {doc.status}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[var(--color-brand-text-secondary)] font-medium mb-3">{doc.category} • Uploaded {doc.date}</p>
+                        
+                        <div className="flex flex-wrap gap-2 mt-auto">
+                          <button className="text-[11px] font-bold text-[var(--color-brand-blue-dark)] hover:underline">View</button>
+                          <span className="text-slate-300">•</span>
+                          <button className="text-[11px] font-bold text-[var(--color-brand-text-secondary)] hover:text-[var(--color-brand-text)] transition-colors">Download</button>
+                          
+                          {(doc.status === 'Pending' || doc.status === 'Re-upload Required') && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <button className="text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition-colors">Verify</button>
+                              <span className="text-slate-300">•</span>
+                              <button className="text-[11px] font-bold text-red-600 hover:text-red-700 transition-colors">Reject</button>
+                            </>
+                          )}
+                          
+                          {doc.status === 'Rejected' && (
+                            <>
+                              <span className="text-slate-300">•</span>
+                              <button className="text-[11px] font-bold text-amber-600 hover:text-amber-700 transition-colors">Request Re-upload</button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab !== 'overview' && activeTab !== 'documents' && (
+              <div className="flex flex-col items-center justify-center py-16 animate-in fade-in">
+                <div className="w-16 h-16 rounded-full bg-[var(--color-brand-sky-light)] flex items-center justify-center mb-4 text-[var(--color-brand-blue-dark)]">
+                  <Activity size={24} />
+                </div>
+                <h3 className="text-lg font-bold text-[var(--color-brand-text)]">Information Available</h3>
+                <p className="text-[13px] text-[var(--color-brand-text-secondary)] mt-1">Detailed {activeTab} information would be displayed here.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

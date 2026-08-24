@@ -1,24 +1,56 @@
 @import "tailwindcss";
 
-@layer utilities {
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
+@layer base {
+  :root {
+    /* Brand Colors - Sky Blue + Cream */
+    --color-brand-blue-primary: #8ED3F4;
+    --color-brand-blue-dark: #6CADD3;
+    --color-brand-sky-light: #DFF3FF;
+    --color-brand-sky-soft: #BFE7F7;
+    --color-brand-sky-pale: #EFF9FE;
+    
+    --color-brand-cream: #FFF8E7;
+    --color-brand-cream-soft: #FFFDF5;
+    
+    --color-brand-page-bg: #FAFCFD;
+    --color-brand-header-bg: #FFFFFF;
+    
+    --color-brand-text: #344054;
+    --color-brand-text-secondary: #667085;
+    
+    --color-brand-border: #D9EAF2;
+    --color-brand-gray-light: #F5F7F9;
+    --color-brand-hover-bg: #F7FCFF;
   }
 }
 
-/* Global Cursor Pointer for Interactive Elements */
-@layer base {
-  button, 
-  select, 
-  label,
-  input[type="submit"], 
-  input[type="button"], 
-  input[type="checkbox"], 
-  input[type="radio"] {
-    cursor: pointer;
-  }
+body {
+  background-color: var(--color-brand-page-bg);
+  color: var(--color-brand-text);
+  font-family: 'Inter', sans-serif;
+}
+
+/* Custom Scrollbar for a cleaner look */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Hide scrollbar completely for specific elements */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

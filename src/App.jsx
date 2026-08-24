@@ -23,6 +23,11 @@ import EmployeeRoles from "./pages/employees/EmployeeRoles";
 import EmployeePerformance from "./pages/employees/EmployeePerformance";
 import EmployeeActivityLogs from "./pages/employees/EmployeeActivityLogs";
 import Attendance from "./pages/employees/Attendance";
+import LeaveManagement from "./pages/employees/LeaveManagement";
+
+import HRDashboard from "./pages/hr/HRDashboard";
+import HRReports from "./pages/hr/HRReports";
+import HRNotifications from "./pages/hr/HRNotifications";
 
 // Lead Management Imports
 import ManageLeads from "./pages/leads/ManageLeads";
@@ -72,6 +77,15 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+// Component to dynamically route dashboards based on role
+const RoleBasedDashboard = () => {
+  const role = localStorage.getItem('userRole');
+  if (role === 'HR Admin') {
+    return <HRDashboard />;
+  }
+  return <Dashboard />;
+};
+
 function App() {
   return (
     <BrowserRouter>
@@ -79,7 +93,7 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-          <Route index element={<Dashboard />} />
+          <Route index element={<RoleBasedDashboard />} />
           <Route path="users" element={<ManageUsers />} />
           <Route path="users/add" element={<AddUser />} />
           <Route path="users/:id" element={<UserDetails />} />
@@ -95,14 +109,16 @@ function App() {
           <Route path="employees/departments" element={<Departments />} />
           <Route path="employees/designations" element={<Designations />} />
           <Route path="employees/roles" element={<EmployeeRoles />} />
-          <Route
-            path="employees/performance"
-            element={<EmployeePerformance />}
-          />
+          <Route path="employees/performance" element={<EmployeePerformance />} />
           <Route path="employees/activity" element={<EmployeeActivityLogs />} />
           <Route path="employees/attendance" element={<Attendance />} />
+          <Route path="employees/leave-management" element={<LeaveManagement />} />
           <Route path="employees/:id" element={<EmployeeDetails />} />
           <Route path="employees/:id/edit" element={<EditEmployee />} />
+          
+          <Route path="hr/reports" element={<HRReports />} />
+          <Route path="hr/notifications" element={<HRNotifications />} />
+
           {/* Lead Management Routes */}
           <Route path="leads" element={<ManageLeads />} />
           <Route path="leads/add" element={<AddLead />} />

@@ -1,275 +1,199 @@
-import React, { useState, useMemo } from 'react';
+import { useState } from 'react';
+import { Search, Plus, MoreVertical, Eye, Edit, Trash2, Shield, UserCheck, UserX, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { 
-  Users, UserCheck, UserMinus, Briefcase, Award, Search, Filter, 
-  Download, Plus, Eye, Trash2, Edit, ChevronLeft, ChevronRight,
-  Calendar, TrendingUp, TrendingDown
-} from 'lucide-react';
-import { Link } from 'react-router-dom';
-
-const initialMockEmployees = [
-  { id: 'EMP-1001', name: 'Ravi Kumar', email: 'ravi.kumar@ngm.com', department: 'Loan Department', designation: 'Loan Officer', branch: 'Lucknow Branch', status: 'Active', lastLogin: '18 May 2025, 10:30 AM', avatar: 'https://i.pravatar.cc/150?u=1' },
-  { id: 'EMP-1002', name: 'Priya Sharma', email: 'priya.sharma@ngm.com', department: 'Sales Department', designation: 'Sales Executive', branch: 'Lucknow Branch', status: 'Active', lastLogin: '18 May 2025, 09:45 AM', avatar: 'https://i.pravatar.cc/150?u=2' },
-  { id: 'EMP-1003', name: 'Amit Verma', email: 'amit.verma@ngm.com', department: 'Loan Department', designation: 'Relationship Manager', branch: 'Kanpur Branch', status: 'Active', lastLogin: '18 May 2025, 08:20 AM', avatar: 'https://i.pravatar.cc/150?u=3' },
-  { id: 'EMP-1004', name: 'Neha Singh', email: 'neha.singh@ngm.com', department: 'Operations', designation: 'Verification Officer', branch: 'Delhi Branch', status: 'Active', lastLogin: '17 May 2025, 06:15 PM', avatar: 'https://i.pravatar.cc/150?u=4' },
-  { id: 'EMP-1005', name: 'Suresh Patel', email: 'suresh.patel@ngm.com', department: 'Collections', designation: 'Collection Executive', branch: 'Lucknow Branch', status: 'Inactive', lastLogin: '15 May 2025, 04:30 PM', avatar: 'https://i.pravatar.cc/150?u=5' },
-  { id: 'EMP-1006', name: 'John Doe', email: 'john.doe@ngm.com', department: 'Support', designation: 'Customer Support', branch: 'Delhi Branch', status: 'Active', lastLogin: '18 May 2025, 11:05 AM', avatar: 'https://i.pravatar.cc/150?u=6' },
-  { id: 'EMP-1007', name: 'Emily Davis', email: 'emily.davis@ngm.com', department: 'Finance', designation: 'Accountant', branch: 'Lucknow Branch', status: 'Active', lastLogin: '15 May 2025, 09:10 AM', avatar: 'https://i.pravatar.cc/150?u=7' },
-  { id: 'EMP-1008', name: 'Michael Brown', email: 'michael.brown@ngm.com', department: 'Admin', designation: 'System Administrator', branch: 'Head Office', status: 'Active', lastLogin: '18 May 2025, 11:30 AM', avatar: 'https://i.pravatar.cc/150?u=8' },
-];
+import toast from 'react-hot-toast';
 
 export default function ManageEmployees() {
-  const [employees, setEmployees] = useState(initialMockEmployees);
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
-  const [deptFilter, setDeptFilter] = useState('All Departments');
-  const [desigFilter, setDesigFilter] = useState('All Designations');
-  const [statusFilter, setStatusFilter] = useState('All Status');
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const [filterDepartment, setFilterDepartment] = useState('All');
 
-  // Extract unique filter options dynamically
-  const departments = ['All Departments', ...new Set(employees.map(e => e.department))];
-  const designations = ['All Designations', ...new Set(employees.map(e => e.designation))];
-  const statuses = ['All Status', 'Active', 'Inactive'];
+  // Mock data for employees
+  const [employees, setEmployees] = useState([
+    { id: 'EMP-1001', name: 'Ravi Kumar', email: 'ravi@ngm.com', phone: '+91 9876543210', department: 'Sales', designation: 'Sales Executive', status: 'Active', joinDate: '2023-01-15' },
+    { id: 'EMP-1002', name: 'Priya Singh', email: 'priya@ngm.com', phone: '+91 9876543211', department: 'HR', designation: 'HR Manager', status: 'Active', joinDate: '2022-11-01' },
+    { id: 'EMP-1003', name: 'Amit Sharma', email: 'amit@ngm.com', phone: '+91 9876543212', department: 'Operations', designation: 'Operations Head', status: 'On Leave', joinDate: '2021-05-20' },
+    { id: 'EMP-1004', name: 'Neha Gupta', email: 'neha@ngm.com', phone: '+91 9876543213', department: 'Credit', designation: 'Credit Analyst', status: 'Inactive', joinDate: '2023-08-10' },
+  ]);
 
-  // Filtering Logic
-  const filteredEmployees = useMemo(() => {
-    return employees.filter(emp => {
-      const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            emp.id.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesDept = deptFilter === 'All Departments' || emp.department === deptFilter;
-      const matchesDesig = desigFilter === 'All Designations' || emp.designation === desigFilter;
-      const matchesStatus = statusFilter === 'All Status' || emp.status === statusFilter;
-      
-      return matchesSearch && matchesDept && matchesDesig && matchesStatus;
-    });
-  }, [employees, searchTerm, deptFilter, desigFilter, statusFilter]);
+  const departments = ['All', 'Sales', 'HR', 'Operations', 'Credit', 'Accounts'];
 
-  // Pagination Logic
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage) || 1;
-  const currentItems = filteredEmployees.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  // Dynamic KPIs
-  const activeCount = employees.filter(e => e.status === 'Active').length;
-  const inactiveCount = employees.filter(e => e.status === 'Inactive').length;
-  const uniqueDepts = new Set(employees.map(e => e.department)).size;
-  const uniqueDesigs = new Set(employees.map(e => e.designation)).size;
-
-  const topKpis = [
-    { label: 'Total Employees', value: employees.length, change: '+12.5%', isUp: true, icon: Users, color: 'text-[#489b0d]', bg: 'bg-[#489b0d]/10' },
-    { label: 'Active Employees', value: activeCount, change: '+8.6%', isUp: true, icon: UserCheck, color: 'text-[#489b0d]', bg: 'bg-[#489b0d]/10' },
-    { label: 'Inactive Employees', value: inactiveCount, change: '-3.2%', isUp: false, icon: UserMinus, color: 'text-red-500', bg: 'bg-red-50' },
-    { label: 'Departments', value: uniqueDepts, change: '-', isUp: null, icon: Briefcase, color: 'text-orange-500', bg: 'bg-orange-50' },
-    { label: 'Designations', value: uniqueDesigs, change: '-', isUp: null, icon: Award, color: 'text-orange-500', bg: 'bg-orange-50' },
-  ];
-
-  // Actions
-  const handleDelete = (id) => {
+  const handleStatusChange = (id, currentStatus) => {
+    const actionText = currentStatus === 'Active' ? 'Deactivate' : 'Activate';
+    
     Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
+      title: `${actionText} Employee?`,
+      text: `Are you sure you want to ${actionText.toLowerCase()} this employee?`,
       icon: 'warning',
       showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonColor: currentStatus === 'Active' ? '#ef4444' : '#10b981',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: `Yes, ${actionText}`
     }).then((result) => {
       if (result.isConfirmed) {
-        const updated = employees.filter(e => e.id !== id);
-        setEmployees(updated);
-        
-        // Adjust page if deleting last item on current page
-        const newFilteredLength = updated.length;
-        const newTotalPages = Math.ceil(newFilteredLength / itemsPerPage) || 1;
-        if (currentPage > newTotalPages) {
-          setCurrentPage(newTotalPages);
-        }
-        Swal.fire('Deleted!', 'Employee has been deleted.', 'success');
+        setEmployees(employees.map(emp => {
+          if (emp.id === id) {
+            return { ...emp, status: currentStatus === 'Active' ? 'Inactive' : 'Active' };
+          }
+          return emp;
+        }));
+        toast.success(`Employee ${actionText.toLowerCase()}d successfully`);
       }
     });
   };
 
-  // Reset page on filter change
-  useMemo(() => {
-    setCurrentPage(1);
-  }, [searchTerm, deptFilter, desigFilter, statusFilter]);
+  const filteredEmployees = employees.filter(emp => {
+    const matchesSearch = emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                          emp.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDept = filterDepartment === 'All' || emp.department === filterDepartment;
+    return matchesSearch && matchesDept;
+  });
 
   return (
-    <div className="w-full space-y-6 pb-10">
+    <div className="w-full space-y-6 pb-10 bg-[var(--color-brand-page-bg)] min-h-screen">
+      
       {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Employee Management</h1>
-          <p className="text-[13px] text-slate-500 font-medium">Manage your organization employees and their activities</p>
+          <h1 className="text-2xl font-bold text-[var(--color-brand-text)] mb-1">Employee Management</h1>
+          <p className="text-[13px] text-[var(--color-brand-text-secondary)] font-medium">Manage all company employees, their roles and statuses</p>
         </div>
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input 
-            type="text" 
-            placeholder="Search employees, email, id..." 
+        <button 
+          onClick={() => navigate('/employees/add')}
+          className="flex items-center gap-2 bg-[var(--color-brand-blue-primary)] hover:bg-[var(--color-brand-blue-dark)] text-white px-4 py-2.5 rounded-[10px] text-[13px] font-semibold transition-all shadow-sm"
+        >
+          <Plus size={16} />
+          Add Employee
+        </button>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="bg-white p-5 rounded-[18px] border border-[var(--color-brand-border)] flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <select 
+            value={filterDepartment}
+            onChange={(e) => setFilterDepartment(e.target.value)}
+            className="w-full md:w-auto bg-white border border-[var(--color-brand-border)] text-[var(--color-brand-text)] text-[13px] rounded-[10px] px-4 py-2.5 focus:outline-none focus:border-[var(--color-brand-blue-dark)]"
+          >
+            {departments.map(dept => (
+              <option key={dept} value={dept}>{dept} Department</option>
+            ))}
+          </select>
+        </div>
+        
+        <div className="relative w-full md:w-[300px]">
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <Search size={16} />
+          </div>
+          <input
+            type="text"
+            placeholder="Search by name or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-16 py-2.5 bg-white border border-slate-200 rounded-md text-[13px] font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all"
+            className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 pl-10 pr-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]"
           />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 opacity-80">
-            <span className="text-[10px] font-bold text-slate-400">Ctrl + K</span>
-          </div>
         </div>
       </div>
 
-      {/* Top KPIs */}
-      <div className="flex flex-wrap gap-4">
-        {topKpis.map((kpi, idx) => (
-          <div key={idx} className="flex-1 min-w-[210px] bg-white rounded-lg border border-slate-100 p-5 shadow-sm flex items-center gap-4 hover:shadow-md transition-shadow">
-            <div className={`w-12 h-12 rounded-md flex items-center justify-center shrink-0 ${kpi.bg} ${kpi.color}`}>
-              <kpi.icon size={24} strokeWidth={2} />
-            </div>
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 mb-0.5">{kpi.label}</p>
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-2xl font-extrabold text-slate-800 leading-none">{kpi.value}</h3>
-              </div>
-              {kpi.isUp !== null ? (
-                <p className={`text-[10px] font-bold flex items-center gap-1 mt-1.5 ${kpi.isUp ? 'text-[#489b0d]' : 'text-red-500'}`}>
-                  {kpi.isUp ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-                  {kpi.change} <span className="text-slate-400 font-medium">vs last month</span>
-                </p>
-              ) : (
-                <p className="text-[10px] font-bold text-slate-400 mt-1.5">-</p>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Main Table Container */}
-      <div className="bg-white rounded-lg border border-slate-100 shadow-sm flex flex-col overflow-hidden">
-        
-        {/* Toolbar */}
-        <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50">
-          <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
-            <select value={deptFilter} onChange={(e) => setDeptFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-bold text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0 cursor-pointer hover:bg-slate-50">
-              {departments.map(dept => <option key={dept} value={dept}>{dept}</option>)}
-            </select>
-            <select value={desigFilter} onChange={(e) => setDesigFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-bold text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0 cursor-pointer hover:bg-slate-50">
-              {designations.map(desig => <option key={desig} value={desig}>{desig}</option>)}
-            </select>
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-bold text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[120px] shrink-0 cursor-pointer hover:bg-slate-50">
-              {statuses.map(status => <option key={status} value={status}>{status}</option>)}
-            </select>
-            <button className="flex items-center gap-2 px-4 py-2 bg-[#489b0d]/10 text-[#489b0d] rounded-md text-[12px] font-bold hover:bg-[#489b0d]/20 transition-colors border border-[#489b0d]/20 shrink-0">
-              <Download size={14} className="shrink-0" /> Export CSV
-            </button>
-          </div>
-          
-          <Link to="/employees/add" className="flex items-center justify-center gap-2 px-4 py-2 bg-[#489b0d] text-white rounded-md text-[12px] font-bold hover:bg-[#3e850b] transition-colors shadow-sm w-full md:w-auto shrink-0">
-            <Plus size={16} /> Add Employee
-          </Link>
-        </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto min-h-[300px]">
+      {/* Table */}
+      <div className="bg-white border border-[var(--color-brand-border)] rounded-[18px] overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="border-b border-slate-100 bg-white">
-                <th className="py-4 px-5 w-10"><input type="checkbox" className="rounded border-slate-300 text-[#489b0d] focus:ring-[#489b0d]" /></th>
-                <th className="py-4 px-5 text-[11px] font-bold text-slate-800 tracking-wide">EMPLOYEE ID</th>
-                <th className="py-4 px-5 text-[11px] font-bold text-slate-800 tracking-wide">EMPLOYEE</th>
-                <th className="py-4 px-5 text-[11px] font-bold text-slate-800 tracking-wide">DEPARTMENT</th>
-                <th className="py-4 px-5 text-[11px] font-bold text-slate-800 tracking-wide">DESIGNATION</th>
-                <th className="py-4 px-5 text-[11px] font-bold text-slate-800 tracking-wide">STATUS</th>
-                <th className="py-4 px-5 text-[11px] font-bold text-slate-800 tracking-wide">LAST LOGIN</th>
-                <th className="py-4 px-5 text-[11px] font-bold text-slate-800 tracking-wide text-center">ACTIONS</th>
+              <tr className="bg-[var(--color-brand-sky-pale)] border-b border-[var(--color-brand-border)]">
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider">Employee</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider">Contact</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider">Department</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider">Status</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
-              {currentItems.length > 0 ? currentItems.map((emp) => (
-                <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-3.5 px-5"><input type="checkbox" className="rounded border-slate-300 text-[#489b0d] focus:ring-[#489b0d]" /></td>
-                  <td className="py-3.5 px-5 text-[12px] font-bold text-slate-600 whitespace-nowrap">{emp.id}</td>
-                  <td className="py-3.5 px-5 whitespace-nowrap">
+            <tbody className="divide-y divide-[var(--color-brand-border)]">
+              {filteredEmployees.map((emp) => (
+                <tr key={emp.id} className="hover:bg-[var(--color-brand-hover-bg)] transition-colors group">
+                  <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <img src={emp.avatar} alt={emp.name} className="w-8 h-8 rounded-full object-cover border border-slate-100" />
+                      <div className="w-10 h-10 rounded-full bg-[var(--color-brand-sky-light)] flex items-center justify-center text-[var(--color-brand-blue-dark)] font-bold text-sm shrink-0">
+                        {emp.name.charAt(0)}
+                      </div>
                       <div>
-                        <p className="text-[12px] font-bold text-slate-800 leading-none mb-1">{emp.name}</p>
-                        <p className="text-[11px] font-medium text-slate-500 leading-none">{emp.email}</p>
+                        <p className="text-[14px] font-bold text-[var(--color-brand-text)]">{emp.name}</p>
+                        <p className="text-[12px] text-[var(--color-brand-text-secondary)] mt-0.5">{emp.id}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="py-3.5 px-5 text-[12px] font-semibold text-slate-600 whitespace-nowrap">{emp.department}</td>
-                  <td className="py-3.5 px-5 text-[12px] font-semibold text-slate-600 whitespace-nowrap">{emp.designation}</td>
-                  <td className="py-3.5 px-5 whitespace-nowrap">
-                    {emp.status === 'Active' ? (
-                      <span className="inline-flex items-center text-[10px] font-bold text-[#489b0d] bg-[#489b0d]/10 px-2 py-0.5 rounded-md">Active</span>
-                    ) : (
-                      <span className="inline-flex items-center text-[10px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-md">Inactive</span>
-                    )}
+                  <td className="py-4 px-6">
+                    <p className="text-[13px] text-[var(--color-brand-text)] font-medium">{emp.email}</p>
+                    <p className="text-[12px] text-[var(--color-brand-text-secondary)] mt-0.5">{emp.phone}</p>
                   </td>
-                  <td className="py-3.5 px-5 text-[12px] font-medium text-slate-500 whitespace-nowrap">{emp.lastLogin}</td>
-                  <td className="py-3.5 px-5 whitespace-nowrap text-center">
-                    <div className="flex items-center justify-center gap-2 transition-opacity">
-                      <Link to={`/employees/${emp.id}`} className="p-1.5 text-blue-500 hover:bg-blue-50 rounded-lg transition-colors" title="View Details">
+                  <td className="py-4 px-6">
+                    <p className="text-[13px] text-[var(--color-brand-text)] font-bold">{emp.department}</p>
+                    <p className="text-[12px] text-[var(--color-brand-text-secondary)] mt-0.5">{emp.designation}</p>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold
+                      ${emp.status === 'Active' ? 'bg-emerald-50 text-emerald-600' : 
+                        emp.status === 'Inactive' ? 'bg-slate-100 text-slate-600' : 
+                        'bg-[var(--color-brand-cream)] text-amber-600'}`}
+                    >
+                      {emp.status}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
+                    <div className="flex items-center justify-end gap-2 transition-opacity">
+                      <button 
+                        onClick={() => navigate(`/employees/${emp.id}`)}
+                        className="p-1.5 text-[var(--color-brand-text-secondary)] hover:text-[var(--color-brand-blue-dark)] hover:bg-[var(--color-brand-sky-light)] rounded-md transition-colors"
+                        title="View Details"
+                      >
                         <Eye size={16} />
-                      </Link>
-                      <Link to={`/employees/${emp.id}/edit`} className="p-1.5 text-orange-500 hover:bg-orange-50 rounded-lg transition-colors" title="Edit Employee">
+                      </button>
+                      <button 
+                        onClick={() => navigate(`/employees/${emp.id}/edit`)}
+                        className="p-1.5 text-[var(--color-brand-text-secondary)] hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
+                        title="Edit Employee"
+                      >
                         <Edit size={16} />
-                      </Link>
-                      <button onClick={() => handleDelete(emp.id)} className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors" title="Delete Employee">
-                        <Trash2 size={16} />
+                      </button>
+                      <button 
+                        onClick={() => handleStatusChange(emp.id, emp.status)}
+                        className={`p-1.5 rounded-md transition-colors ${
+                          emp.status === 'Active' 
+                            ? 'text-[var(--color-brand-text-secondary)] hover:text-red-600 hover:bg-red-50' 
+                            : 'text-[var(--color-brand-text-secondary)] hover:text-emerald-600 hover:bg-emerald-50'
+                        }`}
+                        title={emp.status === 'Active' ? 'Deactivate' : 'Activate'}
+                      >
+                        {emp.status === 'Active' ? <UserX size={16} /> : <UserCheck size={16} />}
                       </button>
                     </div>
                   </td>
                 </tr>
-              )) : (
-                <tr>
-                  <td colSpan="8" className="py-8 text-center text-slate-500 text-sm">
-                    No employees found matching your filters.
-                  </td>
-                </tr>
-              )}
+              ))}
             </tbody>
           </table>
+          
+          {filteredEmployees.length === 0 && (
+            <div className="p-10 text-center">
+              <div className="w-16 h-16 rounded-full bg-[var(--color-brand-gray-light)] flex items-center justify-center mx-auto mb-3">
+                <Users size={24} className="text-[var(--color-brand-text-secondary)]" />
+              </div>
+              <p className="text-[14px] font-bold text-[var(--color-brand-text)]">No employees found</p>
+              <p className="text-[13px] text-[var(--color-brand-text-secondary)] mt-1">Try adjusting your search or filters.</p>
+            </div>
+          )}
         </div>
-
-        {/* Pagination */}
-        <div className="p-4 border-t border-slate-100 flex items-center justify-between mt-auto bg-slate-50/50">
-          <p className="text-[12px] font-medium text-slate-500">
-            Showing {filteredEmployees.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredEmployees.length)} of {filteredEmployees.length} entries
-          </p>
-          <div className="flex items-center gap-1">
-            <button 
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-              disabled={currentPage === 1}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-white transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
-            >
-              <ChevronLeft size={14} />
-            </button>
-            
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button 
-                key={page}
-                onClick={() => setCurrentPage(page)}
-                className={`w-8 h-8 flex items-center justify-center rounded-lg font-medium text-[13px] transition-colors ${
-                  currentPage === page 
-                    ? 'bg-[#489b0d] text-white shadow-sm' 
-                    : 'border border-slate-200 text-slate-600 hover:bg-white'
-                }`}
-              >
-                {page}
-              </button>
-            ))}
-
-            <button 
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-              disabled={currentPage === totalPages}
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-white transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
-            >
-              <ChevronRight size={14} />
-            </button>
+        
+        {/* Pagination placeholder */}
+        <div className="p-4 border-t border-[var(--color-brand-border)] flex items-center justify-between bg-white">
+          <p className="text-[12px] text-[var(--color-brand-text-secondary)] font-medium">Showing <span className="font-bold text-[var(--color-brand-text)]">{filteredEmployees.length}</span> entries</p>
+          <div className="flex gap-1">
+            <button className="px-3 py-1.5 text-[12px] font-semibold text-[var(--color-brand-text-secondary)] border border-[var(--color-brand-border)] rounded-md hover:bg-[var(--color-brand-gray-light)] transition-colors">Prev</button>
+            <button className="px-3 py-1.5 text-[12px] font-semibold text-white bg-[var(--color-brand-blue-primary)] rounded-md">1</button>
+            <button className="px-3 py-1.5 text-[12px] font-semibold text-[var(--color-brand-text-secondary)] border border-[var(--color-brand-border)] rounded-md hover:bg-[var(--color-brand-gray-light)] transition-colors">Next</button>
           </div>
         </div>
-
       </div>
     </div>
   );
