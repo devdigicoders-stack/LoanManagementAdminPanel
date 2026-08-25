@@ -11,11 +11,12 @@ const LoginPage = () => {
   const [subRole, setSubRole] = useState('Tele callers operator');
   const navigate = useNavigate();
 
-  // Clear auth state when login page mounts
+  // Clear auth state when login page mounts (keep role-specific pics intact)
   useEffect(() => {
     localStorage.removeItem('isAuthenticated');
     localStorage.removeItem('userRole');
     localStorage.removeItem('userSubRole');
+    localStorage.removeItem('userEmail');
   }, []);
 
   const handleLogin = (e) => {
@@ -24,10 +25,42 @@ const LoginPage = () => {
     if (email === 'admin@gmail.com' && password === '123456') {
       localStorage.setItem('isAuthenticated', 'true');
       localStorage.setItem('userRole', role);
+      localStorage.setItem('userEmail', email);
       if (role === 'Sales Admin') {
         localStorage.setItem('userSubRole', subRole);
       }
       toast.success(`Login Successful! Welcome, ${role}.`);
+      navigate('/');
+    } else if (email === "tele@gmail.com" || email === "admin@tele.com") {
+      localStorage.setItem("isAuthenticated", "true");
+      localStorage.setItem("userRole", "Telecaller Operator");
+      localStorage.setItem("userSubRole", "Sales");
+      localStorage.setItem("adminPic_Telecaller Operator", "https://api.dicebear.com/7.x/avataaars/svg?seed=Telecaller&backgroundColor=dff3ff");
+      localStorage.setItem("adminName_Telecaller Operator", "Telecaller Admin");
+      navigate("/telecaller");
+    } else if (email === "admin@agent.com" || email === "agent@gmail.com" || email === "admin@accountant.com") {
+      if (email === "admin@agent.com" && password === "123456") {
+        localStorage.setItem("userRole", "agent");
+        localStorage.setItem("adminName_agent", "Agent Operator");
+        localStorage.setItem("adminPic_agent", "https://api.dicebear.com/7.x/avataaars/svg?seed=Agent&backgroundColor=dff3ff");
+        toast.success("Agent Login successful");
+        navigate("/agent");
+        return;
+      }
+
+      if (email === "admin@accountant.com" && password === "123456") {
+        localStorage.setItem("userRole", "accountant");
+        localStorage.setItem("adminName_accountant", "Accountant Admin");
+        localStorage.setItem("adminPic_accountant", "https://api.dicebear.com/7.x/avataaars/svg?seed=Accountant&backgroundColor=dff3ff");
+        toast.success("Accountant Login successful");
+        navigate("/accountant");
+        return;
+      }
+    } else if (email === 'admin@operator.com' && password === '123456') {
+      localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('userRole', 'Operation Admin');
+      localStorage.setItem('userEmail', email);
+      toast.success(`Login Successful! Welcome, Operation Admin.`);
       navigate('/');
     } else {
       toast.error('Invalid email or password. Please try again.');

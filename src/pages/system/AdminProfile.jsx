@@ -11,9 +11,12 @@ export default function AdminProfile() {
   const [isEditing, setIsEditing] = useState(false);
   
   // Load initial data from localStorage if exists
-  const initialName = localStorage.getItem("adminName") || "Admin User";
-  const initialPic = localStorage.getItem("adminPic") || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc";
   const initialRole = localStorage.getItem("userRole") || "Super Admin";
+  const picKey = `adminPic_${initialRole}`;
+  const nameKey = `adminName_${initialRole}`;
+
+  const initialName = localStorage.getItem(nameKey) || "Admin User";
+  const initialPic = localStorage.getItem(picKey) || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc";
 
   const [profilePic, setProfilePic] = useState(initialPic);
   const fileInputRef = useRef(null);
@@ -27,7 +30,7 @@ export default function AdminProfile() {
 
   const [profileData, setProfileData] = useState({
     name: initialName,
-    email: "admin@ngm.com",
+    email: localStorage.getItem("userEmail") || "admin@ngm.com",
     phone: "+91 9876543210",
     location: "Lucknow, UP"
   });
@@ -44,8 +47,8 @@ export default function AdminProfile() {
     setTimeout(() => {
       setIsSaving(false);
       setIsEditing(false);
-      localStorage.setItem("adminName", profileData.name);
-      localStorage.setItem("adminPic", profilePic);
+      localStorage.setItem(nameKey, profileData.name);
+      localStorage.setItem(picKey, profilePic);
       window.dispatchEvent(new Event('profileUpdated'));
       toast.success("Profile information updated successfully!");
     }, 800);
@@ -98,7 +101,7 @@ export default function AdminProfile() {
     try {
       const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
       setProfilePic(croppedImage);
-      localStorage.setItem("adminPic", croppedImage);
+      localStorage.setItem(picKey, croppedImage);
       window.dispatchEvent(new Event('profileUpdated'));
       toast.success("Profile picture updated successfully!");
       setIsCropping(false);

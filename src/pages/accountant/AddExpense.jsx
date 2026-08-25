@@ -1,0 +1,96 @@
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { ArrowLeft, Save, FileMinus, Upload } from "lucide-react";
+import toast from "react-hot-toast";
+
+const tc = {
+  bg: "#FAFCFD", card: "#FFFFFF", sky: "#DFF3FF", skyMid: "#BFE7F7",
+  primary: "#8ED3F4", cream: "#FFF8E7", text: "#344054", muted: "#667085",
+  border: "#D9EAF2", blue: "#1e7ba8",
+};
+
+export default function AddExpense() {
+  const navigate = useNavigate();
+  const [file, setFile] = useState(null);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    toast.success("Expense recorded successfully.");
+    navigate("/accountant/expenses");
+  };
+
+  return (
+    <div className="space-y-6 max-w-4xl mx-auto w-full">
+      <div className="flex items-center gap-4">
+        <Link to="/accountant/expenses" className="p-2 rounded-xl transition-all hover:opacity-80" style={{ background: tc.sky, color: tc.blue }}>
+          <ArrowLeft size={18} />
+        </Link>
+        <div>
+          <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Add Expense</h1>
+          <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>Record a new operational expense.</p>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="rounded-2xl p-6 space-y-6" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
+        <h2 className="text-[15px] font-extrabold flex items-center gap-2" style={{ color: tc.text }}><FileMinus size={16} /> Expense Details</h2>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Expense Category <span className="text-red-500">*</span></label>
+            <select required className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }}>
+              <option value="">Select Category</option>
+              <option>Office Expense</option>
+              <option>Travel</option>
+              <option>Marketing</option>
+              <option>Utilities</option>
+              <option>Software</option>
+              <option>Stationery</option>
+              <option>Communication</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Amount <span className="text-red-500">*</span></label>
+            <input type="number" required className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} placeholder="e.g. 1500" />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Expense Date <span className="text-red-500">*</span></label>
+            <input type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Payment Method <span className="text-red-500">*</span></label>
+            <select required className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }}>
+              <option value="">Select Method</option>
+              <option>Cash</option>
+              <option>Bank Transfer</option>
+              <option>UPI</option>
+              <option>Other</option>
+            </select>
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Description <span className="text-red-500">*</span></label>
+            <input type="text" required className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} placeholder="Brief description of the expense..." />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Reference Number</label>
+            <input type="text" className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} placeholder="Optional..." />
+          </div>
+          <div className="space-y-1.5 sm:col-span-2">
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Upload Proof <span className="text-[10px] text-gray-400">(Bill/Receipt)</span></label>
+            <div className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all hover:bg-[#FAFCFD]" style={{ borderColor: tc.border }} onClick={() => document.getElementById('expense-proof').click()}>
+              <input type="file" id="expense-proof" className="hidden" onChange={(e) => setFile(e.target.files[0])} accept="image/*,.pdf" />
+              <Upload size={24} className="mx-auto mb-2" style={{ color: tc.muted }} />
+              <p className="text-[13px] font-bold" style={{ color: tc.text }}>{file ? file.name : "Click to upload bill or receipt"}</p>
+              <p className="text-[11px] mt-1" style={{ color: tc.muted }}>JPG, PNG or PDF (Max. 5MB)</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4" style={{ borderTop: `1px solid ${tc.border}` }}>
+          <button type="button" onClick={() => navigate(-1)} className="px-6 py-2.5 rounded-xl font-bold text-[13px] transition-all hover:bg-gray-100" style={{ color: tc.muted }}>Cancel</button>
+          <button type="submit" className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-[13px] transition-all text-white hover:opacity-90 shadow-sm" style={{ background: tc.blue }}><Save size={16} /> Save Expense</button>
+        </div>
+      </form>
+    </div>
+  );
+}

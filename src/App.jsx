@@ -69,6 +69,82 @@ import UnderConstruction from './pages/UnderConstruction';
 import UserProfile from './pages/UserProfile';
 import ChangePassword from './pages/ChangePassword';
 
+// Operations Admin Imports
+import OperationDashboard from './pages/operations/OperationDashboard';
+import ApplicationManagement from './pages/operations/ApplicationManagement';
+import ApplicationDetails from './pages/operations/ApplicationDetails';
+import AssignedApplications from './pages/operations/AssignedApplications';
+import CustomerManagement from './pages/operations/CustomerManagement';
+import CustomerDetails from './pages/operations/CustomerDetails';
+import DocumentManagement from './pages/operations/DocumentManagement';
+import ApplicationVerification from './pages/operations/ApplicationVerification';
+import FollowUpManagement from './pages/operations/FollowUpManagement';
+import RemarksNotes from './pages/operations/RemarksNotes';
+import ApplicationHistory from './pages/operations/ApplicationHistory';
+import OperationNotifications from './pages/operations/OperationNotifications';
+import OperationReports from './pages/operations/OperationReports';
+
+// Telecaller Panel Imports
+import TelecallerLayout from './layouts/TelecallerLayout';
+import TelecallerDashboard from './pages/telecaller/TelecallerDashboard';
+import MyLeads from './pages/telecaller/MyLeads';
+import AddNewLead from './pages/telecaller/AddNewLead';
+import LeadDetails from './pages/telecaller/LeadDetails';
+import CustomerCall from './pages/telecaller/CustomerCall';
+import MyFollowups from './pages/telecaller/MyFollowups';
+import AddFollowup from './pages/telecaller/AddFollowup';
+import CompleteFollowup from './pages/telecaller/CompleteFollowup';
+import CustomerDocuments from './pages/telecaller/CustomerDocuments';
+import TelecallerRemarksNotes from './pages/telecaller/RemarksNotes';
+import TelecallerNotifications from './pages/telecaller/TelecallerNotifications';
+import TelecallerReports from './pages/telecaller/TelecallerReports';
+import MyPerformance from './pages/telecaller/MyPerformance';
+import TelecallerProfile from './pages/telecaller/TelecallerProfile';
+import UpdateLeadStatus from './pages/telecaller/UpdateLeadStatus';
+
+// Agent Panel Imports
+import AgentLayout from './layouts/AgentLayout';
+import AgentDashboard from './pages/agent/AgentDashboard';
+import AgentMyLeads from './pages/agent/MyLeads';
+import AgentLeadDetails from './pages/agent/LeadDetails';
+import AgentCustomerVisits from './pages/agent/CustomerVisits';
+import AgentScheduleVisit from './pages/agent/ScheduleVisit';
+import AgentVisitDetails from './pages/agent/VisitDetails';
+import AgentMyFollowups from './pages/agent/MyFollowups';
+import AgentAddFollowup from './pages/agent/AddFollowup';
+import AgentCompleteFollowup from './pages/agent/CompleteFollowup';
+import AgentCustomerDocuments from './pages/agent/CustomerDocuments';
+import AgentCustomerDetails from './pages/agent/CustomerDetails';
+import AgentRemarksNotes from './pages/agent/RemarksNotes';
+import AgentUpdateLeadStatus from './pages/agent/UpdateLeadStatus';
+import AgentCreateApplication from './pages/agent/CreateApplication';
+import AgentApplicationTracking from './pages/agent/ApplicationTracking';
+import AgentNotifications from './pages/agent/AgentNotifications';
+import AgentMyPerformance from './pages/agent/MyPerformance';
+import AgentReports from './pages/agent/AgentReports';
+import AgentProfile from './pages/agent/AgentProfile';
+
+// Accountant Pages
+import AccountantLayout from './layouts/AccountantLayout';
+import AccountantDashboard from './pages/accountant/AccountantDashboard';
+import PaymentsCollections from './pages/accountant/PaymentsCollections';
+import RecordPayment from './pages/accountant/RecordPayment';
+import PaymentDetails from './pages/accountant/PaymentDetails';
+import Transactions from './pages/accountant/Transactions';
+import TransactionDetails from './pages/accountant/TransactionDetails';
+import OutstandingPayments from './pages/accountant/OutstandingPayments';
+import AccountantCustomers from './pages/accountant/AccountantCustomers';
+import CustomerFinancialProfile from './pages/accountant/CustomerFinancialProfile';
+import Receipts from './pages/accountant/Receipts';
+import Refunds from './pages/accountant/Refunds';
+import RequestRefund from './pages/accountant/RequestRefund';
+import Expenses from './pages/accountant/Expenses';
+import AddExpense from './pages/accountant/AddExpense';
+import Reconciliation from './pages/accountant/Reconciliation';
+import FinancialReports from './pages/accountant/FinancialReports';
+import AccountantNotifications from './pages/accountant/AccountantNotifications';
+import AccountantProfile from './pages/accountant/AccountantProfile';
+
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
   if (!isAuthenticated) {
@@ -83,6 +159,9 @@ const RoleBasedDashboard = () => {
   if (role === 'HR Admin') {
     return <HRDashboard />;
   }
+  if (role === 'Operation Admin') {
+    return <OperationDashboard />;
+  }
   return <Dashboard />;
 };
 
@@ -92,6 +171,51 @@ function App() {
       <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        
+        {/* Telecaller Routes */}
+        <Route path="/telecaller" element={<ProtectedRoute><TelecallerLayout /></ProtectedRoute>}>
+          <Route index element={<TelecallerDashboard />} />
+          <Route path="leads" element={<MyLeads />} />
+          <Route path="leads/add" element={<AddNewLead />} />
+          <Route path="leads/:id" element={<LeadDetails />} />
+          <Route path="call/:id" element={<CustomerCall />} />
+          <Route path="followups" element={<MyFollowups />} />
+          <Route path="followups/add" element={<AddFollowup />} />
+          <Route path="followups/complete/:id" element={<CompleteFollowup />} />
+          <Route path="documents" element={<CustomerDocuments />} />
+          <Route path="remarks" element={<TelecallerRemarksNotes />} />
+          <Route path="notifications" element={<TelecallerNotifications />} />
+          <Route path="reports" element={<TelecallerReports />} />
+          <Route path="performance" element={<MyPerformance />} />
+          <Route path="profile" element={<TelecallerProfile />} />
+          <Route path="change-password" element={<ChangePassword />} />
+          <Route path="status/:id" element={<UpdateLeadStatus />} />
+        </Route>
+
+        {/* Agent Routes */}
+        <Route path="/agent" element={<ProtectedRoute><AgentLayout /></ProtectedRoute>}>
+          <Route index element={<AgentDashboard />} />
+          <Route path="leads" element={<AgentMyLeads />} />
+          <Route path="leads/:id" element={<AgentLeadDetails />} />
+          <Route path="visits" element={<AgentCustomerVisits />} />
+          <Route path="visits/add" element={<AgentScheduleVisit />} />
+          <Route path="visits/:id" element={<AgentVisitDetails />} />
+          <Route path="followups" element={<AgentMyFollowups />} />
+          <Route path="followups/add" element={<AgentAddFollowup />} />
+          <Route path="followups/complete/:id" element={<AgentCompleteFollowup />} />
+          <Route path="documents" element={<AgentCustomerDocuments />} />
+          <Route path="customer/:id" element={<AgentCustomerDetails />} />
+          <Route path="remarks" element={<AgentRemarksNotes />} />
+          <Route path="status/:id" element={<AgentUpdateLeadStatus />} />
+          <Route path="applications/new" element={<AgentCreateApplication />} />
+          <Route path="applications" element={<AgentApplicationTracking />} />
+          <Route path="notifications" element={<AgentNotifications />} />
+          <Route path="performance" element={<AgentMyPerformance />} />
+          <Route path="reports" element={<AgentReports />} />
+          <Route path="profile" element={<AgentProfile />} />
+          <Route path="change-password" element={<AgentProfile />} />
+        </Route>
+
         <Route path="/" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route index element={<RoleBasedDashboard />} />
           <Route path="users" element={<ManageUsers />} />
@@ -153,6 +277,20 @@ function App() {
           <Route path="profile" element={<AdminProfile />} />
           <Route path="notifications" element={<Notifications />} />
           
+          {/* Operations Admin Routes */}
+          <Route path="operations/applications" element={<ApplicationManagement />} />
+          <Route path="operations/applications/:id" element={<ApplicationDetails />} />
+          <Route path="operations/assigned" element={<AssignedApplications />} />
+          <Route path="operations/customers" element={<CustomerManagement />} />
+          <Route path="operations/customers/:id" element={<CustomerDetails />} />
+          <Route path="operations/documents" element={<DocumentManagement />} />
+          <Route path="operations/verification" element={<ApplicationVerification />} />
+          <Route path="operations/follow-ups" element={<FollowUpManagement />} />
+          <Route path="operations/remarks" element={<RemarksNotes />} />
+          <Route path="operations/history" element={<ApplicationHistory />} />
+          <Route path="operations/notifications" element={<OperationNotifications />} />
+          <Route path="operations/reports" element={<OperationReports />} />
+          
           {/* Placeholder Routes for missing pages */}
           <Route path="user-profile/:id" element={<UserProfile />} />
           <Route path="verify-documents" element={<VerifyDocuments />} />
@@ -160,6 +298,29 @@ function App() {
           <Route path="request-documents" element={<RequestDocuments />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
+        {/* Accountant Routes */}
+        <Route path="/accountant" element={<ProtectedRoute allowedRole="accountant"><AccountantLayout /></ProtectedRoute>}>
+          <Route index element={<AccountantDashboard />} />
+          <Route path="payments" element={<PaymentsCollections />} />
+          <Route path="payments/add" element={<RecordPayment />} />
+          <Route path="payments/:id" element={<PaymentDetails />} />
+          <Route path="transactions" element={<Transactions />} />
+          <Route path="transactions/:id" element={<TransactionDetails />} />
+          <Route path="outstanding" element={<OutstandingPayments />} />
+          <Route path="customers" element={<AccountantCustomers />} />
+          <Route path="customers/:id" element={<CustomerFinancialProfile />} />
+          <Route path="receipts" element={<Receipts />} />
+          <Route path="refunds" element={<Refunds />} />
+          <Route path="refunds/request" element={<RequestRefund />} />
+          <Route path="expenses" element={<Expenses />} />
+          <Route path="expenses/add" element={<AddExpense />} />
+          <Route path="reconciliation" element={<Reconciliation />} />
+          <Route path="reports" element={<FinancialReports />} />
+          <Route path="notifications" element={<AccountantNotifications />} />
+          <Route path="profile" element={<AccountantProfile />} />
+          <Route path="change-password" element={<AccountantProfile />} />
+        </Route>
+
       </Routes>
     </BrowserRouter>
   );

@@ -44,6 +44,22 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         roles: ['Super Admin', 'HR Admin', 'Operation Admin', 'Sales Admin', 'Accountant Admin', 'Credit Admin']
       },
       {
+        title: "OPERATIONS",
+        items: [
+          { name: "Application Management", icon: ClipboardList, path: "/operations/applications" },
+          { name: "Assigned Applications", icon: Target, path: "/operations/assigned" },
+          { name: "Customer Management", icon: Users, path: "/operations/customers" },
+          { name: "Document Management", icon: FolderOpen, path: "/operations/documents" },
+          { name: "Application Verification", icon: ShieldCheck, path: "/operations/verification" },
+          { name: "Follow-up Management", icon: CalendarRange, path: "/operations/follow-ups" },
+          { name: "Remarks / Notes", icon: MessageSquare, path: "/operations/remarks" },
+          { name: "Application History", icon: History, path: "/operations/history" },
+          { name: "Notifications", icon: Bell, path: "/operations/notifications" },
+          { name: "Reports", icon: BarChart3, path: "/operations/reports" },
+        ],
+        roles: ['Operation Admin']
+      },
+      {
         title: "EMPLOYEE MANAGEMENT",
         items: [
           { name: "Manage Employees", icon: Users, path: "/employees" },
@@ -70,7 +86,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           { name: "View Documents", icon: FolderOpen, path: "/loans/documents" },
           { name: "Verify Documents", icon: ShieldCheck, path: "/verify-documents" },
         ],
-        roles: ['Super Admin', 'Operation Admin', 'Sales Admin']
+        roles: ['Super Admin', 'Sales Admin']
       },
       {
         title: "ADMIN PANEL",
@@ -82,7 +98,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           { name: "Permission Management", icon: Lock, path: "/users/roles" },
           { name: "Manage Complaints", icon: MessageSquare, path: "/complaints" },
         ],
-        roles: ['Super Admin', 'Credit Admin', 'Operation Admin']
+        roles: ['Super Admin', 'Credit Admin']
       },
       {
         title: "ACCOUNT",
