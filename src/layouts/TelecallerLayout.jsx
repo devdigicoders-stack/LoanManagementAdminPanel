@@ -7,16 +7,8 @@ import {
 } from "lucide-react";
 
 const navItems = [
-  { name: "Dashboard",           icon: LayoutDashboard, path: "/telecaller" },
-  { name: "My Leads",            icon: Target,           path: "/telecaller/leads" },
-  { name: "Add New Lead",        icon: Plus,             path: "/telecaller/leads/add" },
-  { name: "My Follow-ups",       icon: CalendarCheck,    path: "/telecaller/followups" },
-  { name: "Customer Documents",  icon: FolderOpen,       path: "/telecaller/documents" },
-  { name: "Notifications",       icon: Bell,             path: "/telecaller/notifications" },
-  { name: "Reports & Analytics", icon: BarChart3,        path: "/telecaller/reports" },
-  { name: "My Performance",      icon: Activity,         path: "/telecaller/performance" },
-  { name: "My Profile",          icon: User,             path: "/telecaller/profile" },
-  { name: "Change Password",     icon: Lock,             path: "/telecaller/change-password" },
+  { name: "Dashboard", icon: LayoutDashboard, path: "/telecaller" },
+  { name: "My Leads", icon: Target, path: "/telecaller/leads" },
 ];
 
 export default function TelecallerLayout() {
@@ -58,17 +50,17 @@ export default function TelecallerLayout() {
         style={{ background: "#FFFFFF", borderRight: "1px solid #D9EAF2", boxShadow: "2px 0 12px rgba(142,211,244,0.08)" }}
       >
         {/* Brand */}
-        <div className="flex items-center justify-between px-5 py-5 shrink-0" style={{ borderBottom: "1px solid #D9EAF2" }}>
+        <div className="flex items-center justify-between px-5 py-6 shrink-0" style={{ borderBottom: "1px solid #f1f5f9" }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: "#DFF3FF" }}>
-              <span className="font-extrabold text-base" style={{ color: "#1e7ba8" }}>N</span>
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-[#8b5cf6]">
+              <span className="font-extrabold text-lg text-white">N</span>
             </div>
             <div>
-              <p className="font-extrabold text-[14px] leading-tight" style={{ color: "#344054" }}>NGM Loans</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#8ED3F4" }}>Telecaller</p>
+              <p className="font-extrabold text-[15px] leading-tight text-gray-900">NuoG Housing</p>
+              <p className="text-[11px] font-medium text-gray-500">Telecaller Portal</p>
             </div>
           </div>
-          <button className="lg:hidden p-1 rounded-md" style={{ color: "#667085" }} onClick={() => setSidebarOpen(false)}>
+          <button className="lg:hidden p-1 rounded-md text-gray-500" onClick={() => setSidebarOpen(false)}>
             <X size={18} />
           </button>
         </div>
@@ -89,83 +81,45 @@ export default function TelecallerLayout() {
                 key={item.path}
                 to={item.path}
                 onClick={() => { if (window.innerWidth < 1024) setSidebarOpen(false); }}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-200 group"
-                style={active
-                  ? { background: "#DFF3FF", color: "#1e7ba8", border: "1px solid #BFE7F7" }
-                  : { color: "#667085", border: "1px solid transparent" }
-                }
+                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                  active 
+                    ? "bg-purple-50 text-purple-700 font-bold" 
+                    : "text-gray-500 font-medium hover:bg-gray-50 hover:text-gray-900"
+                }`}
               >
-                <Icon size={17} strokeWidth={active ? 2.5 : 2} style={{ color: active ? "#1e7ba8" : "#8ED3F4", flexShrink: 0 }} />
-                <span className="text-[13px] font-semibold truncate">{item.name}</span>
-                {active && <ChevronRight size={14} className="ml-auto" style={{ color: "#8ED3F4" }} />}
+                <Icon size={18} strokeWidth={active ? 2.5 : 2} className={active ? "text-purple-600" : "text-gray-400"} />
+                <span className="text-[14px] truncate">{item.name}</span>
               </NavLink>
             );
           })}
         </nav>
 
         {/* Logout */}
-        <div className="px-3 pb-5 shrink-0" style={{ borderTop: "1px solid #D9EAF2", paddingTop: "12px" }}>
+        <div className="px-5 pb-6 shrink-0 flex flex-col gap-4">
+          <div className="flex items-center gap-3 mb-2">
+             <div className="w-10 h-10 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-lg">
+               T
+             </div>
+             <div>
+               <p className="font-bold text-[14px] text-gray-900">Telecaller</p>
+               <p className="text-[10px] text-purple-600 font-bold uppercase tracking-wider">Telecaller</p>
+             </div>
+          </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-xl w-full transition-all duration-200 hover:bg-red-50 group"
-            style={{ color: "#ef4444" }}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl w-full transition-all duration-200 bg-red-50 hover:bg-red-100 text-red-600 font-bold"
           >
-            <LogOut size={17} strokeWidth={2} />
-            <span className="text-[13px] font-semibold">Logout</span>
+            <LogOut size={16} strokeWidth={2.5} />
+            <span className="text-[13px]">Logout</span>
           </button>
         </div>
       </aside>
 
       {/* Main Area */}
       <div className="flex flex-col flex-1 min-w-0 h-full overflow-hidden">
-        {/* Header */}
-        <header
-          className="shrink-0 flex items-center justify-between px-5 py-3"
-          style={{ background: "#FFFFFF", borderBottom: "1px solid #D9EAF2", zIndex: 10 }}
-        >
-          <div className="flex items-center gap-3">
-            <button
-              className="lg:hidden p-2 rounded-lg"
-              style={{ background: "#DFF3FF", color: "#1e7ba8" }}
-              onClick={() => setSidebarOpen(true)}
-            >
-              <Menu size={20} />
-            </button>
-            <div>
-              <h1 className="text-[14px] font-bold" style={{ color: "#344054" }}>
-                {navItems.find(n =>
-                  n.path === "/telecaller"
-                    ? location.pathname === "/telecaller"
-                    : location.pathname.startsWith(n.path) && n.path !== "/telecaller"
-                )?.name || "Dashboard"}
-              </h1>
-              <p className="text-[11px] font-medium" style={{ color: "#667085" }}>Telecaller Operator · Sales</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <NavLink to="/telecaller/notifications"
-              className="relative p-2 rounded-xl transition-all"
-              style={{ background: "#DFF3FF" }}
-            >
-              <Bell size={18} style={{ color: "#1e7ba8" }} />
-              <span className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full text-[9px] font-bold flex items-center justify-center text-white" style={{ background: "#8ED3F4" }}>3</span>
-            </NavLink>
-
-            <NavLink to="/telecaller/profile" className="flex items-center gap-2 group">
-              <div className="w-9 h-9 rounded-full overflow-hidden border-2" style={{ borderColor: "#BFE7F7" }}>
-                <img src={adminPic} alt="profile" className="w-full h-full object-cover" />
-              </div>
-              <div className="hidden sm:block">
-                <p className="text-[12px] font-bold" style={{ color: "#344054" }}>{adminName}</p>
-                <p className="text-[10px] font-medium" style={{ color: "#8ED3F4" }}>Telecaller Operator</p>
-              </div>
-            </NavLink>
-          </div>
-        </header>
-
+        {/* Header - We can hide this entirely as the image doesn't show a top header, just a content area */}
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-5 lg:p-7">
+        <main className="flex-1 overflow-y-auto bg-[#f8fafc]">
           <Outlet />
         </main>
       </div>

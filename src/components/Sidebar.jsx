@@ -21,7 +21,23 @@ import {
   CalendarRange,
   ListChecks,
   History,
-  FileBadge
+  FileBadge,
+  UserPlus,
+  CircleDollarSign,
+  MonitorSmartphone,
+  AlertCircle,
+  FileCheck,
+  MapPin,
+  CreditCard,
+  Gavel,
+  Landmark,
+  CheckSquare,
+  Wallet,
+  XOctagon,
+  PhoneCall,
+  UserCog,
+  Briefcase,
+  UserX
 } from "lucide-react";
 
 export default function Sidebar({ isOpen, setIsOpen }) {
@@ -41,23 +57,121 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       {
         title: "",
         items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }],
-        roles: ['Super Admin', 'HR Admin', 'Operation Admin', 'Sales Admin', 'Accountant Admin', 'Credit Admin']
+        roles: ['Super Admin', 'Operation Admin', 'Sales Admin', 'Accountant Admin', 'Credit Admin']
       },
       {
-        title: "OPERATIONS",
+        title: "CORE HR",
         items: [
-          { name: "Application Management", icon: ClipboardList, path: "/operations/applications" },
-          { name: "Assigned Applications", icon: Target, path: "/operations/assigned" },
-          { name: "Customer Management", icon: Users, path: "/operations/customers" },
-          { name: "Document Management", icon: FolderOpen, path: "/operations/documents" },
-          { name: "Application Verification", icon: ShieldCheck, path: "/operations/verification" },
-          { name: "Follow-up Management", icon: CalendarRange, path: "/operations/follow-ups" },
-          { name: "Remarks / Notes", icon: MessageSquare, path: "/operations/remarks" },
-          { name: "Application History", icon: History, path: "/operations/history" },
-          { name: "Notifications", icon: Bell, path: "/operations/notifications" },
-          { name: "Reports", icon: BarChart3, path: "/operations/reports" },
+          { name: "Dashboard", icon: LayoutDashboard, path: "/" },
+          { name: "Employees Data", icon: Users, path: "/employees" },
+          { name: "Recruit & Onboard", icon: UserPlus, path: "/hr/onboarding" },
         ],
-        roles: ['Operation Admin']
+        roles: ['HR Admin']
+      },
+      {
+        title: "TIME & PAYROLL",
+        items: [
+          { name: "Attendance & Time", icon: ListChecks, path: "/employees/attendance" },
+          { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
+          { name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" },
+        ],
+        roles: ['HR Admin']
+      },
+      {
+        title: "PERFORMANCE & ANALYTICS",
+        items: [
+          { name: "Performance Mgmt", icon: Target, path: "/employees/performance" },
+          { name: "Targets & Achiev", icon: Target, path: "/hr/targets" },
+          { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
+        ],
+        roles: ['HR Admin']
+      },
+      {
+        title: "SELF SERVICE",
+        items: [
+          { name: "ESS Portal", icon: MonitorSmartphone, path: "/hr/ess" },
+        ],
+        roles: ['HR Admin']
+      },
+      {
+        // title: "DASHBOARD",
+        items: [
+          // { name: "Common Dashboard", icon: LayoutDashboard, path: "/" },
+        ],
+        roles: ['Operation Admin', 'Ops Head', 'Ops Manager', 'Ops Executive', 'National Head', 'Founder']
+      },
+      {
+        title: "LEAD & CRM",
+        items: [
+          { name: "All Leads", icon: Users, path: "/ops/leads" },
+          { name: "Add Lead", icon: UserPlus, path: "/ops/leads/add" },
+          { name: "Lead Assignment", icon: UserCog, path: "/ops/leads/assignment" },
+          { name: "Follow-Ups", icon: CalendarRange, path: "/ops/leads/followups" },
+          { name: "Lead Reports", icon: BarChart3, path: "/ops/leads/reports" },
+        ],
+        roles: ['Operation Admin', 'Ops Head', 'Ops Manager', 'Ops Executive', 'National Head']
+      },
+      {
+        title: "LOAN ORIGINATION (LOS)",
+        items: [
+          { name: "Applications", icon: FileText, path: "/ops/los/applications" },
+          { name: "Data Collection", icon: FolderOpen, path: "/ops/los/data" },
+          { name: "Document Verification", icon: ShieldCheck, path: "/ops/los/verification" },
+          { name: "Field Verification", icon: MapPin, path: "/ops/los/field-verification" },
+          { name: "Credit Scoring", icon: CreditCard, path: "/ops/los/scoring" },
+          { name: "Underwriting", icon: Briefcase, path: "/ops/los/underwriting" },
+          { name: "Collateral / Security", icon: Lock, path: "/ops/los/collateral" },
+          { name: "Approval", icon: CheckSquare, path: "/ops/los/approval" },
+          { name: "Legal Documentation", icon: Gavel, path: "/ops/los/legal" },
+          { name: "Disbursement", icon: Landmark, path: "/ops/los/disbursement" },
+        ],
+        roles: ['Operation Admin', 'Ops Head', 'Ops Manager', 'National Head']
+      },
+      {
+        title: "LOAN SERVICING",
+        items: [
+          { name: "Active Loans", icon: CheckCircle2, path: "/ops/servicing/active" },
+          { name: "EMI", icon: CircleDollarSign, path: "/ops/servicing/emi" },
+          { name: "Part Payment", icon: Wallet, path: "/ops/servicing/part-payment" },
+          { name: "Pre-Closure", icon: XOctagon, path: "/ops/servicing/closure" },
+          { name: "Restructuring", icon: History, path: "/ops/servicing/restructuring" },
+          { name: "NOC", icon: FileCheck, path: "/ops/servicing/noc" },
+        ],
+        roles: ['Operation Admin', 'Ops Head', 'Ops Manager', 'National Head']
+      },
+      {
+        title: "COLLECTIONS",
+        items: [
+          { name: "Collection Dashboard", icon: LayoutDashboard, path: "/ops/collections" },
+          { name: "Tele-Calling", icon: PhoneCall, path: "/ops/collections/tele-calling" },
+          { name: "Field Recovery", icon: MapPin, path: "/ops/collections/field" },
+          { name: "Notice", icon: Bell, path: "/ops/collections/notice" },
+          { name: "Settlement", icon: UserCheck, path: "/ops/collections/settlement" },
+          { name: "Legal Action", icon: Gavel, path: "/ops/collections/legal" },
+        ],
+        roles: ['Operation Admin', 'Ops Head', 'National Head']
+      },
+      {
+        title: "REPORTS & ANALYTICS",
+        items: [
+          { name: "Portfolio", icon: BarChart3, path: "/ops/reports/portfolio" },
+          { name: "Disbursement", icon: Landmark, path: "/ops/reports/disbursement" },
+          { name: "Collection", icon: CircleDollarSign, path: "/ops/reports/collection" },
+          { name: "NPA", icon: AlertCircle, path: "/ops/reports/npa" },
+          { name: "Defaulters", icon: UserX, path: "/ops/reports/defaulters" },
+          { name: "Performance", icon: Target, path: "/ops/reports/performance" },
+        ],
+        roles: ['Operation Admin', 'Ops Head', 'National Head', 'Founder']
+      },
+      {
+        title: "HR EXECUTIVE",
+        items: [
+          { name: "Dashboard", icon: LayoutDashboard, path: "/" },
+          { name: "Recruitment", icon: Users, path: "/hr/recruitment" },
+          { name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" },
+          { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
+        ],
+        roles: ['HR Executive']
       },
       {
         title: "EMPLOYEE MANAGEMENT",
@@ -68,7 +182,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
           { name: "Activity Logs", icon: History, path: "/employees/activity" },
         ],
-        roles: ['Super Admin', 'HR Admin']
+        roles: ['Super Admin']
       },
       {
         title: "HR REPORTS & ALERTS",
@@ -76,7 +190,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
           { name: "Notifications", icon: Bell, path: "/hr/notifications" },
         ],
-        roles: ['Super Admin', 'HR Admin']
+        roles: ['Super Admin']
       },
       {
         title: "LEAD & APPLICATION",
@@ -107,7 +221,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           { name: "Change Password", icon: Lock, path: "/change-password" },
           { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
         ],
-        roles: ['Super Admin', 'HR Admin', 'Operation Admin', 'Sales Admin', 'Accountant Admin', 'Credit Admin']
+        roles: ['Super Admin', 'HR Admin', 'HR Executive', 'Operation Admin', 'Ops Head', 'Ops Manager', 'Ops Executive', 'Sales Admin', 'Accountant Admin', 'Credit Admin']
       }
     ];
 

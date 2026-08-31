@@ -28,6 +28,13 @@ import LeaveManagement from "./pages/employees/LeaveManagement";
 import HRDashboard from "./pages/hr/HRDashboard";
 import HRReports from "./pages/hr/HRReports";
 import HRNotifications from "./pages/hr/HRNotifications";
+import Onboarding from "./pages/hr/Onboarding";
+import PublicOnboarding from "./pages/onboarding/PublicOnboarding";
+import PublicOnboardingForm from "./pages/onboarding/PublicOnboardingForm";
+import Payroll from "./pages/hr/Payroll";
+import Targets from "./pages/hr/Targets";
+import ESS from "./pages/hr/ESS";
+import Recruitment from "./pages/hr/Recruitment";
 
 // Lead Management Imports
 import ManageLeads from "./pages/leads/ManageLeads";
@@ -106,6 +113,43 @@ import UpdateLeadStatus from './pages/telecaller/UpdateLeadStatus';
 import AgentLayout from './layouts/AgentLayout';
 import AgentDashboard from './pages/agent/AgentDashboard';
 import AgentMyLeads from './pages/agent/MyLeads';
+
+// OPS Imports
+import LOSDashboard from "./pages/ops/LOSDashboard";
+import AllLeads from "./pages/ops/crm/AllLeads";
+import OpsAddLead from "./pages/ops/crm/AddLead";
+import LeadAssignment from "./pages/ops/crm/LeadAssignment";
+import OpsFollowUps from "./pages/ops/crm/FollowUps";
+import LeadReports from "./pages/ops/crm/LeadReports";
+import LOSApplications from "./pages/ops/los/Applications";
+import DataCollection from "./pages/ops/los/DataCollection";
+import DocumentVerification from "./pages/ops/los/DocumentVerification";
+import FieldVerification from "./pages/ops/los/FieldVerification";
+import CreditScoring from "./pages/ops/los/CreditScoring";
+import Underwriting from "./pages/ops/los/Underwriting";
+import Collateral from "./pages/ops/los/Collateral";
+import Approval from "./pages/ops/los/Approval";
+import LegalDocs from "./pages/ops/los/LegalDocs";
+import Disbursement from "./pages/ops/los/Disbursement";
+import OpsActiveLoans from "./pages/ops/servicing/ActiveLoans";
+import EmiManagement from "./pages/ops/servicing/EmiManagement";
+import PartPayment from "./pages/ops/servicing/PartPayment";
+import PreClosure from "./pages/ops/servicing/PreClosure";
+import Restructuring from "./pages/ops/servicing/Restructuring";
+import NocGeneration from "./pages/ops/servicing/NocGeneration";
+import OpsCollectionDashboard from "./pages/ops/collections/CollectionDashboard";
+import TeleCalling from "./pages/ops/collections/TeleCalling";
+import FieldRecovery from "./pages/ops/collections/FieldRecovery";
+import LegalNotice from "./pages/ops/collections/LegalNotice";
+import Settlement from "./pages/ops/collections/Settlement";
+import LegalAction from "./pages/ops/collections/LegalAction";
+import PortfolioAnalytics from "./pages/ops/reports/PortfolioAnalytics";
+import DisbursementTrends from "./pages/ops/reports/DisbursementTrends";
+import CollectionEfficiency from "./pages/ops/reports/CollectionEfficiency";
+import NpaTracking from "./pages/ops/reports/NpaTracking";
+import DefaultersList from "./pages/ops/reports/DefaultersList";
+import Performance from "./pages/ops/reports/Performance";
+import EmployeeDirectory from "./pages/employees/EmployeeDirectory";
 import AgentLeadDetails from './pages/agent/LeadDetails';
 import AgentCustomerVisits from './pages/agent/CustomerVisits';
 import AgentScheduleVisit from './pages/agent/ScheduleVisit';
@@ -145,7 +189,7 @@ import FinancialReports from './pages/accountant/FinancialReports';
 import AccountantNotifications from './pages/accountant/AccountantNotifications';
 import AccountantProfile from './pages/accountant/AccountantProfile';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRole }) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -171,6 +215,8 @@ function App() {
       <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/onboarding/:id" element={<PublicOnboarding />} />
+        <Route path="/onboarding/:id/form" element={<PublicOnboardingForm />} />
         
         {/* Telecaller Routes */}
         <Route path="/telecaller" element={<ProtectedRoute><TelecallerLayout /></ProtectedRoute>}>
@@ -242,6 +288,11 @@ function App() {
           
           <Route path="hr/reports" element={<HRReports />} />
           <Route path="hr/notifications" element={<HRNotifications />} />
+          <Route path="hr/onboarding" element={<Onboarding />} />
+          <Route path="hr/recruitment" element={<Recruitment />} />
+          <Route path="hr/payroll" element={<Payroll />} />
+          <Route path="hr/targets" element={<Targets />} />
+          <Route path="hr/ess" element={<ESS />} />
 
           {/* Lead Management Routes */}
           <Route path="leads" element={<ManageLeads />} />
@@ -277,19 +328,60 @@ function App() {
           <Route path="profile" element={<AdminProfile />} />
           <Route path="notifications" element={<Notifications />} />
           
-          {/* Operations Admin Routes */}
-          <Route path="operations/applications" element={<ApplicationManagement />} />
-          <Route path="operations/applications/:id" element={<ApplicationDetails />} />
-          <Route path="operations/assigned" element={<AssignedApplications />} />
-          <Route path="operations/customers" element={<CustomerManagement />} />
-          <Route path="operations/customers/:id" element={<CustomerDetails />} />
-          <Route path="operations/documents" element={<DocumentManagement />} />
-          <Route path="operations/verification" element={<ApplicationVerification />} />
-          <Route path="operations/follow-ups" element={<FollowUpManagement />} />
-          <Route path="operations/remarks" element={<RemarksNotes />} />
-          <Route path="operations/history" element={<ApplicationHistory />} />
-          <Route path="operations/notifications" element={<OperationNotifications />} />
-          <Route path="operations/reports" element={<OperationReports />} />
+          {/* OPS Management Routes */}
+          {/* Dashboard */}
+          {/* Note: "/" handles the dashboard based on role, so we don't strictly need a separate /ops/dashboard unless desired, but we can map /ops to it. */}
+          
+          {/* Lead & CRM */}
+          <Route path="ops/leads" element={<AllLeads />} />
+          <Route path="ops/leads/add" element={<OpsAddLead />} />
+          <Route path="ops/leads/assignment" element={<LeadAssignment />} />
+          <Route path="ops/leads/followups" element={<OpsFollowUps />} />
+          <Route path="ops/leads/reports" element={<LeadReports />} />
+
+          {/* LOS */}
+          <Route path="ops/los" element={<LOSDashboard />} /> {/* Master LOS Dashboard we built */}
+          <Route path="ops/los/applications" element={<LOSApplications />} />
+          <Route path="ops/los/data" element={<DataCollection />} />
+          <Route path="ops/los/verification" element={<DocumentVerification />} />
+          <Route path="ops/los/field-verification" element={<FieldVerification />} />
+          <Route path="ops/los/scoring" element={<CreditScoring />} />
+          <Route path="ops/los/underwriting" element={<Underwriting />} />
+          <Route path="ops/los/collateral" element={<Collateral />} />
+          <Route path="ops/los/approval" element={<Approval />} />
+          <Route path="ops/los/legal" element={<LegalDocs />} />
+          <Route path="ops/los/disbursement" element={<Disbursement />} />
+
+          {/* Loan Servicing */}
+          <Route path="ops/servicing/active" element={<OpsActiveLoans />} />
+          <Route path="ops/servicing/emi" element={<EmiManagement />} />
+          <Route path="ops/servicing/part-payment" element={<PartPayment />} />
+          <Route path="ops/servicing/closure" element={<PreClosure />} />
+          <Route path="ops/servicing/restructuring" element={<Restructuring />} />
+          <Route path="ops/servicing/noc" element={<NocGeneration />} />
+
+          {/* Collections */}
+          <Route path="ops/collections" element={<OpsCollectionDashboard />} />
+          <Route path="ops/collections/tele-calling" element={<TeleCalling />} />
+          <Route path="ops/collections/field" element={<FieldRecovery />} />
+          <Route path="ops/collections/notice" element={<LegalNotice />} />
+          <Route path="ops/collections/settlement" element={<Settlement />} />
+          <Route path="ops/collections/legal" element={<LegalAction />} />
+
+          {/* Reports & Analytics */}
+          <Route path="ops/reports/portfolio" element={<PortfolioAnalytics />} />
+          <Route path="ops/reports/disbursement" element={<DisbursementTrends />} />
+          <Route path="ops/reports/collection" element={<CollectionEfficiency />} />
+          <Route path="ops/reports/npa" element={<NpaTracking />} />
+          <Route path="ops/reports/defaulters" element={<DefaultersList />} />
+          <Route path="ops/reports/performance" element={<Performance />} />
+          
+          {/* HR & Employees */}
+          <Route path="hr/recruitment" element={<Recruitment />} />
+          <Route path="hr/onboarding" element={<Onboarding />} />
+          <Route path="employees" element={<EmployeeDirectory />} />
+          <Route path="employees/departments" element={<Departments />} />
+          <Route path="hr/ess" element={<ESS />} />
           
           {/* Placeholder Routes for missing pages */}
           <Route path="user-profile/:id" element={<UserProfile />} />

@@ -1,212 +1,240 @@
 import { useState } from 'react';
-import { ArrowLeft, Upload, User, MapPin, Briefcase, Lock, FileText, CheckCircle2 } from 'lucide-react';
+import { X, UserPlus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import toast from 'react-hot-toast';
 
 export default function AddEmployee() {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('personal');
+
+  // state for form fields
+  const [formData, setFormData] = useState({
+    fullName: '', role: '', email: '', mobile: '', designation: '', division: '',
+    pincode: '', district: '', state: '', city: '',
+    pan: '', aadhar: '',
+    grossMonthly: '', transportation: '', performance: '', achievement: '', incentives: ''
+  });
+
+  const grossYearly = formData.grossMonthly ? (parseFloat(formData.grossMonthly) * 12).toString() : '';
+
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
   const handleSave = (e) => {
     e.preventDefault();
     Swal.fire({
-      title: 'Save Employee?',
+      title: 'Create Employee?',
       text: 'Are you sure you want to add this employee to the system?',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#8ED3F4',
+      confirmButtonColor: '#6b21a8',
       cancelButtonColor: '#64748b',
-      confirmButtonText: 'Yes, Save Employee'
+      confirmButtonText: 'Yes, Create Employee'
     }).then((result) => {
       if (result.isConfirmed) {
+        const existing = localStorage.getItem('employees');
+        let empList = existing ? JSON.parse(existing) : [];
+        
+        const newId = `NUOGM-EMP-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+        
+        let badgeRole = formData.role.toUpperCase();
+        if (badgeRole === 'UNSECURED EXECUTIVE') badgeRole = 'UNSECURED EXEC';
+        if (badgeRole === 'SECURED EXECUTIVE') badgeRole = 'SECURED EXEC';
+        if (badgeRole === 'HR MANAGER') badgeRole = 'HR';
+        
+        const newEmp = {
+          id: newId,
+          name: formData.fullName || 'New Employee',
+          email: formData.email || 'employee@gmail.com',
+          role: badgeRole || 'NEW ROLE',
+          designation: formData.designation || 'Executive',
+          status: 'Active',
+          onboarding: 'Pending'
+        };
+        
+        empList.unshift(newEmp);
+        localStorage.setItem('employees', JSON.stringify(empList));
+
         toast.success('Employee created successfully.');
         navigate('/employees');
       }
     });
   };
 
+  const SectionHeader = ({ title, colorClass }) => (
+    <div className={`px-4 py-2.5 rounded-lg mb-5 font-bold text-[14px] ${colorClass}`}>
+      {title}
+    </div>
+  );
+
   return (
-    <div className="w-full space-y-6 pb-10 bg-[var(--color-brand-page-bg)] min-h-screen">
-      
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="w-full bg-[#f8f9fa] min-h-screen p-6">
+      <div className="max-w-5xl mx-auto bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-100">
+          <h1 className="text-[18px] font-bold text-gray-900">Add New Employee</h1>
           <button 
             onClick={() => navigate('/employees')}
-            className="w-10 h-10 flex items-center justify-center rounded-[12px] border border-[var(--color-brand-border)] bg-white text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-sky-light)] hover:text-[var(--color-brand-blue-dark)] transition-colors shadow-sm"
+            className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <ArrowLeft size={18} />
+            <X size={20} />
           </button>
-          <div>
-            <h1 className="text-2xl font-bold text-[var(--color-brand-text)] mb-1">Add New Employee</h1>
-            <p className="text-[13px] text-[var(--color-brand-text-secondary)] font-medium">Create a new employee profile in the system</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-col lg:flex-row gap-6">
-        
-        {/* Sidebar Navigation */}
-        <div className="w-full lg:w-64 shrink-0 space-y-2 bg-white p-3 rounded-[18px] border border-[var(--color-brand-border)] shadow-sm h-fit">
-          {[
-            { id: 'personal', label: 'Personal Information', icon: User },
-            { id: 'address', label: 'Address Details', icon: MapPin },
-            { id: 'professional', label: 'Professional Info', icon: Briefcase },
-            { id: 'login', label: 'Login Information', icon: Lock },
-            { id: 'documents', label: 'Documents', icon: FileText },
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-[12px] text-[13px] font-bold transition-all ${
-                activeTab === tab.id 
-                  ? 'bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] shadow-sm border border-[var(--color-brand-border)]' 
-                  : 'text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-gray-light)] hover:text-[var(--color-brand-text)]'
-              }`}
-            >
-              <tab.icon size={18} className={activeTab === tab.id ? 'text-[var(--color-brand-blue-dark)]' : ''} />
-              {tab.label}
-            </button>
-          ))}
         </div>
 
-        {/* Main Form Content */}
-        <div className="flex-1 bg-white rounded-[18px] border border-[var(--color-brand-border)] shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-[var(--color-brand-border)] bg-[var(--color-brand-sky-pale)]">
-            <h2 className="text-[18px] font-bold text-[var(--color-brand-text)] capitalize">
-              {activeTab.replace('-', ' ')}
-            </h2>
-          </div>
+        {/* Form Content */}
+        <form onSubmit={handleSave} className="p-8 space-y-8">
           
-          <form onSubmit={handleSave} className="p-6 space-y-6">
-            
-            {activeTab === 'personal' && (
-              <div className="space-y-6 animate-in fade-in">
-                {/* Photo Upload */}
-                <div className="flex items-center gap-6">
-                  <div className="w-24 h-24 rounded-full bg-[var(--color-brand-sky-light)] flex items-center justify-center border-2 border-dashed border-[var(--color-brand-blue-primary)] shrink-0 overflow-hidden group relative cursor-pointer">
-                    <User size={32} className="text-[var(--color-brand-blue-dark)]" />
-                    <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Upload size={20} className="text-white" />
-                    </div>
-                  </div>
-                  <div>
-                    <h4 className="text-[14px] font-bold text-[var(--color-brand-text)] mb-1">Profile Photo</h4>
-                    <p className="text-[12px] text-[var(--color-brand-text-secondary)] mb-3">Upload a professional, recent photograph.</p>
-                    <button type="button" className="px-4 py-1.5 text-[12px] font-semibold bg-[var(--color-brand-cream)] text-amber-700 rounded-md hover:opacity-80 transition-opacity">
-                      Browse Image
-                    </button>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">First Name *</label>
-                    <input required type="text" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Middle Name</label>
-                    <input type="text" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Last Name *</label>
-                    <input required type="text" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Gender *</label>
-                    <select required className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]">
-                      <option value="">Select Gender</option>
-                      <option>Male</option><option>Female</option><option>Other</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Date of Birth *</label>
-                    <input required type="date" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Mobile Number *</label>
-                    <input required type="tel" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                </div>
+          {/* Basic Information */}
+          <div>
+            <SectionHeader title="Basic Information" colorClass="bg-purple-50 text-purple-700" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-1">
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Full Name *</label>
+                <input required type="text" name="fullName" value={formData.fullName} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200" />
               </div>
-            )}
-
-            {activeTab === 'professional' && (
-              <div className="space-y-6 animate-in fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Employee ID *</label>
-                    <input required type="text" defaultValue="EMP-1005" className="w-full bg-[var(--color-brand-gray-light)] border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text-secondary)] font-bold focus:outline-none cursor-not-allowed" readOnly />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Department *</label>
-                    <select required className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]">
-                      <option value="">Select Department</option>
-                      <option>Sales</option><option>HR</option><option>Operations</option>
-                    </select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Designation *</label>
-                    <input required type="text" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Joining Date *</label>
-                    <input required type="date" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Role *</label>
+                <select required name="role" value={formData.role} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200">
+                  <option value="">- Select Role -</option>
+                  <option>HR Manager</option>
+                  <option>Operational Head</option>
+                  <option>Operational Manager</option>
+                  <option>Reporting Manager</option>
+                  <option>Secured Loan Manager</option>
+                  <option>Unsecured Loan Manager</option>
+                  <option>Agent Manager</option>
+                  <option>Secured Executive</option>
+                  <option>Unsecured Executive</option>
+                  <option>Agent Executive</option>
+                  <option>Telecaller</option>
+                </select>
               </div>
-            )}
-
-            {activeTab === 'login' && (
-              <div className="space-y-6 animate-in fade-in">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Login Email *</label>
-                    <input required type="email" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-[12px] font-semibold text-[var(--color-brand-text)]">Temporary Password *</label>
-                    <input required type="password" placeholder="Min 8 chars, 1 uppercase, 1 special char" className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-2.5 px-4 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)]" />
-                  </div>
-                </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Email ID *</label>
+                <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200" />
               </div>
-            )}
-
-            {/* Placeholders for other tabs for brevity */}
-            {(activeTab === 'address' || activeTab === 'documents') && (
-              <div className="py-10 text-center animate-in fade-in">
-                <div className="w-16 h-16 rounded-full bg-[var(--color-brand-sky-light)] flex items-center justify-center mx-auto mb-3 text-[var(--color-brand-blue-dark)]">
-                  <CheckCircle2 size={24} />
-                </div>
-                <h3 className="text-lg font-bold text-[var(--color-brand-text)] mb-2">Ready for Input</h3>
-                <p className="text-[13px] text-[var(--color-brand-text-secondary)]">Please fill in the {activeTab} information required for this profile.</p>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Mobile No. *</label>
+                <input required type="tel" name="mobile" value={formData.mobile} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200" />
               </div>
-            )}
-
-            <div className="pt-6 border-t border-[var(--color-brand-border)] flex items-center justify-end gap-3">
-              <button 
-                type="button"
-                onClick={() => navigate('/employees')}
-                className="px-6 py-2.5 rounded-[10px] text-[13px] font-bold text-[var(--color-brand-text-secondary)] bg-[var(--color-brand-gray-light)] hover:bg-slate-200 transition-colors"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit"
-                className="px-6 py-2.5 rounded-[10px] text-[13px] font-bold text-[var(--color-brand-blue-dark)] bg-[var(--color-brand-sky-light)] border border-[var(--color-brand-border)] hover:opacity-80 transition-opacity shadow-sm"
-              >
-                Save & Add Another
-              </button>
-              <button 
-                type="submit"
-                className="px-6 py-2.5 rounded-[10px] text-[13px] font-bold text-white bg-[var(--color-brand-blue-primary)] hover:bg-[var(--color-brand-blue-dark)] transition-colors shadow-sm"
-              >
-                Save Employee
-              </button>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Designation *</label>
+                <input required type="text" name="designation" placeholder="e.g. Field Executive, Manager" value={formData.designation} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200 placeholder:text-gray-400" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Division</label>
+                <input type="text" name="division" placeholder="e.g. Sales, Operations" value={formData.division} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200 placeholder:text-gray-400" />
+              </div>
             </div>
-          </form>
-        </div>
+          </div>
+
+          {/* Location */}
+          <div>
+            <SectionHeader title="Location" colorClass="bg-teal-50 text-teal-600" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5 px-1">
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Pincode</label>
+                <input type="text" name="pincode" placeholder="6-digit pincode" value={formData.pincode} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-teal-300 focus:ring-1 focus:ring-teal-200 placeholder:text-gray-400" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">District</label>
+                <input type="text" name="district" placeholder="Auto-filled from pincode" value={formData.district} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-teal-300 focus:ring-1 focus:ring-teal-200 placeholder:text-gray-400" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">State</label>
+                <select name="state" value={formData.state} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-teal-300 focus:ring-1 focus:ring-teal-200">
+                  <option value="">Select state</option>
+                  <option>Andhra Pradesh</option>
+                  <option>Arunachal Pradesh</option>
+                  <option>Assam</option>
+                  <option>Bihar</option>
+                  <option>Chhattisgarh</option>
+                  <option>Goa</option>
+                  <option>Gujarat</option>
+                  <option>Haryana</option>
+                  <option>Himachal Pradesh</option>
+                  <option>Jharkhand</option>
+                  <option>Karnataka</option>
+                  <option>Kerala</option>
+                  <option>Madhya Pradesh</option>
+                  <option>Maharashtra</option>
+                  <option>Manipur</option>
+                  <option>Meghalaya</option>
+                </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">City / Location</label>
+                <input type="text" name="city" placeholder="City or area" value={formData.city} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-teal-300 focus:ring-1 focus:ring-teal-200 placeholder:text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Identity Documents */}
+          <div>
+            <SectionHeader title="Identity Documents" colorClass="bg-orange-50 text-orange-600" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-1">
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">PAN Number *</label>
+                <input required type="text" name="pan" placeholder="ABCDE1234F" value={formData.pan} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 uppercase focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200 placeholder:text-gray-400 placeholder:normal-case" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Aadhar Number *</label>
+                <input required type="text" name="aadhar" placeholder="12-digit Aadhar" value={formData.aadhar} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200 placeholder:text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          {/* Salary Structure */}
+          <div>
+            <SectionHeader title="Salary Structure" colorClass="bg-green-50 text-green-600" />
+            <p className="text-[12px] text-gray-500 font-medium px-1 mb-4">Enter monthly salary — annual will auto-calculate (x12)</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-5 px-1">
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Gross Monthly (₹) *</label>
+                <input required type="number" name="grossMonthly" placeholder="e.g. 30000" value={formData.grossMonthly} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-green-300 focus:ring-1 focus:ring-green-200 placeholder:text-gray-400" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Gross Yearly (₹)</label>
+                <input type="text" value={grossYearly} readOnly placeholder="Auto-calculated" className="w-full bg-green-50/50 border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-600 font-medium focus:outline-none cursor-not-allowed placeholder:text-gray-400" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Transportation Allowance (₹)</label>
+                <input type="number" name="transportation" placeholder="e.g. 2000" value={formData.transportation} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-green-300 focus:ring-1 focus:ring-green-200 placeholder:text-gray-400" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Performance Bonus (₹)</label>
+                <input type="number" name="performance" placeholder="e.g. 5000" value={formData.performance} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-green-300 focus:ring-1 focus:ring-green-200 placeholder:text-gray-400" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Achievement Bonus (₹)</label>
+                <input type="number" name="achievement" placeholder="e.g. 3000" value={formData.achievement} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-green-300 focus:ring-1 focus:ring-green-200 placeholder:text-gray-400" />
+              </div>
+              <div>
+                <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Business Incentives (₹)</label>
+                <input type="number" name="incentives" placeholder="e.g. 1000" value={formData.incentives} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-green-300 focus:ring-1 focus:ring-green-200 placeholder:text-gray-400" />
+              </div>
+            </div>
+          </div>
+
+          <div className="pt-8 flex flex-col md:flex-row items-center justify-between gap-6 px-1">
+            <button 
+              type="button"
+              onClick={() => navigate('/employees')}
+              className="text-[14px] font-bold text-gray-500 hover:text-gray-700 transition-colors w-full md:w-1/4"
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit"
+              className="w-full md:flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-[10px] text-[14px] font-bold text-white bg-[#6b21a8] hover:bg-[#581c87] transition-colors shadow-sm"
+            >
+              <UserPlus size={18} />
+              Create Employee
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );

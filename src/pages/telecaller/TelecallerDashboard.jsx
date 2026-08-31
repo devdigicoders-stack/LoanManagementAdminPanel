@@ -1,202 +1,230 @@
-import { Link } from "react-router-dom";
-import {
-  Target, Phone, CalendarCheck, Clock, Star, FolderOpen,
-  TrendingUp, XCircle, Activity, ChevronRight, Eye, Plus, BarChart2
-} from "lucide-react";
-import Highcharts from "highcharts";
-import { HighchartsReact } from "highcharts-react-official";
-import { mockLeads, statusColors } from "./telecallerData";
-
-const tc = {
-  bg: "#FAFCFD",
-  card: "#FFFFFF",
-  sky: "#DFF3FF",
-  skyMid: "#BFE7F7",
-  primary: "#8ED3F4",
-  cream: "#FFF8E7",
-  text: "#344054",
-  muted: "#667085",
-  border: "#D9EAF2",
-  blue: "#1e7ba8",
-};
-
-const summaryCards = [
-  { label: "My Total Leads",      value: 6,  sub: "Total leads assigned to you",             icon: Target,       color: "#DFF3FF", iconColor: "#1e7ba8" },
-  { label: "New Leads",           value: 1,  sub: "Leads that need first contact",           icon: Plus,         color: "#FFF8E7", iconColor: "#D97706" },
-  { label: "Today's Calls",       value: 4,  sub: "Customer calls scheduled for today",      icon: Phone,        color: "#EEF2FF", iconColor: "#4338CA" },
-  { label: "Pending Follow-ups",  value: 2,  sub: "Follow-ups requiring action",             icon: Clock,        color: "#FEF3C7", iconColor: "#D97706" },
-  { label: "Interested Leads",    value: 1,  sub: "Customers interested in the loan",        icon: Star,         color: "#DCFCE7", iconColor: "#15803D" },
-  { label: "Documents Pending",   value: 1,  sub: "Customers whose documents are pending",   icon: FolderOpen,   color: "#FEF9C3", iconColor: "#CA8A04" },
-  { label: "Converted Leads",     value: 0,  sub: "Successfully converted leads",            icon: TrendingUp,   color: "#D1FAE5", iconColor: "#059669" },
-  { label: "Lost Leads",          value: 1,  sub: "Leads marked as lost",                   icon: XCircle,      color: "#FEE2E2", iconColor: "#DC2626" },
-];
-
-const todayActivity = [
-  { label: "Calls Scheduled",      value: 10, color: "#1e7ba8" },
-  { label: "Calls Completed",      value: 7,  color: "#15803D" },
-  { label: "Follow-ups Pending",   value: 3,  color: "#D97706" },
-  { label: "Pending Calls",        value: 3,  color: "#4338CA" },
-  { label: "Documents Collected",  value: 2,  color: "#059669" },
-];
-
-const quickActions = [
-  { label: "My Leads",          path: "/telecaller/leads",       bg: "#DFF3FF",  col: "#1e7ba8" },
-  { label: "Add New Lead",      path: "/telecaller/leads/add",   bg: "#FFF8E7",  col: "#D97706" },
-  { label: "Today's Follow-ups",path: "/telecaller/followups",   bg: "#EEF2FF",  col: "#4338CA" },
-  { label: "Add Remark",        path: "/telecaller/remarks",     bg: "#DCFCE7",  col: "#15803D" },
-  { label: "Upload Document",   path: "/telecaller/documents",   bg: "#FEF9C3",  col: "#CA8A04" },
-];
+import React, { useState } from 'react';
+import { ClipboardList, Hourglass, CheckSquare, XSquare, Search, Phone, Mail, FileText, CheckCircle2, XCircle } from 'lucide-react';
 
 export default function TelecallerDashboard() {
-  const name = localStorage.getItem(`adminName_${localStorage.getItem("userRole")}`) || "Telecaller";
+  const [activeFilter, setActiveFilter] = useState('All Records');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const chartOptions = {
-    chart: { type: "areaspline", backgroundColor: "transparent", height: 200, margin: [20, 0, 20, 0] },
-    title: { text: "" },
-    xAxis: { visible: false },
-    yAxis: { visible: false },
-    plotOptions: {
-      areaspline: { fillOpacity: 0.2, marker: { enabled: false } }
+  const [leads, setLeads] = useState([
+    {
+      id: 1,
+      name: "Karan Malhotra",
+      loanType: "Home Loan",
+      status: "Pending",
+      phone: "9998877665",
+      email: "karan.malhotra@gmail.com",
+      amount: "₹28,00,000",
+      assignedBy: "Sitaram",
+      note: "High income",
+      interested: null
     },
-    series: [{
-      name: "Calls",
-      data: [12, 18, 15, 22, 28, 20, 34],
-      color: tc.blue,
-      fillColor: {
-        linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
-        stops: [[0, "rgba(30, 123, 168, 0.4)"], [1, "rgba(30, 123, 168, 0)"]]
-      }
-    }],
-    credits: { enabled: false },
-    tooltip: { outside: true }
+    {
+      id: 2,
+      name: "Rahul Sharma",
+      loanType: "Personal Loan",
+      status: "Pending",
+      phone: "9876543210",
+      email: "rahul.sharma@gmail.com",
+      amount: "₹1,50,000",
+      assignedBy: "Sitaram",
+      note: "First time borrower",
+      interested: null
+    },
+    {
+      id: 3,
+      name: "Priya Verma",
+      loanType: "Home Loan",
+      status: "Pending",
+      phone: "9123456780",
+      email: "priya.verma@yahoo.com",
+      amount: "₹25,00,000",
+      assignedBy: "Sitaram",
+      note: "Salaried",
+      interested: null
+    }
+  ]);
+
+  const handleStatusChange = (id, isInterested) => {
+    setLeads(prev => prev.map(lead => 
+      lead.id === id ? { ...lead, interested: isInterested } : lead
+    ));
   };
 
-  return (
-    <div className="space-y-6" style={{ color: tc.text }}>
+  const filteredLeads = leads.filter(lead => {
+    // Filter by Tabs
+    if (activeFilter === 'Interested' && lead.interested !== true) return false;
+    if (activeFilter === 'Not Interested' && lead.interested !== false) return false;
+    
+    // Filter by Search
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      return lead.name.toLowerCase().includes(q) || 
+             lead.phone.includes(q) || 
+             lead.loanType.toLowerCase().includes(q);
+    }
+    return true;
+  });
 
+  const totalRecords = leads.length;
+  const pendingCalls = leads.filter(l => l.interested === null).length;
+  const interestedCount = leads.filter(l => l.interested === true).length;
+  const notInterestedCount = leads.filter(l => l.interested === false).length;
+
+  return (
+    <div className="p-4 md:p-8 max-w-6xl mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>My Dashboard</h1>
-        <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>
-          Welcome back, <strong>{name}</strong> — Manage your assigned leads, follow-ups and customer interactions.
-        </p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Telecaller Dashboard</h1>
+          <p className="text-[14px] text-gray-500 mt-1">Call customers and mark their interest</p>
+        </div>
+        <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-3 py-1.5 rounded-lg font-medium text-[13px] shadow-sm">
+          <CheckCircle2 size={16} className="text-green-600" />
+          Welcome, avni saha!
+        </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-        {summaryCards.map((card, i) => {
-          const Icon = card.icon;
-          return (
-            <div key={i} className="rounded-2xl p-4 flex flex-col gap-2"
-              style={{ background: tc.card, border: `1px solid ${tc.border}`, boxShadow: "0 1px 6px rgba(142,211,244,0.08)" }}>
-              <div className="flex items-center justify-between">
-                <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: card.color }}>
-                  <Icon size={17} style={{ color: card.iconColor }} />
-                </div>
-                <span className="text-[24px] font-extrabold" style={{ color: tc.text }}>{card.value}</span>
+      {/* Stats Widgets */}
+      <div className="flex flex-wrap gap-4 mb-8">
+        {/* Total Records */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between w-48 shadow-sm">
+          <div>
+            <p className="text-[12px] font-bold text-gray-500 mb-1">Total Records</p>
+            <p className="text-3xl font-bold text-blue-600">{totalRecords}</p>
+          </div>
+          <div className="text-gray-400 bg-gray-50 p-2 rounded-lg">
+            <ClipboardList size={24} />
+          </div>
+        </div>
+
+        {/* Pending Call */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between w-48 shadow-sm">
+          <div>
+            <p className="text-[12px] font-bold text-gray-500 mb-1">Pending Call</p>
+            <p className="text-3xl font-bold text-orange-500">{pendingCalls}</p>
+          </div>
+          <div className="text-orange-400 bg-orange-50 p-2 rounded-lg">
+            <Hourglass size={24} />
+          </div>
+        </div>
+
+        {/* Interested */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between w-48 shadow-sm">
+          <div>
+            <p className="text-[12px] font-bold text-gray-500 mb-1">Interested</p>
+            <p className="text-3xl font-bold text-green-500">{interestedCount}</p>
+          </div>
+          <div className="text-green-500 bg-green-50 p-2 rounded-lg border border-green-200">
+            <CheckSquare size={24} />
+          </div>
+        </div>
+
+        {/* Not Interested */}
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between w-48 shadow-sm">
+          <div>
+            <p className="text-[12px] font-bold text-gray-500 mb-1">Not Interested</p>
+            <p className="text-3xl font-bold text-red-500">{notInterestedCount}</p>
+          </div>
+          <div className="text-gray-600 bg-gray-50 p-2 rounded-lg border border-gray-200">
+            <XSquare size={24} />
+          </div>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex gap-2 mb-6">
+        <button 
+          onClick={() => setActiveFilter('All Records')}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-bold transition-colors shadow-sm ${activeFilter === 'All Records' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
+        >
+          <ClipboardList size={14} /> All Records
+        </button>
+        <button 
+          onClick={() => setActiveFilter('Interested')}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-bold transition-colors shadow-sm ${activeFilter === 'Interested' ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
+        >
+          <CheckSquare size={14} className={activeFilter === 'Interested' ? 'text-white' : 'text-green-500'} /> Interested
+        </button>
+        <button 
+          onClick={() => setActiveFilter('Not Interested')}
+          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-bold transition-colors shadow-sm ${activeFilter === 'Not Interested' ? 'bg-red-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
+        >
+          <XSquare size={14} className={activeFilter === 'Not Interested' ? 'text-white' : 'text-gray-400'} /> Not Interested
+        </button>
+      </div>
+
+      {/* Search */}
+      <div className="relative mb-6">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+        <input 
+          type="text" 
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by name, phone, loan type..." 
+          className="w-full bg-white border border-gray-200 rounded-xl py-3 pl-11 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
+
+      {/* Leads List */}
+      <div className="space-y-4">
+        {filteredLeads.length === 0 ? (
+          <div className="text-center py-10 bg-white rounded-xl border border-gray-200 text-gray-500 font-medium">
+            No records found matching your filters.
+          </div>
+        ) : (
+          filteredLeads.map((lead) => (
+            <div key={lead.id} className={`bg-white border ${lead.interested === true ? 'border-green-300 shadow-[0_0_10px_rgba(34,197,94,0.1)]' : lead.interested === false ? 'border-red-300 shadow-[0_0_10px_rgba(239,68,68,0.1)]' : 'border-gray-200'} rounded-xl p-5 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-sm hover:shadow-md transition-all`}>
+            
+            {/* Left Details */}
+            <div className="space-y-3 flex-1">
+              <div className="flex items-center gap-3">
+                <h3 className="text-[16px] font-bold text-gray-900">{lead.name}</h3>
+                <span className="bg-gray-100 text-gray-600 px-2 py-0.5 rounded text-[11px] font-bold">{lead.loanType}</span>
+                <span className="bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded text-[11px] font-bold flex items-center gap-1">
+                  <Hourglass size={10} /> {lead.status}
+                </span>
               </div>
-              <div>
-                <p className="text-[13px] font-bold" style={{ color: tc.text }}>{card.label}</p>
-                <p className="text-[11px]" style={{ color: tc.muted }}>{card.sub}</p>
+              
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[13px] text-gray-600 font-medium">
+                <div className="flex items-center gap-1.5 text-blue-600">
+                  <Phone size={14} /> {lead.phone}
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Mail size={14} className="text-gray-400" /> {lead.email}
+                </div>
+                <div className="flex items-center gap-1.5 font-bold text-gray-700">
+                  <span className="text-yellow-500 text-[14px]">💰</span> {lead.amount}
+                </div>
+                <div className="text-gray-400">
+                  By: {lead.assignedBy}
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-1.5 text-[12px] font-medium text-gray-500 bg-gray-50 w-max px-2 py-1 rounded">
+                <FileText size={12} /> {lead.note}
               </div>
             </div>
-          );
-        })}
+
+            {/* Action Buttons */}
+            <div className="flex flex-col gap-2 w-full md:w-auto shrink-0 mt-2 md:mt-0">
+              <button 
+                onClick={() => handleStatusChange(lead.id, true)}
+                className={`flex items-center justify-center gap-1.5 ${lead.interested === true ? 'bg-green-800 border-green-900 border-2' : 'bg-[#22c55e] hover:bg-[#16a34a] border border-transparent'} text-white px-4 py-2 rounded-md text-[12px] font-bold transition-all w-full md:w-44 whitespace-nowrap shadow-sm`}
+              >
+                <CheckCircle2 size={14} /> {lead.interested === true ? 'Marked Interested' : 'Interested'}
+              </button>
+              <button 
+                onClick={() => handleStatusChange(lead.id, false)}
+                className={`flex items-center justify-center gap-1.5 ${lead.interested === false ? 'bg-red-50 text-red-700 border-red-500 border-2' : 'bg-white border-[#ef4444] text-[#ef4444] hover:bg-red-50 border'} px-4 py-2 rounded-md text-[12px] font-bold transition-all w-full md:w-44 whitespace-nowrap shadow-sm`}
+              >
+                <XCircle size={14} /> {lead.interested === false ? 'Marked Not Interested' : 'Not Interested'}
+              </button>
+            </div>
+            
+          </div>
+        )))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-5">
-
-        {/* Today's Activity */}
-        <div className="rounded-2xl p-5" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Activity size={17} style={{ color: tc.primary }} />
-            <h2 className="text-[15px] font-extrabold" style={{ color: tc.text }}>Today's Activity</h2>
-          </div>
-          <div className="space-y-3">
-            {todayActivity.map((a, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: a.color }} />
-                  <span className="text-[13px] font-semibold" style={{ color: tc.text }}>{a.label}</span>
-                </div>
-                <span className="text-[13px] font-extrabold px-3 py-0.5 rounded-full" style={{ background: tc.sky, color: tc.blue }}>{a.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="rounded-2xl p-5" style={{ background: tc.cream, border: `1px solid ${tc.border}` }}>
-          <h2 className="text-[15px] font-extrabold mb-4" style={{ color: tc.text }}>Quick Actions</h2>
-          <div className="flex flex-col gap-2">
-            {quickActions.map((a, i) => (
-              <Link key={i} to={a.path}
-                className="flex items-center justify-between px-4 py-2.5 rounded-xl transition-all hover:opacity-90"
-                style={{ background: a.bg, border: `1px solid ${tc.border}` }}>
-                <span className="text-[13px] font-bold" style={{ color: a.col }}>{a.label}</span>
-                <ChevronRight size={15} style={{ color: a.col }} />
-              </Link>
-            ))}
-          </div>
-        </div>
-
-        {/* Stats Summary */}
-        <div className="rounded-2xl p-5 flex flex-col justify-between" style={{ background: tc.sky, border: `1px solid ${tc.skyMid}` }}>
-          <div>
-            <h2 className="text-[15px] font-extrabold mb-1" style={{ color: tc.blue }}>This Month Activity</h2>
-            <p className="text-[12px] font-medium mb-4" style={{ color: tc.blue }}>Visual trend of your calls</p>
-          </div>
-          <div className="-mx-5 -mb-5 mt-auto">
-            <HighchartsReact highcharts={Highcharts} options={chartOptions} />
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Leads */}
-      <div className="rounded-2xl" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${tc.border}` }}>
-          <h2 className="text-[15px] font-extrabold" style={{ color: tc.text }}>Recent Assigned Leads</h2>
-          <Link to="/telecaller/leads" className="text-[12px] font-bold flex items-center gap-1" style={{ color: tc.blue }}>
-            View All <ChevronRight size={14} />
-          </Link>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-[12px]">
-            <thead>
-              <tr style={{ background: tc.sky }}>
-                {["Lead ID", "Customer Name", "Mobile", "Loan Type", "Amount", "Status", "Next Follow-up", "Action"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {mockLeads.slice(0, 5).map((lead, i) => {
-                const sc = statusColors[lead.status] || { bg: "#F1F5F9", text: "#64748B" };
-                return (
-                  <tr key={i} style={{ borderBottom: `1px solid ${tc.border}` }} className="hover:bg-[#FAFCFD] transition-colors">
-                    <td className="px-4 py-3 font-bold" style={{ color: tc.blue }}>{lead.id}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: tc.text }}>{lead.customerName}</td>
-                    <td className="px-4 py-3" style={{ color: tc.muted }}>{lead.mobile}</td>
-                    <td className="px-4 py-3" style={{ color: tc.muted }}>{lead.loanType}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: tc.text }}>₹{Number(lead.amount).toLocaleString("en-IN")}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: sc.bg, color: sc.text }}>{lead.status}</span>
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: tc.muted }}>{lead.nextFollowup}</td>
-                    <td className="px-4 py-3">
-                      <Link to={`/telecaller/leads/${lead.id}`}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors"
-                        style={{ background: tc.sky, color: tc.blue }}>
-                        <Eye size={12} /> View
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }

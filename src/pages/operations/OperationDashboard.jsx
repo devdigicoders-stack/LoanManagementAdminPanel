@@ -1,256 +1,190 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Highcharts from 'highcharts';
 import HighchartsReactImport from 'highcharts-react-official';
 import { 
-  FileText, Clock, AlertCircle, CheckCircle, RotateCw, FileSearch, ShieldCheck, 
-  XCircle, Zap, FilePlus, Search, Bell, PlusCircle, ArrowRight, TrendingUp
+  Users, FileText, ShieldCheck, Briefcase, CheckSquare, 
+  XOctagon, Landmark, CheckCircle2, AlertCircle, TrendingDown, Filter, ArrowRight
 } from 'lucide-react';
 
 const HighchartsReact = HighchartsReactImport.default || HighchartsReactImport;
 Highcharts.setOptions({ accessibility: { enabled: false } });
 
-// --- Mock Data ---
-const recentApps = [
-  { id: 'APP-8001', name: 'Ramesh Patel', type: 'Personal Loan', amount: '₹2,50,000', status: 'Documents Pending', officer: 'Suresh K.', date: '2023-10-25' },
-  { id: 'APP-8002', name: 'Priya Sharma', type: 'Home Loan', amount: '₹45,00,000', status: 'Verification', officer: 'Meena R.', date: '2023-10-25' },
-  { id: 'APP-8003', name: 'Amit Kumar', type: 'Business Loan', amount: '₹15,00,000', status: 'In Progress', officer: 'Vikram S.', date: '2023-10-24' },
-  { id: 'APP-8004', name: 'Neha Gupta', type: 'Personal Loan', amount: '₹1,00,000', status: 'New', officer: 'Unassigned', date: '2023-10-24' },
-  { id: 'APP-8005', name: 'Rajesh Singh', type: 'Auto Loan', amount: '₹8,50,000', status: 'On Hold', officer: 'Suresh K.', date: '2023-10-23' },
+// --- MOCK KPI DATA ---
+const topCards = [
+  { label: 'Total Leads', value: '4,521', icon: Users, color: 'text-blue-600 bg-blue-50 border-blue-100' },
+  { label: 'New Apps', value: '1,204', icon: FileText, color: 'text-indigo-600 bg-indigo-50 border-indigo-100' },
+  { label: 'Pending Ver.', value: '342', icon: ShieldCheck, color: 'text-orange-600 bg-orange-50 border-orange-100' },
+  { label: 'Under Review', value: '185', icon: Briefcase, color: 'text-purple-600 bg-purple-50 border-purple-100' },
+  { label: 'Approved', value: '890', icon: CheckSquare, color: 'text-green-600 bg-green-50 border-green-100' },
+  { label: 'Rejected', value: '124', icon: XOctagon, color: 'text-red-600 bg-red-50 border-red-100' },
+  { label: 'Disbursed', value: '750', icon: Landmark, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
+  { label: 'Active Loans', value: '3,420', icon: CheckCircle2, color: 'text-cyan-600 bg-cyan-50 border-cyan-100' },
+  { label: 'Overdue', value: '112', icon: AlertCircle, color: 'text-yellow-600 bg-yellow-50 border-yellow-100' },
+  { label: 'NPA', value: '18', icon: TrendingDown, color: 'text-rose-600 bg-rose-50 border-rose-100' },
 ];
 
-const statusChartOptions = {
-  chart: { type: 'column', backgroundColor: 'transparent', height: 300, style: { fontFamily: 'inherit' } },
+// --- CHARTS CONFIG ---
+const funnelOptions = {
+  chart: { type: 'column', backgroundColor: 'transparent', height: 350 },
   title: { text: null },
-  xAxis: { 
-    categories: ['New', 'In Progress', 'Docs Pending', 'Verification', 'On Hold', 'Approved', 'Rejected', 'Completed'],
-    labels: { style: { color: '#667085', fontSize: '11px', fontWeight: '700' } },
-    lineColor: '#D9EAF2', tickColor: '#D9EAF2'
-  },
-  yAxis: { 
-    title: { text: null }, 
-    labels: { style: { color: '#667085', fontSize: '11px', fontWeight: '700' } }, 
-    gridLineColor: '#F0FAFF', gridLineDashStyle: 'Dash' 
-  },
+  xAxis: { categories: ['Leads', 'Applications', 'Verified', 'Underwriting', 'Approved', 'Disbursed'], lineWidth: 0, tickWidth: 0 },
+  yAxis: { title: { text: null }, gridLineDashStyle: 'Dash', gridLineColor: '#f3f4f6' },
   legend: { enabled: false },
   credits: { enabled: false },
-  tooltip: { backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: 12, borderWidth: 0, shadow: true, padding: 12 },
-  plotOptions: { column: { borderRadius: 6, borderWidth: 0, colorByPoint: true } },
-  colors: ['#BFE7F7', '#8ED3F4', '#FDE68A', '#8ED3F4', '#FECACA', '#A7F3D0', '#FECACA', '#8ED3F4'], 
-  series: [{ name: 'Applications', data: [14, 25, 18, 12, 5, 42, 8, 150] }]
+  plotOptions: {
+    column: {
+      borderRadius: 6,
+      colorByPoint: true,
+      borderWidth: 0,
+      dataLabels: { enabled: true, format: '{y}', style: { fontWeight: 'bold', fontSize: '12px' } }
+    }
+  },
+  colors: ['#cbd5e1', '#94a3b8', '#64748b', '#475569', '#334155', '#0f172a'],
+  series: [{ name: 'Count', data: [4521, 1204, 950, 890, 800, 750] }]
 };
 
-// Reusable Card Component
-const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-[24px] border border-[#D9EAF2] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 p-6 ${className}`}>
-    {children}
-  </div>
-);
+const dailyAppsOptions = {
+  chart: { type: 'areaspline', backgroundColor: 'transparent', height: 250 },
+  title: { text: null },
+  xAxis: { categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], gridLineWidth: 0 },
+  yAxis: { title: { text: null }, gridLineDashStyle: 'Dash' },
+  legend: { enabled: false },
+  credits: { enabled: false },
+  plotOptions: { areaspline: { fillOpacity: 0.2, lineWidth: 3, marker: { enabled: false } } },
+  series: [{ name: 'Applications', data: [45, 52, 38, 65, 80, 42, 30], color: '#6366f1' }]
+};
+
+const approvalVsRejectionOptions = {
+  chart: { type: 'pie', backgroundColor: 'transparent', height: 250 },
+  title: { text: null },
+  credits: { enabled: false },
+  plotOptions: { pie: { innerSize: '70%', dataLabels: { enabled: false }, showInLegend: true, borderWidth: 0 } },
+  series: [{ name: 'Decisions', data: [{ name: 'Approved', y: 890, color: '#10b981' }, { name: 'Rejected', y: 124, color: '#ef4444' }, { name: 'Hold', y: 45, color: '#f59e0b' }] }]
+};
+
+const disbursementTrendOptions = {
+  chart: { type: 'column', backgroundColor: 'transparent', height: 250 },
+  title: { text: null },
+  xAxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'] },
+  yAxis: { title: { text: null }, gridLineDashStyle: 'Dash' },
+  legend: { enabled: false },
+  credits: { enabled: false },
+  plotOptions: { column: { borderRadius: 4, borderWidth: 0 } },
+  series: [{ name: 'Disbursed (₹ Lakhs)', data: [120, 150, 130, 180, 210, 250], color: '#0ea5e9' }]
+};
 
 export default function OperationDashboard() {
   const navigate = useNavigate();
+  const [role, setRole] = useState('');
+
+  useEffect(() => {
+    setRole(localStorage.getItem('userRole') || 'Unknown Role');
+  }, []);
 
   return (
-    <div className="w-full bg-[#FAFCFD] min-h-screen p-2 space-y-8 pb-12">
+    <div className="p-4 md:p-8 max-w-[1600px] mx-auto space-y-6 bg-[#f8fafc] min-h-screen">
       
       {/* Header */}
-      <div className="relative overflow-hidden bg-white rounded-[24px] p-8 border border-[#D9EAF2] shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-[#DFF3FF] to-[#FFF8E7] rounded-full blur-3xl opacity-70 transform translate-x-1/3 -translate-y-1/3 pointer-events-none"></div>
-        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-3xl font-black text-[#344054] tracking-tight">Operation Dashboard</h1>
-            <p className="text-[15px] text-[#667085] font-medium mt-2">Manage and track application processing workflows.</p>
-          </div>
-          <div className="flex items-center gap-3">
-           <button className="flex items-center gap-2 px-5 py-2.5 bg-[#FFF8E7] text-[#D97706] border border-[#FDE68A] rounded-xl font-bold text-[14px] hover:bg-[#FEF3C7] shadow-sm transition-all hover:-translate-y-0.5">
-              <Clock size={18} /> Today's Focus
-           </button>
-           <button className="flex items-center gap-2 px-5 py-2.5 bg-[#8ED3F4] text-white border border-[#7BC4E8] rounded-xl font-bold text-[14px] hover:bg-[#7BC4E8] shadow-md transition-all hover:-translate-y-0.5">
-              <FilePlus size={18} /> New Application
-           </button>
-          </div>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+        <div>
+          <h1 className="text-2xl font-black text-gray-900 tracking-tight">Command Center</h1>
+          <p className="text-[14px] text-gray-500 font-medium mt-1">
+            Welcome back! You are viewing the dashboard as <span className="text-purple-600 font-bold bg-purple-50 px-2 py-0.5 rounded border border-purple-100">{role}</span>
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => alert("Showing today's focus tasks (Pending Verifications & Approvals)")}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#FFF8E7] text-[#D97706] border border-[#FDE68A] rounded-xl font-bold text-[14px] hover:bg-[#FEF3C7] shadow-sm transition-all hover:-translate-y-0.5"
+          >
+             <Clock size={18} /> Today's Focus
+          </button>
+          <button 
+            onClick={() => navigate('/ops/leads/add')}
+            className="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white border border-blue-700 rounded-xl font-bold text-[14px] hover:bg-blue-700 shadow-md transition-all hover:-translate-y-0.5"
+          >
+             <FilePlus size={18} /> New Lead / App
+          </button>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-6">
+      {/* Top KPI Cards (Har role ke according data dikhega) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        {topCards.map((card, idx) => (
+          <div key={idx} className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden">
+            <div className={`absolute -right-6 -top-6 w-24 h-24 rounded-full opacity-20 transition-transform group-hover:scale-150 ${card.color.split(' ')[1]}`}></div>
+            <div className="flex justify-between items-start mb-4 relative z-10">
+              <div className={`p-2.5 rounded-xl border ${card.color}`}>
+                <card.icon size={20} strokeWidth={2.5} />
+              </div>
+            </div>
+            <h3 className="text-2xl font-black text-gray-900 tracking-tight relative z-10">{card.value}</h3>
+            <p className="text-[12px] font-bold text-gray-500 uppercase tracking-wider mt-1 relative z-10">{card.label}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Main Charts Area */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        <Card className="flex flex-col relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-[#F0FAFF] to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#FAFCFD] text-[#667085] flex items-center justify-center shrink-0 border border-[#D9EAF2]">
-              <FileText size={22} strokeWidth={2.5} />
+        {/* Loan Funnel (Takes up 2 columns) */}
+        <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <div>
+              <h3 className="text-lg font-black text-gray-900">Loan Conversion Funnel</h3>
+              <p className="text-xs text-gray-500 font-medium mt-1">Tracking lead flow through origination to disbursement</p>
             </div>
           </div>
-          <p className="text-[13px] font-bold text-[#667085] mb-1">Total Apps</p>
-          <h3 className="text-3xl font-black text-[#344054] tracking-tight">842</h3>
-        </Card>
+          <HighchartsReact highcharts={Highcharts} options={funnelOptions} />
+        </div>
 
-        <Card className="flex flex-col relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-[#DFF3FF] to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#DFF3FF] text-[#0284C7] flex items-center justify-center shrink-0 border border-[#BFE7F7]">
-              <Zap size={22} strokeWidth={2.5} />
+        {/* Approval vs Rejection (1 column) */}
+        <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-black text-gray-900 mb-6">Decision Analytics</h3>
+          <HighchartsReact highcharts={Highcharts} options={approvalVsRejectionOptions} />
+          
+          <div className="mt-4 space-y-3">
+            <div className="flex justify-between items-center text-sm">
+              <span className="flex items-center gap-2 font-medium text-gray-600"><div className="w-3 h-3 rounded-full bg-emerald-500"></div> Approved</span>
+              <span className="font-bold text-gray-900">890 (84%)</span>
             </div>
-            <span className="text-[12px] font-bold text-[#0284C7] bg-[#F0FAFF] px-2 py-0.5 rounded-full border border-[#D9EAF2]">+12</span>
-          </div>
-          <p className="text-[13px] font-bold text-[#667085] mb-1">New Apps</p>
-          <h3 className="text-3xl font-black text-[#344054] tracking-tight">45</h3>
-        </Card>
-
-        <Card className="flex flex-col relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-[#BFE7F7] to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#BFE7F7] text-[#0369A1] flex items-center justify-center shrink-0 border border-[#8ED3F4]">
-              <RotateCw size={22} strokeWidth={2.5} />
+            <div className="flex justify-between items-center text-sm">
+              <span className="flex items-center gap-2 font-medium text-gray-600"><div className="w-3 h-3 rounded-full bg-red-500"></div> Rejected</span>
+              <span className="font-bold text-gray-900">124 (12%)</span>
             </div>
-          </div>
-          <p className="text-[13px] font-bold text-[#667085] mb-1">Under Process</p>
-          <h3 className="text-3xl font-black text-[#344054] tracking-tight">128</h3>
-        </Card>
-
-        <Card className="flex flex-col relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-[#FFF8E7] to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#FFF8E7] text-[#D97706] flex items-center justify-center shrink-0 border border-[#FDE68A]">
-              <FileSearch size={22} strokeWidth={2.5} />
-            </div>
-            <span className="text-[12px] font-bold text-[#D97706] bg-[#FFFDF5] px-2 py-0.5 rounded-full border border-[#FEF08A]">Urgent</span>
-          </div>
-          <p className="text-[13px] font-bold text-[#667085] mb-1">Docs Pending</p>
-          <h3 className="text-3xl font-black text-[#344054] tracking-tight">34</h3>
-        </Card>
-
-        <Card className="flex flex-col relative overflow-hidden group">
-          <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-[#FFFDF5] to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#FFFDF5] text-[#667085] flex items-center justify-center shrink-0 border border-[#FEF08A]">
-              <ShieldCheck size={22} strokeWidth={2.5} />
+            <div className="flex justify-between items-center text-sm">
+              <span className="flex items-center gap-2 font-medium text-gray-600"><div className="w-3 h-3 rounded-full bg-amber-500"></div> Hold</span>
+              <span className="font-bold text-gray-900">45 (4%)</span>
             </div>
           </div>
-          <p className="text-[13px] font-bold text-[#667085] mb-1">Verification</p>
-          <h3 className="text-3xl font-black text-[#344054] tracking-tight">22</h3>
-        </Card>
+        </div>
 
       </div>
 
-      {/* Overview & Quick Actions */}
-      <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+      {/* Secondary Trend Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        {/* Today's Overview */}
-        <Card className="xl:col-span-3">
-          <h3 className="text-lg font-extrabold text-[#344054] mb-6">Today's Overview</h3>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <div className="bg-[#FAFCFD] p-5 rounded-[20px] border border-[#D9EAF2] flex flex-col items-center justify-center text-center group hover:border-[#8ED3F4] transition-colors">
-              <p className="text-[12px] font-bold text-[#667085] uppercase mb-1">New Apps</p>
-              <p className="text-3xl font-black text-[#344054] group-hover:text-[#0284C7] transition-colors">24</p>
-            </div>
-            <div className="bg-[#FFFDF5] p-5 rounded-[20px] border border-[#FEF08A] flex flex-col items-center justify-center text-center group hover:border-[#FCD34D] transition-colors">
-              <p className="text-[12px] font-bold text-[#667085] uppercase mb-1">Docs Received</p>
-              <p className="text-3xl font-black text-[#344054] group-hover:text-[#D97706] transition-colors">18</p>
-            </div>
-            <div className="bg-[#DFF3FF] p-5 rounded-[20px] border border-[#BFE7F7] flex flex-col items-center justify-center text-center group hover:border-[#8ED3F4] transition-colors">
-              <p className="text-[12px] font-bold text-[#667085] uppercase mb-1">Processed</p>
-              <p className="text-3xl font-black text-[#344054] group-hover:text-[#0369A1] transition-colors">32</p>
-            </div>
-            <div className="bg-[#FEF2F2] p-5 rounded-[20px] border border-[#FECACA] flex flex-col items-center justify-center text-center group hover:border-[#FCA5A5] transition-colors">
-              <p className="text-[12px] font-bold text-[#667085] uppercase mb-1">On Hold</p>
-              <p className="text-3xl font-black text-[#344054] group-hover:text-[#DC2626] transition-colors">5</p>
-            </div>
-            <div className="bg-[#FAFCFD] p-5 rounded-[20px] border border-[#D9EAF2] flex flex-col items-center justify-center text-center group hover:border-[#8ED3F4] transition-colors">
-              <p className="text-[12px] font-bold text-[#667085] uppercase mb-1">Follow-ups</p>
-              <p className="text-3xl font-black text-[#344054] group-hover:text-[#0284C7] transition-colors">12</p>
-            </div>
+        {/* Daily Applications Trend */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-black text-gray-900">Weekly Application Volume</h3>
+            <button className="text-indigo-600 text-sm font-bold flex items-center gap-1 hover:underline">View All <ArrowRight size={14}/></button>
           </div>
-        </Card>
+          <HighchartsReact highcharts={Highcharts} options={dailyAppsOptions} />
+        </div>
 
-        {/* Quick Actions */}
-        <Card className="xl:col-span-1">
-          <h3 className="text-lg font-extrabold text-[#344054] mb-6">Quick Actions</h3>
-          <div className="space-y-4">
-            {[
-              { label: 'View Applications', icon: FileText, route: '/operations/applications', color: 'text-[#0284C7] bg-[#DFF3FF] border-[#BFE7F7]' },
-              { label: 'Pending Documents', icon: FileSearch, route: '/operations/documents', color: 'text-[#D97706] bg-[#FFF8E7] border-[#FDE68A]' },
-              { label: 'Add Follow-up', icon: PlusCircle, route: '/operations/follow-ups', color: 'text-[#059669] bg-[#ECFDF5] border-[#A7F3D0]' },
-              { label: 'Search Application', icon: Search, route: '/operations/applications', color: 'text-[#667085] bg-[#FAFCFD] border-[#D9EAF2]' }
-            ].map((action, i) => (
-              <button key={i} onClick={() => navigate(action.route)} className="w-full flex items-center justify-between p-3.5 rounded-[16px] bg-[#FAFCFD] hover:bg-white border border-[#D9EAF2] hover:border-[#BFE7F7] hover:shadow-md transition-all group hover:-translate-y-0.5">
-                <div className="flex items-center gap-4">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-transform group-hover:scale-110 ${action.color}`}>
-                    <action.icon size={18} strokeWidth={2.5} />
-                  </div>
-                  <span className="text-[14px] font-bold text-[#344054]">{action.label}</span>
-                </div>
-                <ArrowRight size={16} className="text-[#BFE7F7] group-hover:text-[#8ED3F4]" />
-              </button>
-            ))}
+        {/* Disbursement Trend */}
+        <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-black text-gray-900">Disbursement Trend (Lakhs)</h3>
+            <button className="text-sky-600 text-sm font-bold flex items-center gap-1 hover:underline">View Report <ArrowRight size={14}/></button>
           </div>
-        </Card>
-      </div>
-
-      {/* Charts & Recent Table */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        
-        {/* Status Chart */}
-        <Card className="xl:col-span-1">
-          <h3 className="text-lg font-extrabold text-[#344054] mb-6">Status Overview</h3>
-          <HighchartsReact highcharts={Highcharts} options={statusChartOptions} />
-        </Card>
-
-        {/* Recent Applications */}
-        <Card className="xl:col-span-2 !p-0 overflow-hidden flex flex-col">
-          <div className="flex justify-between items-center p-6 border-b border-[#D9EAF2] bg-white">
-            <h3 className="text-lg font-extrabold text-[#344054]">Recent Applications</h3>
-            <button onClick={() => navigate('/operations/applications')} className="text-[12px] font-bold text-[#8ED3F4] bg-[#F0FAFF] px-4 py-2 rounded-xl hover:bg-[#DFF3FF] transition-colors border border-[#D9EAF2]">View All</button>
-          </div>
-          <div className="overflow-x-auto p-2">
-            <table className="w-full text-left">
-              <thead>
-                <tr>
-                  <th className="py-4 px-5 text-[11px] font-black text-[#667085] uppercase tracking-wider bg-[#FAFCFD] rounded-l-xl">App ID</th>
-                  <th className="py-4 px-5 text-[11px] font-black text-[#667085] uppercase tracking-wider bg-[#FAFCFD]">Customer</th>
-                  <th className="py-4 px-5 text-[11px] font-black text-[#667085] uppercase tracking-wider bg-[#FAFCFD]">Amount</th>
-                  <th className="py-4 px-5 text-[11px] font-black text-[#667085] uppercase tracking-wider bg-[#FAFCFD]">Status</th>
-                  <th className="py-4 px-5 text-[11px] font-black text-[#667085] uppercase tracking-wider bg-[#FAFCFD] rounded-r-xl">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F0FAFF]">
-                {recentApps.map((app, i) => (
-                  <tr key={i} className="hover:bg-[#F0FAFF] transition-colors group">
-                    <td className="py-4 px-5 text-[13px] font-bold text-[#344054] whitespace-nowrap">{app.id}</td>
-                    <td className="py-4 px-5 whitespace-nowrap">
-                      <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-[#DFF3FF] flex items-center justify-center text-[#0284C7] font-bold text-[13px] border border-[#BFE7F7]">
-                          {app.name.charAt(0)}
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[14px] font-bold text-[#344054]">{app.name}</span>
-                          <span className="text-[12px] font-medium text-[#667085]">{app.type}</span>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-5 text-[14px] font-black text-[#344054] whitespace-nowrap">{app.amount}</td>
-                    <td className="py-4 px-5 whitespace-nowrap">
-                      <span className={`px-3 py-1.5 text-[11px] font-bold rounded-lg border ${
-                        app.status === 'Completed' ? 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]' : 
-                        app.status === 'Documents Pending' ? 'bg-[#FFF8E7] text-[#D97706] border-[#FDE68A]' :
-                        app.status === 'On Hold' ? 'bg-[#FEF2F2] text-[#DC2626] border-[#FECACA]' :
-                        'bg-[#DFF3FF] text-[#0284C7] border-[#BFE7F7]'
-                      }`}>
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="py-4 px-5 whitespace-nowrap">
-                      <button className="text-[12px] font-bold text-[#8ED3F4] opacity-0 group-hover:opacity-100 transition-opacity hover:underline">Process</button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+          <HighchartsReact highcharts={Highcharts} options={disbursementTrendOptions} />
+        </div>
 
       </div>
+      
     </div>
   );
 }
