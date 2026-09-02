@@ -2,15 +2,15 @@
 
 @layer base {
   :root {
-    /* Brand Colors - Sky Blue + Cream */
-    --color-brand-blue-primary: #8ED3F4;
-    --color-brand-blue-dark: #6CADD3;
-    --color-brand-sky-light: #DFF3FF;
-    --color-brand-sky-soft: #BFE7F7;
-    --color-brand-sky-pale: #EFF9FE;
+    /* Brand Colors - Green + White */
+    --color-brand-blue-primary: #5bc210;
+    --color-brand-blue-dark: #489b0d;
+    --color-brand-sky-light: #e6f4df;
+    --color-brand-sky-soft: #d3ecd3;
+    --color-brand-sky-pale: #f0f8ed;
     
-    --color-brand-cream: #FFF8E7;
-    --color-brand-cream-soft: #FFFDF5;
+    --color-brand-cream: #ffffff;
+    --color-brand-cream-soft: #fafafa;
     
     --color-brand-page-bg: #FAFCFD;
     --color-brand-header-bg: #FFFFFF;

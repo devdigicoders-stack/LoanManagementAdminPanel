@@ -129,32 +129,47 @@ export default function PublicOnboardingForm() {
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem('employees');
-    if (saved) {
-      const empList = JSON.parse(saved);
-      const found = empList.find(e => e.id === id);
-      if (found) {
+    const fetchEmployee = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/employees/onboarding/${id}`);
+        if (res.ok) {
+          const data = await res.json();
+            setEmployeeDetails({
+              employeeId: data.empId,
+              fullName: data.name,
+              email: data.email,
+              phone: data.mobile || "N/A",
+              designation: data.designation,
+              division: data.division || "N/A",
+              role: data.role,
+              pan: data.pan || "N/A",
+              aadhar: data.aadhar || "N/A",
+              grossMonthly: data.grossMonthly || 0,
+              transportation: data.transportation || 0,
+              performance: data.performance || 0,
+              achievement: data.achievement || 0,
+              incentives: data.incentives || 0
+            });
+            if (data.onboardingStatus === 'Done') {
+              setCurrentStep(8);
+            }
+        } else {
+          setEmployeeDetails({
+            employeeId: id || "UNKNOWN",
+            fullName: "Employee Not Found",
+            email: "N/A", phone: "N/A", designation: "N/A", division: "N/A", role: "N/A", pan: "N/A", aadhar: "N/A"
+          });
+        }
+      } catch (error) {
         setEmployeeDetails({
-          employeeId: found.id,
-          fullName: found.name,
-          email: found.email,
-          phone: "9874563211", // Placeholder
-          designation: found.designation,
-          division: "Sales",
-          role: found.role,
-          pan: "KISPA1208J",
-          aadhar: "124578963214"
+          employeeId: id || "UNKNOWN",
+          fullName: "Employee Not Found",
+          email: "N/A", phone: "N/A", designation: "N/A", division: "N/A", role: "N/A", pan: "N/A", aadhar: "N/A"
         });
-        return;
       }
-    }
+    };
     
-    // Fallback
-    setEmployeeDetails({
-      employeeId: id || "UNKNOWN",
-      fullName: "Employee Not Found",
-      email: "N/A", phone: "N/A", designation: "N/A", division: "N/A", role: "N/A", pan: "N/A", aadhar: "N/A"
-    });
+    fetchEmployee();
   }, [id]);
 
   const handleChange = (e) => {
@@ -211,27 +226,46 @@ export default function PublicOnboardingForm() {
     }
   };
 
-  const handleSubmit = () => {
-    const saved = localStorage.getItem('employees');
-    if (saved) {
-      let empList = JSON.parse(saved);
-      empList = empList.map(emp => {
-        if (emp.id === id) {
-          const serializedDocs = {};
-          Object.keys(documents).forEach(key => {
-             serializedDocs[key] = {
-               name: documents[key].name,
-               size: documents[key].size,
-               type: documents[key].type,
-             };
-          });
-          return { ...emp, onboardingStatus: 'Submitted', formData: formData, documents: serializedDocs };
-        }
-        return emp;
+  const handleSubmit = async () => {
+    try {
+      const formDataToSend = new FormData();
+      
+      // Append normal text fields
+      Object.keys(formData).forEach(key => {
+        formDataToSend.append(key, formData[key]);
       });
-      localStorage.setItem('employees', JSON.stringify(empList));
+
+      // Append files and their metadata
+      const serializedDocs = [];
+      Object.keys(documents).forEach(key => {
+        if (documents[key]) {
+          serializedDocs.push({
+            key: key,
+            name: documents[key].name,
+            type: documents[key].type
+          });
+          // Fieldname will be the key
+          formDataToSend.append(key, documents[key]);
+        }
+      });
+      
+      formDataToSend.append('documents', JSON.stringify(serializedDocs));
+
+      const res = await fetch(`http://localhost:5000/api/employees/onboarding/${id}`, {
+        method: 'POST',
+        // Omit Content-Type, fetch will automatically set it to multipart/form-data with the correct boundary
+        body: formDataToSend
+      });
+      
+      if (res.ok) {
+        setIsSubmitted(true);
+        toast.success("Onboarding Details Submitted!");
+      } else {
+        toast.error("Failed to submit onboarding details");
+      }
+    } catch (error) {
+      toast.error("Server error while submitting");
     }
-    setIsSubmitted(true);
   };
 
   if (!employeeDetails) {
@@ -244,9 +278,9 @@ export default function PublicOnboardingForm() {
       {/* Top Bar */}
       {!isSubmitted && (
       <div className="bg-white border-b border-gray-100 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-[10px] flex items-center justify-center text-white font-bold text-lg shadow-sm">
+        <div className="max-w-5xl mx-auto px-5 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 bg-blue-600 rounded-[8px] flex items-center justify-center text-white font-bold text-sm shadow-sm">
               N
             </div>
             <div>
@@ -260,16 +294,16 @@ export default function PublicOnboardingForm() {
         </div>
         
         {/* Stepper */}
-        <div className="max-w-6xl mx-auto px-6 py-4 overflow-x-auto hide-scroll">
+        <div className="max-w-5xl mx-auto px-5 py-3 overflow-x-auto hide-scroll">
           <div className="flex items-center justify-between min-w-[700px]">
             {steps.map((step) => {
               const isActive = currentStep === step.id;
               const isCompleted = currentStep > step.id;
               
               return (
-                <div key={step.id} className="flex flex-col items-center gap-1.5 flex-1 relative">
+                <div key={step.id} className="flex flex-col items-center gap-1 flex-1 relative">
                   <div 
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-bold z-10 transition-colors
+                    className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold z-10 transition-colors
                       ${isCompleted ? 'bg-green-500 text-white' : isActive ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'}`}
                   >
                     {isCompleted ? <Check size={16} strokeWidth={3} /> : step.id}
@@ -280,7 +314,7 @@ export default function PublicOnboardingForm() {
                   
                   {/* Connecting Line */}
                   {step.id < 9 && (
-                    <div className={`absolute top-4 left-[50%] w-[100%] h-[2px] -z-0
+                    <div className={`absolute top-3.5 left-[50%] w-[100%] h-[2px] -z-0
                       ${currentStep > step.id ? 'bg-green-500' : 'bg-gray-100'}`} 
                     />
                   )}
@@ -293,10 +327,10 @@ export default function PublicOnboardingForm() {
       )}
 
       {/* Main Content Area */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="max-w-3xl mx-auto px-4 py-6">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
           
-          <div className="p-8">
+          <div className="p-6">
             {/* Step 1: Verify Details */}
             {currentStep === 1 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -363,27 +397,27 @@ export default function PublicOnboardingForm() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="border border-gray-200 rounded-xl p-5 shadow-sm bg-gray-50/30">
                     <p className="text-gray-500 text-[13px] font-medium mb-1">Gross Monthly</p>
-                    <p className="text-2xl font-bold text-blue-600">₹32,000</p>
+                    <p className="text-2xl font-bold text-blue-600">₹{employeeDetails.grossMonthly}</p>
                   </div>
                   <div className="border border-gray-200 rounded-xl p-5 shadow-sm bg-gray-50/30">
                     <p className="text-gray-500 text-[13px] font-medium mb-1">Gross Yearly</p>
-                    <p className="text-2xl font-bold text-blue-600">₹3,84,000</p>
+                    <p className="text-2xl font-bold text-blue-600">₹{employeeDetails.grossMonthly * 12}</p>
                   </div>
                   <div className="border border-gray-200 rounded-xl p-5 shadow-sm bg-gray-50/30">
                     <p className="text-gray-500 text-[13px] font-medium mb-1">Transportation Allowance</p>
-                    <p className="text-2xl font-bold text-blue-600">₹2,000</p>
+                    <p className="text-2xl font-bold text-blue-600">₹{employeeDetails.transportation}</p>
                   </div>
                   <div className="border border-gray-200 rounded-xl p-5 shadow-sm bg-gray-50/30">
                     <p className="text-gray-500 text-[13px] font-medium mb-1">Performance Bonus</p>
-                    <p className="text-2xl font-bold text-blue-600">₹1,000</p>
+                    <p className="text-2xl font-bold text-blue-600">₹{employeeDetails.performance}</p>
                   </div>
                   <div className="border border-gray-200 rounded-xl p-5 shadow-sm bg-gray-50/30">
                     <p className="text-gray-500 text-[13px] font-medium mb-1">Achievement Bonus</p>
-                    <p className="text-2xl font-bold text-blue-600">₹1,000</p>
+                    <p className="text-2xl font-bold text-blue-600">₹{employeeDetails.achievement}</p>
                   </div>
                   <div className="border border-gray-200 rounded-xl p-5 shadow-sm bg-gray-50/30">
                     <p className="text-gray-500 text-[13px] font-medium mb-1">Business Incentives</p>
-                    <p className="text-2xl font-bold text-blue-600">₹1,000</p>
+                    <p className="text-2xl font-bold text-blue-600">₹{employeeDetails.incentives}</p>
                   </div>
                 </div>
               </div>

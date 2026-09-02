@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Search, Filter, Download, MessageSquare, AlertCircle, CheckCircle2,
   Clock, MoreVertical, Eye, Trash2, ShieldAlert, ArrowUpRight, CheckSquare, X
@@ -6,16 +6,9 @@ import {
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
-const initialComplaints = [
-  { id: "CMP-001", customer: "Ramesh Tiwari", phone: "+91 9876543210", subject: "EMI Payment not reflected", date: "18 May 2025", status: "Pending", priority: "High" },
-  { id: "CMP-002", customer: "Sunita Devi", phone: "+91 8765432109", subject: "Delay in loan disbursement", date: "17 May 2025", status: "In Progress", priority: "High" },
-  { id: "CMP-003", customer: "Mohd. Ali", phone: "+91 7654321098", subject: "Update registered mobile number", date: "16 May 2025", status: "Resolved", priority: "Low" },
-  { id: "CMP-004", customer: "Kavita Sharma", phone: "+91 6543210987", subject: "Foreclosure charges query", date: "16 May 2025", status: "Resolved", priority: "Medium" },
-  { id: "CMP-005", customer: "Vikram Singh", phone: "+91 5432109876", subject: "Harassment by collection agent", date: "15 May 2025", status: "Escalated", priority: "Critical" },
-];
-
 export default function ManageComplaints() {
-  const [complaints, setComplaints] = useState(initialComplaints);
+  const [complaints, setComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isLogComplaintOpen, setIsLogComplaintOpen] = useState(false);
@@ -31,6 +24,35 @@ export default function ManageComplaints() {
     subject: "",
     priority: "Low"
   });
+
+  const fetchComplaints = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/complaints`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const formattedData = data.map(c => ({
+          ...c,
+          id: c.complaintId,
+          date: new Date(c.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
+        }));
+        setComplaints(formattedData);
+      }
+    } catch (error) {
+      console.error('Error fetching complaints:', error);
+      toast.error('Failed to load complaints');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchComplaints();
+  }, []);
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -78,28 +100,38 @@ export default function ManageComplaints() {
     });
   };
 
-  const handleLogComplaint = (e) => {
+  const handleLogComplaint = async (e) => {
     e.preventDefault();
-    if(!newComplaint.customer || !newComplaint.subject) {
-      toast.error("Please fill required fields.");
+    if(!newComplaint.customer || !newComplaint.subject || !newComplaint.phone) {
+      toast.error("Please fill all required fields.");
       return;
     }
-    const newEntry = {
-      id: `CMP-00${complaints.length + 1}`,
-      customer: newComplaint.customer,
-      phone: newComplaint.phone || "+91 0000000000",
-      subject: newComplaint.subject,
-      date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
-      status: "Pending",
-      priority: newComplaint.priority
-    };
-    setComplaints([newEntry, ...complaints]);
-    setIsLogComplaintOpen(false);
-    setNewComplaint({ customer: "", phone: "", subject: "", priority: "Low" });
-    toast.success("Complaint logged successfully!");
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/complaints`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newComplaint)
+      });
+
+      if (response.ok) {
+        toast.success("Complaint logged successfully!");
+        setIsLogComplaintOpen(false);
+        setNewComplaint({ customer: "", phone: "", subject: "", priority: "Low" });
+        fetchComplaints();
+      } else {
+        const error = await response.json();
+        toast.error(error.message || "Failed to log complaint");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    }
   };
 
-  const handleResolve = (id) => {
+  const handleResolve = (id, dbId) => {
     Swal.fire({
       title: 'Resolve Complaint?',
       text: "Mark this complaint as successfully resolved?",
@@ -108,10 +140,27 @@ export default function ManageComplaints() {
       confirmButtonColor: '#489b0d',
       cancelButtonColor: '#cbd5e1',
       confirmButtonText: 'Yes, Resolve it!'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setComplaints(complaints.map(c => c.id === id ? { ...c, status: "Resolved" } : c));
-        toast.success("Complaint resolved successfully.");
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/complaints/${dbId}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: 'Resolved' })
+          });
+          if (response.ok) {
+            toast.success("Complaint resolved successfully.");
+            fetchComplaints();
+          } else {
+            toast.error("Failed to resolve");
+          }
+        } catch (error) {
+          toast.error("Network error");
+        }
       }
     });
   };
@@ -134,7 +183,7 @@ export default function ManageComplaints() {
     });
   };
 
-  const handleDelete = (id) => {
+  const handleDelete = (id, dbId) => {
     Swal.fire({
       title: 'Delete Complaint?',
       text: "Are you sure you want to permanently delete this complaint?",
@@ -143,10 +192,25 @@ export default function ManageComplaints() {
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#cbd5e1',
       confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setComplaints(complaints.filter(c => c.id !== id));
-        toast.success("Complaint deleted successfully.");
+        try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/complaints/${dbId}`, {
+            method: 'DELETE',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+          if (response.ok) {
+            toast.success("Complaint deleted successfully.");
+            fetchComplaints();
+          } else {
+            toast.error("Failed to delete");
+          }
+        } catch (error) {
+          toast.error("Network error");
+        }
       }
     });
   };
@@ -161,14 +225,21 @@ export default function ManageComplaints() {
     return matchesSearch && matchesPriority && matchesStatus;
   });
 
+  const totalActive = complaints.filter(c => c.status !== 'Resolved').length;
+  const pendingResolution = complaints.filter(c => c.status === 'Pending' || c.status === 'In Progress').length;
+  const escalatedCases = complaints.filter(c => c.status === 'Escalated').length;
+  const resolutionRate = complaints.length > 0 
+    ? Math.round((complaints.filter(c => c.status === 'Resolved').length / complaints.length) * 100) 
+    : 0;
+
   return (
-    <div className="w-full h-full flex flex-col space-y-6 pb-10">
+    <div className="w-full h-full flex flex-col space-y-4 pb-6">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Complaint Management</h1>
-          <p className="text-[12px] font-medium text-slate-500">Track, escalate, and resolve customer grievances efficiently.</p>
+          <h1 className="text-[20px] font-bold text-slate-800 mb-0.5">Complaint Management</h1>
+          <p className="text-[11px] font-medium text-slate-500">Track, escalate, and resolve customer grievances efficiently.</p>
         </div>
         
         {/* Actions */}
@@ -205,62 +276,62 @@ export default function ManageComplaints() {
       </div>
 
       {/* KPI Cards (Premium Design) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-          <div className="flex justify-between items-start mb-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center relative z-10">
-              <MessageSquare size={20} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-blue-500/5 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start mb-2">
+            <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center relative z-10">
+              <MessageSquare size={16} />
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Total Active</p>
-            <h3 className="text-3xl font-black text-slate-800">42</h3>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Total Active</p>
+            <h3 className="text-2xl font-black text-slate-800">{totalActive}</h3>
           </div>
         </div>
         
-        <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-          <div className="flex justify-between items-start mb-3">
-            <div className="w-10 h-10 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center relative z-10">
-              <Clock size={20} />
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-orange-500/5 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start mb-2">
+            <div className="w-8 h-8 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center relative z-10">
+              <Clock size={16} />
             </div>
-            <span className="flex items-center gap-1 text-[11px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
+            <span className="flex items-center gap-1 text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded">
               Needs Attention
             </span>
           </div>
           <div>
-            <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Pending Resolution</p>
-            <h3 className="text-3xl font-black text-slate-800">14</h3>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Pending Resolution</p>
+            <h3 className="text-2xl font-black text-slate-800">{pendingResolution}</h3>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-          <div className="flex justify-between items-start mb-3">
-            <div className="w-10 h-10 rounded-lg bg-red-50 text-red-600 flex items-center justify-center relative z-10">
-              <ShieldAlert size={20} />
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-red-500/5 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start mb-2">
+            <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 flex items-center justify-center relative z-10">
+              <ShieldAlert size={16} />
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Escalated Cases</p>
-            <h3 className="text-3xl font-black text-slate-800">3</h3>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Escalated Cases</p>
+            <h3 className="text-2xl font-black text-slate-800">{escalatedCases}</h3>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-24 h-24 bg-[#489b0d]/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
-          <div className="flex justify-between items-start mb-3">
-            <div className="w-10 h-10 rounded-lg bg-[#489b0d]/10 text-[#489b0d] flex items-center justify-center relative z-10">
-              <CheckSquare size={20} />
+        <div className="bg-white p-4 rounded-xl border border-slate-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-[#489b0d]/5 rounded-bl-full -mr-2 -mt-2 transition-transform group-hover:scale-110"></div>
+          <div className="flex justify-between items-start mb-2">
+            <div className="w-8 h-8 rounded-lg bg-[#489b0d]/10 text-[#489b0d] flex items-center justify-center relative z-10">
+              <CheckSquare size={16} />
             </div>
-            <span className="flex items-center gap-1 text-[11px] font-bold text-[#489b0d] bg-[#489b0d]/10 px-2 py-0.5 rounded text-[#489b0d]">
-              <ArrowUpRight size={12}/> +5.2%
+            <span className="flex items-center gap-1 text-[10px] font-bold text-[#489b0d] bg-[#489b0d]/10 px-2 py-0.5 rounded text-[#489b0d]">
+              <ArrowUpRight size={10}/> +5.2%
             </span>
           </div>
           <div>
-            <p className="text-[11px] font-extrabold text-slate-400 uppercase tracking-wider mb-1">Resolution Rate</p>
-            <h3 className="text-3xl font-black text-slate-800">92%</h3>
+            <p className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-0.5">Resolution Rate</p>
+            <h3 className="text-2xl font-black text-slate-800">{resolutionRate}%</h3>
           </div>
         </div>
       </div>
@@ -277,39 +348,39 @@ export default function ManageComplaints() {
           <table className="w-full text-left">
             <thead>
               <tr className="bg-slate-50/80 border-b border-slate-200">
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Complaint ID</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Customer Details</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Subject & Priority</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Date Logged</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+                <th className="py-3 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Complaint ID</th>
+                <th className="py-3 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Customer Details</th>
+                <th className="py-3 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Subject & Priority</th>
+                <th className="py-3 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="py-3 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Date Logged</th>
+                <th className="py-3 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {filteredComplaints.length > 0 ? filteredComplaints.map(complaint => (
                 <tr key={complaint.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-4 px-6">
+                  <td className="py-3 px-4">
                     <span className="text-[13px] font-bold text-slate-700">{complaint.id}</span>
                   </td>
-                  <td className="py-4 px-6">
+                  <td className="py-3 px-4">
                     <p className="text-[13px] font-bold text-slate-800">{complaint.customer}</p>
                     <p className="text-[11px] font-medium text-slate-500 mt-0.5">{complaint.phone}</p>
                   </td>
-                  <td className="py-4 px-6">
+                  <td className="py-3 px-4">
                     <p className="text-[13px] font-semibold text-slate-700 mb-1 line-clamp-1">{complaint.subject}</p>
                     {getPriorityBadge(complaint.priority)}
                   </td>
-                  <td className="py-4 px-6">
+                  <td className="py-3 px-4">
                     {getStatusBadge(complaint.status)}
                   </td>
-                  <td className="py-4 px-6">
+                  <td className="py-3 px-4">
                     <span className="text-[13px] font-semibold text-slate-600">{complaint.date}</span>
                   </td>
-                  <td className="py-4 px-6">
+                  <td className="py-3 px-4">
                     <div className="flex items-center justify-end gap-2">
                       {complaint.status !== 'Resolved' && (
                         <button 
-                          onClick={() => handleResolve(complaint.id)}
+                          onClick={() => handleResolve(complaint.id, complaint._id)}
                           className="h-8 px-3 inline-flex items-center gap-1.5 text-white bg-slate-800 hover:bg-black font-bold text-[11px] rounded transition-colors shadow-sm"
                         >
                           Resolve
@@ -322,7 +393,7 @@ export default function ManageComplaints() {
                         <Eye size={14} strokeWidth={2.5}/>
                       </button>
                       <button 
-                        onClick={() => handleDelete(complaint.id)}
+                        onClick={() => handleDelete(complaint.id, complaint._id)}
                         className="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 rounded transition-colors"
                       >
                         <Trash2 size={14} strokeWidth={2.5}/>

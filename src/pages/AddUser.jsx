@@ -70,7 +70,9 @@ export default function AddUser() {
                   <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Role <span className="text-red-500">*</span></label>
                   <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all appearance-none outline-none">
                     <option value="">Select role</option>
-                    <option value="Super Admin">Super Admin</option>
+                    {localStorage.getItem('userRole') === 'Super Admin' && (
+                      <option value="Super Admin">Super Admin</option>
+                    )}
                     <option value="Admin">Admin</option>
                     <option value="Employee">Employee</option>
                   </select>

@@ -1,11 +1,12 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { mockUsers } from './ManageUsers';
-import { 
-  ArrowLeft, Download, Edit, User, Mail, Phone, Calendar, Clock, 
+import { hasPermission } from '../utils/permissions';
+import {
+  ArrowLeft, Download, Edit, User, Mail, Phone, Calendar, Clock,
   ShieldCheck, CheckCircle2, FileText, Activity, MapPin, Globe,
-  Briefcase, CreditCard, ChevronRight, Plus, Eye, MoreVertical, X
+  Briefcase, CreditCard, ChevronRight, Plus, Eye, MoreVertical, X,
+  AlertCircle, Send, BarChart3, TrendingUp, Lock
 } from 'lucide-react';
 
 export default function UserProfile() {
@@ -17,10 +18,34 @@ export default function UserProfile() {
   const [newLoanModal, setNewLoanModal] = useState(false);
   const [editUserModal, setEditUserModal] = useState(false);
 
-  // Find the requested user
-  const user = useMemo(() => {
-    return mockUsers.find(u => u.id === id) || null;
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch the requested user
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/users/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data);
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchUser();
   }, [id]);
+
+  if (loading) {
+    return (
+      <div className="w-full h-[60vh] flex flex-col items-center justify-center text-slate-500">
+        <h2 className="text-xl font-bold text-slate-800">Loading profile...</h2>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -34,7 +59,7 @@ export default function UserProfile() {
   }
 
   const tabs = [
-    "Personal Information", "KYC Information", "Employment Details", 
+    "Personal Information", "KYC Information", "Employment Details",
     "Financial Details", "Loan Applications", "Uploaded Documents", "Activity Log"
   ];
 
@@ -68,11 +93,11 @@ export default function UserProfile() {
 
       {/* Profile Header & Quick Summary */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 mb-6 flex flex-col xl:flex-row gap-8">
-        
+
         {/* Left Side: Avatar & Details */}
         <div className="flex-1 flex flex-col sm:flex-row gap-6">
           <img src={user.avatar} alt={user.name} className="w-32 h-32 rounded-full object-cover border-4 border-slate-50 shadow-sm shrink-0" />
-          
+
           <div className="flex-1 flex flex-col justify-center">
             <div className="flex items-center gap-3 mb-3">
               <h2 className="text-2xl font-bold text-slate-800">{user.name}</h2>
@@ -80,7 +105,7 @@ export default function UserProfile() {
                 {user.status} User
               </span>
             </div>
-            
+
             <div className="space-y-2 mb-6">
               <div className="flex items-center gap-2 text-slate-600 text-[13px] font-medium">
                 <Mail size={16} className="text-slate-400" /> {user.email}
@@ -95,7 +120,7 @@ export default function UserProfile() {
                 <User size={18} className="text-slate-400 mt-0.5" />
                 <div>
                   <p className="text-[11px] font-semibold text-slate-500">User ID</p>
-                  <p className="text-[13px] font-bold text-slate-800">{user.id}</p>
+                  <p className="text-[13px] font-bold text-slate-800">{user.userId}</p>
                 </div>
               </div>
               <div className="flex items-start gap-2">
@@ -126,7 +151,7 @@ export default function UserProfile() {
         {/* Right Side: Actions & Summary */}
         <div className="w-full xl:w-[320px] shrink-0 flex flex-col gap-4">
           <div className="flex items-center gap-3 justify-end">
-            <button 
+            <button
               onClick={() => {
                 toast.success('Downloading user profile PDF...');
               }}
@@ -134,7 +159,7 @@ export default function UserProfile() {
             >
               <Download size={16} /> Download Profile
             </button>
-            <button 
+            <button
               onClick={() => setEditUserModal(true)}
               className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md text-[13px] font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
             >
@@ -147,23 +172,23 @@ export default function UserProfile() {
             <div className="space-y-2.5">
               <div className="flex justify-between items-center text-[12px] font-medium text-slate-600">
                 <span>Total Applications</span>
-                <span className="font-bold text-slate-800">{user.totalApplications}</span>
+                <span className="font-bold text-slate-800">{user.loans?.length || 0}</span>
               </div>
               <div className="flex justify-between items-center text-[12px] font-medium text-[#489b0d]">
                 <span>Approved</span>
-                <span className="font-bold">{user.approvedApplications || 0}</span>
+                <span className="font-bold">{user.loans?.filter(l => l.status === 'Approved').length || 0}</span>
               </div>
               <div className="flex justify-between items-center text-[12px] font-medium text-blue-600">
                 <span>Under Review</span>
-                <span className="font-bold">{user.underReviewApplications || 0}</span>
+                <span className="font-bold">{user.loans?.filter(l => ['Under Review', 'Processing', 'Credit Appraisal'].includes(l.status)).length || 0}</span>
               </div>
               <div className="flex justify-between items-center text-[12px] font-medium text-red-600">
                 <span>Rejected</span>
-                <span className="font-bold">{user.rejectedApplications || 0}</span>
+                <span className="font-bold">{user.loans?.filter(l => l.status === 'Rejected').length || 0}</span>
               </div>
               <div className="flex justify-between items-center text-[12px] font-medium text-slate-600 pt-2 border-t border-slate-200">
                 <span>Total Uploaded Documents</span>
-                <span className="font-bold text-slate-800">{user.totalUploadedDocuments || 0}</span>
+                <span className="font-bold text-slate-800">{user.documents?.length || 0}</span>
               </div>
             </div>
           </div>
@@ -176,11 +201,10 @@ export default function UserProfile() {
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`cursor-pointer px-6 py-4 text-[13px] font-bold whitespace-nowrap transition-colors border-b-2 ${
-              activeTab === tab 
-                ? 'border-blue-600 text-blue-600' 
+            className={`cursor-pointer px-6 py-4 text-[13px] font-bold whitespace-nowrap transition-colors border-b-2 ${activeTab === tab
+                ? 'border-blue-600 text-blue-600'
                 : 'border-transparent text-slate-500 hover:text-slate-700'
-            }`}
+              }`}
           >
             {tab}
           </button>
@@ -189,12 +213,12 @@ export default function UserProfile() {
 
       {/* Tab Content */}
       <div className="bg-white min-h-[400px] p-6 rounded-b-xl border border-t-0 border-slate-200">
-        
+
         {activeTab === "Personal Information" && (
           <div className="space-y-6">
             {/* Info Cards Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              
+
               {/* Personal Information */}
               <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-center mb-6">
@@ -284,7 +308,7 @@ export default function UserProfile() {
 
             {/* Bottom Row */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              
+
               {/* Recent Loan Applications */}
               <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6 hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-center mb-6">
@@ -301,53 +325,35 @@ export default function UserProfile() {
                         <th className="pb-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Loan Type</th>
                         <th className="pb-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Applied Amount</th>
                         <th className="pb-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Status</th>
-                        <th className="pb-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Applied On</th>
                         <th className="pb-3 text-[11px] font-semibold text-slate-500 uppercase tracking-wide text-right">Action</th>
                       </tr>
                     </thead>
                     <tbody className="text-[13px]">
-                      <tr className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                        <td className="py-4 font-medium text-slate-700">LN-250512-001</td>
-                        <td className="py-4 text-slate-600">Home Loan</td>
-                        <td className="py-4 font-bold text-slate-800">₹25,00,000</td>
-                        <td className="py-4">
-                          <span className="px-2 py-1 rounded bg-blue-50 text-blue-600 text-[11px] font-bold">Under Review</span>
-                        </td>
-                        <td className="py-4 text-slate-600">12 May 2025</td>
-                        <td className="py-4 text-right">
-                          <button onClick={() => setViewLoan('LN-250512-001')} className="text-blue-600 hover:text-blue-800 font-bold text-[12px] flex items-center gap-1 justify-end ml-auto cursor-pointer">
-                            <Eye size={14} /> View Details
-                          </button>
-                        </td>
-                      </tr>
-                      <tr className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                        <td className="py-4 font-medium text-slate-700">LN-250425-001</td>
-                        <td className="py-4 text-slate-600">Personal Loan</td>
-                        <td className="py-4 font-bold text-slate-800">₹5,00,000</td>
-                        <td className="py-4">
-                          <span className="px-2 py-1 rounded bg-[#489b0d]/10 text-[#489b0d] text-[11px] font-bold">Approved</span>
-                        </td>
-                        <td className="py-4 text-slate-600">25 Apr 2025</td>
-                        <td className="py-4 text-right">
-                          <button onClick={() => setViewLoan('LN-250425-001')} className="text-blue-600 hover:text-blue-800 font-bold text-[12px] flex items-center gap-1 justify-end ml-auto cursor-pointer">
-                            <Eye size={14} /> View Details
-                          </button>
-                        </td>
-                      </tr>
-                      <tr className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
-                        <td className="py-4 font-medium text-slate-700">LN-250310-001</td>
-                        <td className="py-4 text-slate-600">Business Loan</td>
-                        <td className="py-4 font-bold text-slate-800">₹15,00,000</td>
-                        <td className="py-4">
-                          <span className="px-2 py-1 rounded bg-red-50 text-red-600 text-[11px] font-bold">Rejected</span>
-                        </td>
-                        <td className="py-4 text-slate-600">10 Mar 2025</td>
-                        <td className="py-4 text-right">
-                          <button onClick={() => setViewLoan('LN-250310-001')} className="text-blue-600 hover:text-blue-800 font-bold text-[12px] flex items-center gap-1 justify-end ml-auto cursor-pointer">
-                            <Eye size={14} /> View Details
-                          </button>
-                        </td>
-                      </tr>
+                      {user.loans && user.loans.slice(0, 3).map((loan, idx) => (
+                        <tr key={idx} className="border-b border-slate-50 last:border-0 hover:bg-slate-50/50">
+                          <td className="py-4 font-medium text-slate-700">{loan.applicationId}</td>
+                          <td className="py-4 text-slate-600">{loan.loanType}</td>
+                          <td className="py-4 font-bold text-slate-800">₹{Number(loan.amount).toLocaleString('en-IN')}</td>
+                          <td className="py-4">
+                            <span className={`px-2 py-1 rounded text-[11px] font-bold ${loan.status === 'Approved' ? 'bg-[#489b0d]/10 text-[#489b0d]' :
+                                loan.status === 'Rejected' ? 'bg-red-50 text-red-600' :
+                                  'bg-blue-50 text-blue-600'
+                              }`}>
+                              {loan.status}
+                            </span>
+                          </td>
+                          <td className="py-4 text-right">
+                            <button onClick={() => setViewLoan(loan.applicationId)} className="text-blue-600 hover:text-blue-800 font-bold text-[12px] flex items-center gap-1 justify-end ml-auto cursor-pointer">
+                              <Eye size={14} /> View Details
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                      {(!user.loans || user.loans.length === 0) && (
+                        <tr>
+                          <td colSpan="5" className="py-8 text-center text-slate-500 font-medium">No recent applications found</td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>
@@ -361,39 +367,26 @@ export default function UserProfile() {
                     <Plus size={14} /> Add Note
                   </button>
                 </div>
-                
+
                 <div className="space-y-4">
-                  {/* Note 1 */}
-                  <div className="bg-amber-50 rounded-lg p-4 border border-amber-100/50">
-                    <div className="flex justify-between items-start mb-3">
-                      <p className="text-[13px] font-medium text-slate-700 leading-relaxed">
-                        User is very responsive and provided documents on time.
-                      </p>
-                      <button className="text-slate-400 hover:text-slate-600 cursor-pointer">
-                        <MoreVertical size={16} />
-                      </button>
+                  {user.notes && user.notes.map((note, idx) => (
+                    <div key={idx} className={`bg-${note.type || 'slate'}-50 rounded-lg p-4 border border-${note.type || 'slate'}-100/50`}>
+                      <div className="flex justify-between items-start mb-3">
+                        <p className="text-[13px] font-medium text-slate-700 leading-relaxed">
+                          {note.text}
+                        </p>
+                        <button className="text-slate-400 hover:text-slate-600 cursor-pointer">
+                          <MoreVertical size={16} />
+                        </button>
+                      </div>
+                      <div className="flex justify-between items-center text-[11px] text-slate-500 font-medium">
+                        <span className={note.type === 'blue' ? 'text-blue-600' : ''}>- {note.author}</span>
+                      </div>
                     </div>
-                    <div className="flex justify-between items-center text-[11px] text-slate-500 font-medium">
-                      <span>- Admin</span>
-                      <span>21 May 2025, 03:12 PM</span>
-                    </div>
-                  </div>
-                  
-                  {/* Note 2 */}
-                  <div className="bg-blue-50/50 rounded-lg p-4 border border-blue-100/50">
-                    <div className="flex justify-between items-start mb-3">
-                      <p className="text-[13px] font-medium text-slate-700 leading-relaxed">
-                        Requested for higher loan amount. Follow up required.
-                      </p>
-                      <button className="text-slate-400 hover:text-slate-600 cursor-pointer">
-                        <MoreVertical size={16} />
-                      </button>
-                    </div>
-                    <div className="flex justify-between items-center text-[11px] text-slate-500 font-medium">
-                      <span className="text-blue-600">- Neha (Relationship Manager)</span>
-                      <span>20 May 2025, 11:30 AM</span>
-                    </div>
-                  </div>
+                  ))}
+                  {(!user.notes || user.notes.length === 0) && (
+                    <div className="text-center text-slate-500 text-[12px] py-4">No notes added yet.</div>
+                  )}
                 </div>
               </div>
 
@@ -406,73 +399,137 @@ export default function UserProfile() {
           <div className="space-y-6">
             <h2 className="text-lg font-bold text-slate-800">KYC Information</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* PAN Card Details */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                      <CreditCard size={20} />
+              {/* PAN Card */}
+              {(() => {
+                const panDocIdx = user.documents?.findIndex(d => d.name?.toLowerCase().includes('pan'));
+                const panDoc = panDocIdx >= 0 ? user.documents[panDocIdx] : null;
+                const statusColor = panDoc?.status === 'Verified' ? 'text-[#489b0d] bg-[#489b0d]/10' : panDoc?.status === 'Rejected' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
+                const StatusIcon = panDoc?.status === 'Verified' ? CheckCircle2 : panDoc?.status === 'Rejected' ? X : AlertCircle;
+                return (
+                  <div className={`bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border-2 ${panDoc?.status === 'Verified' ? 'border-[#489b0d]/30' : panDoc?.status === 'Rejected' ? 'border-red-200' : 'border-slate-200'}`}>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                          <CreditCard size={20} />
+                        </div>
+                        <div>
+                          <h3 className="text-[14px] font-bold text-slate-800">PAN Card</h3>
+                          <p className="text-[12px] font-semibold text-slate-500">Identity Proof</p>
+                        </div>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded text-[11px] font-bold flex items-center gap-1 ${statusColor}`}>
+                        <StatusIcon size={13} /> {panDoc?.status || 'Pending'}
+                      </span>
                     </div>
-                    <div>
-                      <h3 className="text-[14px] font-bold text-slate-800">PAN Card</h3>
-                      <p className="text-[12px] font-semibold text-slate-500">Identity Proof</p>
+                    <div className="space-y-4">
+                      <InfoRow label="Document Number" value={user.pan || 'N/A'} />
+                      <InfoRow label="Name on Document" value={user.name} />
+                      <InfoRow label="Document Status" value={panDoc?.status || 'Not Uploaded'} />
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        {panDoc ? (
+                          <div
+                            onClick={() => window.open(`/verify-document/${user.userId}/${panDocIdx}`, '_blank')}
+                            className={`w-full h-32 cursor-pointer rounded-lg border border-dashed flex items-center justify-center transition-colors gap-2 text-sm font-medium
+                              ${panDoc.status === 'Verified' ? 'bg-green-50 border-[#489b0d]/40 text-[#489b0d] hover:bg-green-100' :
+                                panDoc.status === 'Rejected' ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100' :
+                                'bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200'}`}
+                          >
+                            <FileText size={22} /> {panDoc.name} 
+                            <span className="text-[10px] font-bold ml-1 opacity-70">• Click to {panDoc.status === 'Verified' ? 'Review' : 'Verify'}</span>
+                          </div>
+                        ) : (
+                          <div className="w-full h-32 bg-orange-50 rounded-lg border-2 border-dashed border-orange-200 flex flex-col items-center justify-center text-orange-500 gap-2">
+                            <AlertCircle size={22} />
+                            <p className="text-[12px] font-bold">PAN Card not uploaded</p>
+                            <button onClick={() => toast.success('Reminder sent to upload PAN Card!')} className="text-[11px] px-3 py-1 bg-orange-500 text-white rounded font-bold hover:bg-orange-600 transition-colors">Send Reminder</button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded bg-[#489b0d]/10 text-[#489b0d] text-[11px] font-bold flex items-center gap-1">
-                    <CheckCircle2 size={14} /> Verified
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  <InfoRow label="Document Number" value={user.pan} />
-                  <InfoRow label="Name on Document" value={user.name} />
-                  <InfoRow label="Verified On" value="13 May 2025" />
-                  <div className="mt-4 pt-4 border-t border-slate-100">
-                    <div 
-                      onClick={() => setViewDoc({ name: 'PAN Card', url: 'https://images.unsplash.com/photo-1620228892461-1eb47ce7cb38?auto=format&fit=crop&q=80&w=800' })}
-                      className="w-full h-32 bg-slate-100 hover:bg-slate-200 cursor-pointer rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-500 transition-colors"
-                    >
-                      <FileText size={24} className="mr-2" /> PAN_Card_Front.pdf
-                    </div>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
 
-              {/* Aadhaar Card Details */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-6">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
-                      <CreditCard size={20} />
+              {/* Aadhaar Card */}
+              {(() => {
+                const aadhaarDocs = user.documents?.reduce((acc, d, idx) => {
+                  if (d.name?.toLowerCase().includes('aadhaar')) acc.push({ ...d, idx });
+                  return acc;
+                }, []) || [];
+                const aadhaarFront = aadhaarDocs.find(d => d.name?.toLowerCase().includes('front'));
+                const aadhaarBack = aadhaarDocs.find(d => d.name?.toLowerCase().includes('back'));
+                const overallStatus = aadhaarFront?.status === 'Verified' && aadhaarBack?.status === 'Verified' ? 'Verified' : aadhaarFront?.status === 'Rejected' || aadhaarBack?.status === 'Rejected' ? 'Rejected' : 'Pending';
+                const statusColor = overallStatus === 'Verified' ? 'text-[#489b0d] bg-[#489b0d]/10' : overallStatus === 'Rejected' ? 'text-red-600 bg-red-50' : 'text-orange-600 bg-orange-50';
+                const StatusIcon = overallStatus === 'Verified' ? CheckCircle2 : overallStatus === 'Rejected' ? X : AlertCircle;
+                return (
+                  <div className={`bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow border-2 ${overallStatus === 'Verified' ? 'border-[#489b0d]/30' : overallStatus === 'Rejected' ? 'border-red-200' : 'border-slate-200'}`}>
+                    <div className="flex justify-between items-start mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-500">
+                          <CreditCard size={20} />
+                        </div>
+                        <div>
+                          <h3 className="text-[14px] font-bold text-slate-800">Aadhaar Card</h3>
+                          <p className="text-[12px] font-semibold text-slate-500">Address Proof</p>
+                        </div>
+                      </div>
+                      <span className={`px-2.5 py-1 rounded text-[11px] font-bold flex items-center gap-1 ${statusColor}`}>
+                        <StatusIcon size={13} /> {overallStatus}
+                      </span>
                     </div>
-                    <div>
-                      <h3 className="text-[14px] font-bold text-slate-800">Aadhaar Card</h3>
-                      <p className="text-[12px] font-semibold text-slate-500">Address Proof</p>
+                    <div className="space-y-4">
+                      <InfoRow label="Document Number" value={user.aadhaar || 'N/A'} />
+                      <InfoRow label="Name on Document" value={user.name} />
+                      <InfoRow label="Document Status" value={overallStatus} />
+                      <div className="mt-4 pt-4 border-t border-slate-100 flex gap-3">
+                        {/* Front */}
+                        {aadhaarFront ? (
+                          <div
+                            onClick={() => window.open(`/verify-document/${user.userId}/${aadhaarFront.idx}`, '_blank')}
+                            className={`flex-1 h-32 cursor-pointer rounded-lg border border-dashed flex flex-col items-center justify-center transition-colors gap-1.5 text-xs font-medium
+                              ${aadhaarFront.status === 'Verified' ? 'bg-green-50 border-[#489b0d]/40 text-[#489b0d] hover:bg-green-100' :
+                                aadhaarFront.status === 'Rejected' ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100' :
+                                'bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200'}`}
+                          >
+                            <FileText size={20} />
+                            <span className="font-bold">Aadhaar Front</span>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${aadhaarFront.status === 'Verified' ? 'bg-green-200 text-[#489b0d]' : aadhaarFront.status === 'Rejected' ? 'bg-red-200 text-red-700' : 'bg-orange-100 text-orange-600'}`}>{aadhaarFront.status || 'Pending'}</span>
+                          </div>
+                        ) : (
+                          <div className="flex-1 h-32 bg-orange-50 rounded-lg border-2 border-dashed border-orange-200 flex flex-col items-center justify-center text-orange-400 gap-1">
+                            <AlertCircle size={18} />
+                            <p className="text-[10px] font-bold text-center">Front Not Uploaded</p>
+                          </div>
+                        )}
+                        {/* Back */}
+                        {aadhaarBack ? (
+                          <div
+                            onClick={() => window.open(`/verify-document/${user.userId}/${aadhaarBack.idx}`, '_blank')}
+                            className={`flex-1 h-32 cursor-pointer rounded-lg border border-dashed flex flex-col items-center justify-center transition-colors gap-1.5 text-xs font-medium
+                              ${aadhaarBack.status === 'Verified' ? 'bg-green-50 border-[#489b0d]/40 text-[#489b0d] hover:bg-green-100' :
+                                aadhaarBack.status === 'Rejected' ? 'bg-red-50 border-red-300 text-red-600 hover:bg-red-100' :
+                                'bg-slate-100 border-slate-300 text-slate-500 hover:bg-slate-200'}`}
+                          >
+                            <FileText size={20} />
+                            <span className="font-bold">Aadhaar Back</span>
+                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-bold ${aadhaarBack.status === 'Verified' ? 'bg-green-200 text-[#489b0d]' : aadhaarBack.status === 'Rejected' ? 'bg-red-200 text-red-700' : 'bg-orange-100 text-orange-600'}`}>{aadhaarBack.status || 'Pending'}</span>
+                          </div>
+                        ) : (
+                          <div className="flex-1 h-32 bg-orange-50 rounded-lg border-2 border-dashed border-orange-200 flex flex-col items-center justify-center text-orange-400 gap-1">
+                            <AlertCircle size={18} />
+                            <p className="text-[10px] font-bold text-center">Back Not Uploaded</p>
+                          </div>
+                        )}
+                      </div>
+                      {(aadhaarDocs.length === 0) && (
+                        <button onClick={() => toast.success('Reminder sent to upload Aadhaar!')} className="w-full py-2 text-[12px] font-bold bg-orange-500 text-white rounded hover:bg-orange-600 transition-colors mt-2 flex items-center justify-center gap-2">
+                          <Send size={13} /> Send Upload Reminder
+                        </button>
+                      )}
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded bg-[#489b0d]/10 text-[#489b0d] text-[11px] font-bold flex items-center gap-1">
-                    <CheckCircle2 size={14} /> Verified
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  <InfoRow label="Document Number" value={user.aadhaar} />
-                  <InfoRow label="Name on Document" value={user.name} />
-                  <InfoRow label="Verified On" value="13 May 2025" />
-                  <div className="mt-4 pt-4 border-t border-slate-100 flex gap-4">
-                    <div 
-                      onClick={() => setViewDoc({ name: 'Aadhaar Card Front', url: 'https://images.unsplash.com/photo-1601597111158-2fceff292cdc?auto=format&fit=crop&q=80&w=800' })}
-                      className="flex-1 h-32 bg-slate-100 hover:bg-slate-200 cursor-pointer rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-500 text-xs transition-colors"
-                    >
-                      <FileText size={20} className="mr-2" /> Aadhaar_Front.jpg
-                    </div>
-                    <div 
-                      onClick={() => setViewDoc({ name: 'Aadhaar Card Back', url: 'https://images.unsplash.com/photo-1601597111158-2fceff292cdc?auto=format&fit=crop&q=80&w=800' })}
-                      className="flex-1 h-32 bg-slate-100 hover:bg-slate-200 cursor-pointer rounded-lg border border-dashed border-slate-300 flex items-center justify-center text-slate-500 text-xs transition-colors"
-                    >
-                      <FileText size={20} className="mr-2" /> Aadhaar_Back.jpg
-                    </div>
-                  </div>
-                </div>
-              </div>
+                );
+              })()}
             </div>
           </div>
         )}
@@ -489,14 +546,14 @@ export default function UserProfile() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                <InfoRow label="Occupation Type" value={user.occupation} />
-                <InfoRow label="Employer Name" value="Tech Solutions Pvt Ltd" />
-                <InfoRow label="Designation" value="Senior Software Engineer" />
-                <InfoRow label="Total Experience" value="5 Years 4 Months" />
-                <InfoRow label="Official Email" value={`work.${user.email.split('@')[0]}@techsolutions.com`} />
-                <InfoRow label="Work Phone" value="080-12345678" />
+                <InfoRow label="Occupation Type" value={user.occupation || 'N/A'} />
+                <InfoRow label="Employer Name" value={user.employerName || 'N/A'} />
+                <InfoRow label="Designation" value={user.designation || 'N/A'} />
+                <InfoRow label="Total Experience" value={user.totalExperience || 'N/A'} />
+                <InfoRow label="Official Email" value={user.officialEmail || 'N/A'} />
+                <InfoRow label="Work Phone" value={user.workPhone || 'N/A'} />
                 <div className="col-span-1 md:col-span-2">
-                  <InfoRow label="Office Address" value="Building 4, Mindspace IT Park, Hitech City, Hyderabad - 500081" />
+                  <InfoRow label="Office Address" value={user.officeAddress || 'N/A'} />
                 </div>
               </div>
             </div>
@@ -508,7 +565,7 @@ export default function UserProfile() {
           <div className="space-y-6">
             <h2 className="text-lg font-bold text-slate-800">Financial Details</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
+
               <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-center mb-6">
                   <h3 className="text-[14px] font-bold text-slate-800">Bank Details</h3>
@@ -517,12 +574,12 @@ export default function UserProfile() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <InfoRow label="Bank Name" value="HDFC Bank" />
-                  <InfoRow label="Branch" value="Sector 45, Gurugram" />
-                  <InfoRow label="Account Holder Name" value={user.name} />
-                  <InfoRow label="Account Number" value="50100234567890" />
-                  <InfoRow label="IFSC Code" value="HDFC0001234" />
-                  <InfoRow label="Account Type" value="Savings Account" />
+                  <InfoRow label="Bank Name" value={user.bankName || 'N/A'} />
+                  <InfoRow label="Branch" value={user.branch || 'N/A'} />
+                  <InfoRow label="Account Holder Name" value={user.accountHolderName || 'N/A'} />
+                  <InfoRow label="Account Number" value={user.accountNumber || 'N/A'} />
+                  <InfoRow label="IFSC Code" value={user.ifscCode || 'N/A'} />
+                  <InfoRow label="Account Type" value={user.accountType || 'N/A'} />
                 </div>
               </div>
 
@@ -534,10 +591,10 @@ export default function UserProfile() {
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <InfoRow label="Annual Income" value={user.annualIncome} />
-                  <InfoRow label="Monthly Net Salary" value="₹ 1,00,000" />
-                  <InfoRow label="Existing EMIs" value="₹ 16,500" />
-                  <InfoRow label="FOIR (Fixed Obligation to Income Ratio)" value="16.5%" />
+                  <InfoRow label="Annual Income" value={user.annualIncome || 'N/A'} />
+                  <InfoRow label="Monthly Net Salary" value={user.monthlyNetSalary || 'N/A'} />
+                  <InfoRow label="Existing EMIs" value={user.existingEmis || 'N/A'} />
+                  <InfoRow label="FOIR (Fixed Obligation to Income Ratio)" value={user.foir || 'N/A'} />
                   <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-lg">
                     <p className="text-[12px] font-bold text-blue-800 mb-1">Income Verification</p>
                     <p className="text-[11px] text-blue-700 leading-relaxed">
@@ -556,7 +613,7 @@ export default function UserProfile() {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">All Loan Applications</h2>
-              <button 
+              <button
                 onClick={() => {
                   toast.success('Full user profile updated successfully!');
                   setNewLoanModal(true);
@@ -566,7 +623,7 @@ export default function UserProfile() {
                 <Plus size={14} /> New Application
               </button>
             </div>
-            
+
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -575,81 +632,45 @@ export default function UserProfile() {
                       <th className="py-4 px-6 text-[12px] font-bold text-slate-600">Application ID</th>
                       <th className="py-4 px-6 text-[12px] font-bold text-slate-600">Loan Product</th>
                       <th className="py-4 px-6 text-[12px] font-bold text-slate-600">Amount & Tenure</th>
-                      <th className="py-4 px-6 text-[12px] font-bold text-slate-600">Applied On</th>
                       <th className="py-4 px-6 text-[12px] font-bold text-slate-600">Status</th>
                       <th className="py-4 px-6 text-[12px] font-bold text-slate-600 text-right">Action</th>
                     </tr>
                   </thead>
                   <tbody className="text-[13px]">
-                    <tr className="border-b border-slate-50 hover:bg-slate-50/50">
-                      <td className="py-4 px-6 font-bold text-blue-600">LN-250512-001</td>
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800">Home Loan</div>
-                        <div className="text-[11px] text-slate-500">Interest: 8.5% p.a.</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800">₹25,00,000</div>
-                        <div className="text-[11px] text-slate-500">240 Months</div>
-                      </td>
-                      <td className="py-4 px-6 text-slate-600">12 May 2025</td>
-                      <td className="py-4 px-6">
-                        <span className="px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 text-[11px] font-bold border border-blue-100">Under Review</span>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <button 
-                          onClick={() => setViewLoan('LN-250512-001')}
-                          className="text-blue-600 hover:text-blue-800 font-bold text-[12px] flex items-center gap-1 justify-end ml-auto cursor-pointer"
-                        >
-                          <Eye size={14} /> View Details
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="border-b border-slate-50 hover:bg-slate-50/50">
-                      <td className="py-4 px-6 font-bold text-blue-600">LN-250425-001</td>
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800">Personal Loan</div>
-                        <div className="text-[11px] text-slate-500">Interest: 12.5% p.a.</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800">₹5,00,000</div>
-                        <div className="text-[11px] text-slate-500">36 Months</div>
-                      </td>
-                      <td className="py-4 px-6 text-slate-600">25 Apr 2025</td>
-                      <td className="py-4 px-6">
-                        <span className="px-2.5 py-1 rounded-full bg-[#489b0d]/10 text-[#489b0d] text-[11px] font-bold border border-[#489b0d]/20">Approved</span>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <button 
-                          onClick={() => setViewLoan('LN-250425-001')}
-                          className="text-blue-600 hover:text-blue-800 font-bold text-[12px] flex items-center gap-1 justify-end ml-auto cursor-pointer"
-                        >
-                          <Eye size={14} /> View Details
-                        </button>
-                      </td>
-                    </tr>
-                    <tr className="hover:bg-slate-50/50">
-                      <td className="py-4 px-6 font-bold text-blue-600">LN-250310-001</td>
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800">Business Loan</div>
-                        <div className="text-[11px] text-slate-500">Interest: 15.0% p.a.</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-slate-800">₹15,00,000</div>
-                        <div className="text-[11px] text-slate-500">60 Months</div>
-                      </td>
-                      <td className="py-4 px-6 text-slate-600">10 Mar 2025</td>
-                      <td className="py-4 px-6">
-                        <span className="px-2.5 py-1 rounded-full bg-red-50 text-red-600 text-[11px] font-bold border border-red-100">Rejected</span>
-                      </td>
-                      <td className="py-4 px-6 text-right">
-                        <button 
-                          onClick={() => setViewLoan('LN-250310-001')}
-                          className="text-blue-600 hover:text-blue-800 font-bold text-[12px] flex items-center gap-1 justify-end ml-auto cursor-pointer"
-                        >
-                          <Eye size={14} /> View Details
-                        </button>
-                      </td>
-                    </tr>
+                    {user.loans && user.loans.map((loan, idx) => (
+                      <tr key={idx} className="border-b border-slate-50 hover:bg-slate-50/50">
+                        <td className="py-4 px-6 font-bold text-blue-600">{loan.applicationId}</td>
+                        <td className="py-4 px-6">
+                          <div className="font-bold text-slate-800">{loan.loanType}</div>
+                          <div className="text-[11px] text-slate-500">Interest: 8.5% p.a.</div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <div className="font-bold text-slate-800">₹{Number(loan.amount).toLocaleString('en-IN')}</div>
+                          <div className="text-[11px] text-slate-500">240 Months</div>
+                        </td>
+                        <td className="py-4 px-6">
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${loan.status === 'Approved' ? 'bg-[#489b0d]/10 text-[#489b0d] border-[#489b0d]/20' :
+                              loan.status === 'Rejected' ? 'bg-red-50 text-red-600 border-red-100' :
+                                'bg-blue-50 text-blue-600 border-blue-100'
+                            }`}>
+                            {loan.status}
+                          </span>
+                        </td>
+                        <td className="py-4 px-6 text-right">
+                          <button
+                            onClick={() => setViewLoan(loan.applicationId)}
+                            className="text-blue-600 hover:text-blue-800 font-bold text-[12px] flex items-center gap-1 justify-end ml-auto cursor-pointer"
+                          >
+                            <Eye size={14} /> View Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                    {(!user.loans || user.loans.length === 0) && (
+                      <tr>
+                        <td colSpan="5" className="py-8 text-center text-slate-500 font-medium">No applications found</td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -660,37 +681,98 @@ export default function UserProfile() {
         {/* Tab Content: Uploaded Documents */}
         {activeTab === "Uploaded Documents" && (
           <div className="space-y-6">
+            {/* Missing Documents Section */}
+            {(() => {
+              const reqDocs = ['PAN Card', 'Aadhaar Front', 'Aadhaar Back', 'Bank Statement', 'Salary Slip', 'ITR'];
+              const uploaded = user.documents?.map(d => d.name) || [];
+              const missing = reqDocs.filter(d => !uploaded.some(u => u.includes(d)));
+              return missing.length > 0 ? (
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle size={18} className="text-orange-500" />
+                    <h2 className="text-lg font-bold text-slate-800">Missing Documents</h2>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {missing.map((doc, idx) => (
+                      <div key={idx} className="bg-orange-50/50 border border-orange-100 rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded bg-orange-100 text-orange-600 flex items-center justify-center">
+                            <FileText size={16} />
+                          </div>
+                          <div>
+                            <p className="text-[13px] font-bold text-slate-800">{doc}</p>
+                            <p className="text-[11px] font-medium text-orange-600">Pending Upload</p>
+                          </div>
+                        </div>
+                        {hasPermission('Send Reminders/SMS') ? (
+                          <button
+                            onClick={() => toast.success(`Reminder sent to customer for ${doc}!`)}
+                            className="h-8 px-3 rounded bg-orange-500 text-white text-[12px] font-bold hover:bg-orange-600 transition-colors shadow-sm flex items-center gap-1.5"
+                          >
+                            <Send size={12} /> Remind
+                          </button>
+                        ) : (
+                          <div className="h-8 px-3 rounded bg-slate-100 text-slate-400 text-[12px] font-bold flex items-center gap-1.5 cursor-not-allowed" title="No permission">
+                            <Lock size={12} /> No Access
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
             <div className="flex justify-between items-center">
               <h2 className="text-lg font-bold text-slate-800">Document Repository</h2>
               <button className="flex items-center gap-1 text-[12px] font-bold bg-white border border-slate-200 text-slate-700 px-3 py-2 rounded-md hover:bg-slate-50 transition-colors cursor-pointer">
                 <Download size={14} /> Download All
               </button>
             </div>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {[
-                { name: "PAN Card", type: "PDF", size: "1.2 MB", date: "12 May" },
-                { name: "Aadhaar Front", type: "JPG", size: "2.5 MB", date: "12 May" },
-                { name: "Aadhaar Back", type: "JPG", size: "2.1 MB", date: "12 May" },
-                { name: "Bank Statement_Jan_Mar", type: "PDF", size: "4.8 MB", date: "13 May" },
-                { name: "Salary Slip_April", type: "PDF", size: "0.8 MB", date: "13 May" },
-                { name: "Salary Slip_March", type: "PDF", size: "0.8 MB", date: "13 May" },
-                { name: "Salary Slip_Feb", type: "PDF", size: "0.8 MB", date: "13 May" },
-                { name: "User Photo", type: "PNG", size: "3.2 MB", date: "12 May" },
-              ].map((doc, idx) => (
-                <div 
-                  key={idx} 
-                  onClick={() => setViewDoc({ name: doc.name, url: `https://images.unsplash.com/photo-1618044733300-9472054094ee?auto=format&fit=crop&q=80&w=800` })}
-                  className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-center hover:border-blue-400 hover:shadow-md transition-all cursor-pointer group"
+              {user.documents && user.documents.map((doc, idx) => (
+                <div
+                  key={idx}
+                  onClick={() => window.open(`/verify-document/${user.userId}/${idx}`, '_blank')}
+                  className={`relative bg-white rounded-xl p-4 flex flex-col items-center justify-center text-center transition-all cursor-pointer group border-2 hover:shadow-md
+                    ${doc.status === 'Verified' ? 'border-[#489b0d]/40 hover:border-[#489b0d]' : 
+                      doc.status === 'Rejected' ? 'border-red-300 hover:border-red-500' : 
+                      'border-slate-200 hover:border-blue-400'}`}
                 >
-                  <div className="w-12 h-12 rounded-lg bg-blue-50 text-blue-500 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+                  <div className={`w-12 h-12 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform
+                    ${doc.status === 'Verified' ? 'bg-green-50 text-[#489b0d]' :
+                      doc.status === 'Rejected' ? 'bg-red-50 text-red-500' :
+                      'bg-blue-50 text-blue-500'}`}>
                     <FileText size={24} />
                   </div>
                   <h4 className="text-[12px] font-bold text-slate-800 truncate w-full mb-1">{doc.name}</h4>
                   <p className="text-[10px] text-slate-500 font-medium">{doc.type} • {doc.size}</p>
-                  <p className="text-[10px] text-slate-400 mt-2">{doc.date}</p>
+                  <p className="text-[10px] text-slate-400 mb-2">{doc.date}</p>
+                  
+                  {/* Status Badge */}
+                  {doc.status === 'Verified' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-[#489b0d] text-[10px] font-bold">
+                      <CheckCircle2 size={10} /> Verified
+                    </span>
+                  )}
+                  {doc.status === 'Rejected' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-600 text-[10px] font-bold">
+                      <X size={10} /> Rejected
+                    </span>
+                  )}
+                  {(!doc.status || doc.status === 'Pending') && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-orange-100 text-orange-600 text-[10px] font-bold">
+                      <AlertCircle size={10} /> Pending
+                    </span>
+                  )}
                 </div>
               ))}
+              {(!user.documents || user.documents.length === 0) && (
+                <div className="col-span-full py-8 text-center text-slate-500 text-[13px] font-medium border-2 border-dashed border-slate-200 rounded-xl">
+                  No documents found in repository.
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -701,43 +783,22 @@ export default function UserProfile() {
             <h2 className="text-lg font-bold text-slate-800">Recent Activity</h2>
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
               <div className="relative border-l-2 border-slate-100 ml-3 md:ml-4 space-y-8 pb-4">
-                
-                <div className="relative pl-6 md:pl-8">
-                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-blue-500 border-4 border-white shadow-sm"></div>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-1">
-                    <h4 className="text-[14px] font-bold text-slate-800">Home Loan Application Submitted</h4>
-                    <span className="text-[11px] font-bold text-slate-500">12 May 2025, 02:30 PM</span>
+                {user.activities && user.activities.map((activity, idx) => (
+                  <div key={idx} className="relative pl-6 md:pl-8">
+                    <div className={`absolute -left-[9px] top-1 w-4 h-4 rounded-full border-4 border-white shadow-sm ${activity.type === 'green' ? 'bg-[#489b0d]' :
+                        activity.type === 'amber' ? 'bg-amber-500' :
+                          activity.type === 'slate' ? 'bg-slate-400' :
+                            'bg-blue-500'
+                      }`}></div>
+                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-1">
+                      <h4 className="text-[14px] font-bold text-slate-800">{activity.title}</h4>
+                    </div>
+                    <p className="text-[13px] text-slate-600">{activity.description}</p>
                   </div>
-                  <p className="text-[13px] text-slate-600">User successfully submitted an application for Home Loan (LN-250512-001).</p>
-                </div>
-
-                <div className="relative pl-6 md:pl-8">
-                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-[#489b0d] border-4 border-white shadow-sm"></div>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-1">
-                    <h4 className="text-[14px] font-bold text-slate-800">KYC Verification Completed</h4>
-                    <span className="text-[11px] font-bold text-slate-500">13 May 2025, 11:15 AM</span>
-                  </div>
-                  <p className="text-[13px] text-slate-600">PAN and Aadhaar verified successfully via automated check.</p>
-                </div>
-
-                <div className="relative pl-6 md:pl-8">
-                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-amber-500 border-4 border-white shadow-sm"></div>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-1">
-                    <h4 className="text-[14px] font-bold text-slate-800">Documents Uploaded</h4>
-                    <span className="text-[11px] font-bold text-slate-500">13 May 2025, 10:45 AM</span>
-                  </div>
-                  <p className="text-[13px] text-slate-600">User uploaded Bank Statements and Salary Slips.</p>
-                </div>
-
-                <div className="relative pl-6 md:pl-8">
-                  <div className="absolute -left-[9px] top-1 w-4 h-4 rounded-full bg-slate-400 border-4 border-white shadow-sm"></div>
-                  <div className="flex flex-col md:flex-row md:items-center justify-between mb-1">
-                    <h4 className="text-[14px] font-bold text-slate-800">Account Registered</h4>
-                    <span className="text-[11px] font-bold text-slate-500">12 May 2025, 10:30 AM</span>
-                  </div>
-                  <p className="text-[13px] text-slate-600">User created an account using Google Ads referral link.</p>
-                </div>
-
+                ))}
+                {(!user.activities || user.activities.length === 0) && (
+                  <div className="text-center text-slate-500 text-[12px] py-4">No recent activity.</div>
+                )}
               </div>
             </div>
           </div>
@@ -784,25 +845,103 @@ export default function UserProfile() {
       {/* Loan Details Modal */}
       {viewLoan && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setViewLoan(null)}>
-          <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full flex flex-col" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-center p-4 border-b border-slate-200">
-              <h3 className="font-bold text-slate-800">Application Details: {viewLoan}</h3>
-              <button onClick={() => setViewLoan(null)} className="p-1 hover:bg-slate-100 rounded text-slate-500 cursor-pointer">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
+            <div className="flex justify-between items-center p-5 border-b border-slate-200 bg-slate-50 rounded-t-xl">
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-[16px]">Application Details</h3>
+                <p className="text-[12px] text-slate-500 font-medium">{viewLoan}</p>
+              </div>
+              <button onClick={() => setViewLoan(null)} className="p-1 hover:bg-slate-200 rounded text-slate-500 cursor-pointer transition-colors">
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
-              <p className="text-[13px] text-slate-600 leading-relaxed">
-                This is a detailed view of the loan application <strong>{viewLoan}</strong>. Here you would see the complete underwriting status, verification stages, and assigned officers.
-              </p>
-              <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-3">
-                <InfoRow label="Application Stage" value="Credit Appraisal" />
-                <InfoRow label="Assigned To" value="Rahul Sharma (Credit Manager)" />
-                <InfoRow label="Disbursement Account" value="HDFC Bank - 50100234567890" />
+
+            <div className="p-6 overflow-y-auto flex-1 custom-scrollbar space-y-6">
+
+              <div className="bg-slate-50 p-5 border border-slate-100 rounded-lg">
+                <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-200">
+                  <h4 className="text-[12px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <BarChart3 size={16} className="text-[#489b0d]" /> Credit Intelligence
+                  </h4>
+                  <span className="text-[#489b0d] font-bold flex items-center gap-1 text-[11px]"><ShieldCheck size={14} /> Low Risk</span>
+                </div>
+
+                <div className="mb-6">
+                  <div className="flex justify-between items-end mb-1">
+                    <p className="text-[11px] text-slate-500 font-bold">Credit Score</p>
+                    <p className="text-[18px] font-black text-slate-800">{user?.creditScore || 750} <span className="text-[11px] text-slate-400 font-medium">/ 900</span></p>
+                  </div>
+                  <div className="w-full bg-slate-200 rounded-full h-2 mb-1.5 overflow-hidden flex relative">
+                    <div className="bg-red-500 h-2" style={{ width: '30%' }}></div>
+                    <div className="bg-orange-500 h-2" style={{ width: '40%' }}></div>
+                    <div className="bg-[#489b0d] h-2" style={{ width: '30%' }}></div>
+                    <div className="absolute top-0 w-3 h-3 bg-white border-2 border-slate-800 rounded-full shadow-sm -mt-0.5" style={{ left: `${((user?.creditScore || 750) / 900) * 100}%`, transform: 'translateX(-50%)' }}></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div className="bg-white p-3 rounded border border-slate-100 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1 text-slate-500">
+                      <Briefcase size={14} /> <span className="text-[10px] font-bold">Employment</span>
+                    </div>
+                    <p className="text-[13px] font-bold text-slate-800">{user?.occupation || 'Salaried'}</p>
+                  </div>
+                  <div className="bg-white p-3 rounded border border-slate-100 shadow-sm">
+                    <div className="flex items-center gap-2 mb-1 text-slate-500">
+                      <TrendingUp size={14} /> <span className="text-[10px] font-bold">Monthly Income</span>
+                    </div>
+                    <p className="text-[13px] font-bold text-slate-800">{user?.monthlyNetSalary || '₹50,000'}</p>
+                  </div>
+                </div>
+
+                <div className="bg-blue-50/50 p-3 rounded border border-blue-100">
+                  <p className="text-[11px] text-blue-600 font-bold mb-1 flex items-center gap-1"><Activity size={14} /> System Recommendation</p>
+                  <p className={`text-[13px] font-bold text-[#489b0d]`}>
+                    Auto-Approval Recommended based on excellent credit history and stable income.
+                  </p>
+                </div>
               </div>
+
+              <div className="space-y-2">
+                <h4 className="text-[12px] font-bold text-slate-800 uppercase tracking-wider mb-2">Underwriter Comments</h4>
+                <textarea
+                  rows="3"
+                  placeholder="Add justification for your decision..."
+                  className="w-full border border-slate-200 rounded p-3 text-[12px] text-slate-700 focus:outline-none focus:border-[#489b0d] resize-none"
+                ></textarea>
+              </div>
+
             </div>
-            <div className="p-4 border-t border-slate-200 flex justify-end">
-              <button onClick={() => setViewLoan(null)} className="px-4 py-2 bg-[#489b0d] text-white rounded font-bold text-[13px] cursor-pointer hover:bg-[#3d830b]">Close</button>
+            <div className="p-5 border-t border-slate-200 flex justify-between items-center bg-slate-50 rounded-b-xl shrink-0">
+              <button onClick={() => setViewLoan(null)} className="px-4 py-2 text-slate-600 rounded font-bold text-[13px] cursor-pointer hover:bg-slate-200 transition-colors">Cancel</button>
+              <div className="flex items-center gap-3">
+                {hasPermission('Approve/Reject/Hold Loan') ? (
+                  <>
+                    <button
+                      onClick={() => { toast.success('Application Rejected'); setViewLoan(null); }}
+                      className="px-4 py-2 bg-red-50 text-red-600 border border-red-200 rounded font-bold text-[13px] cursor-pointer hover:bg-red-100 transition-colors"
+                    >
+                      Reject
+                    </button>
+                    <button
+                      onClick={() => { toast.info('Application put on Hold'); setViewLoan(null); }}
+                      className="px-4 py-2 bg-orange-50 text-orange-600 border border-orange-200 rounded font-bold text-[13px] cursor-pointer hover:bg-orange-100 transition-colors"
+                    >
+                      Hold
+                    </button>
+                    <button
+                      onClick={() => { toast.success('Application Approved'); setViewLoan(null); }}
+                      className="px-5 py-2 bg-[#489b0d] text-white rounded font-bold text-[13px] cursor-pointer hover:bg-[#3d830b] transition-colors shadow-sm"
+                    >
+                      Approve Application
+                    </button>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 px-4 py-2 bg-slate-100 text-slate-400 rounded text-[12px] font-medium cursor-not-allowed">
+                    <Lock size={14} /> No decision access — Contact Admin
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -857,9 +996,9 @@ export default function UserProfile() {
                 <X size={20} />
               </button>
             </div>
-            
+
             <div className="p-6 overflow-y-auto flex-1 space-y-8">
-              
+
               {/* Personal Information */}
               <div>
                 <h4 className="text-[13px] font-bold text-slate-800 mb-3 uppercase tracking-wider border-b border-slate-100 pb-2">Personal Information</h4>
@@ -972,7 +1111,7 @@ export default function UserProfile() {
               </div>
 
             </div>
-            
+
             <div className="p-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50 rounded-b-xl">
               <button onClick={() => setEditUserModal(false)} className="px-6 py-2 border border-slate-200 text-slate-700 rounded-md font-bold text-[13px] cursor-pointer hover:bg-white transition-colors shadow-sm">Cancel</button>
               <button onClick={() => {

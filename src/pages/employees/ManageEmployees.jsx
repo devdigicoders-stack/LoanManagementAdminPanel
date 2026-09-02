@@ -1,42 +1,62 @@
-import { useState } from 'react';
-import { Search, UserPlus, Link2, EyeOff, Check, Hourglass, Edit, Eye, UserCheck, UserX } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Search, UserPlus, Link2, EyeOff, Check, Hourglass, Edit, Eye, UserCheck, UserX, Trash2 } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 
 export default function ManageEmployees() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState('');
+  const location = useLocation();
+  const [searchTerm, setSearchTerm] = useState(location.state?.initialSearch || '');
   const [copiedId, setCopiedId] = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const defaultEmployees = [
-    { id: 'NUOGM-SEC-004', name: 'pranav singh', email: 'pranav@gmail.com', role: 'SECURED EXEC', designation: 'Secure Field Executive', status: 'Inactive', onboarding: 'Done' },
-    { id: 'NUOGM-HR-002', name: 'rahul', email: 'rahul@gmail.com', role: 'HR', designation: 'HR Management', status: 'Inactive', onboarding: 'Pending' },
-    { id: 'NUOGM-ULM-001', name: 'ramesh', email: 'ramesh@gmail.com', role: 'UNSECURED LOAN MANAGER', designation: 'executive manager', status: 'Active', onboarding: 'Done' },
-    { id: 'NUOGM-AGM-002', name: 'jhone', email: 'jhone@gmail.com', role: 'AGENT MANAGER', designation: 'sales agent manager', status: 'Inactive', onboarding: 'Done' },
-    { id: 'NUOGM-AGT-003', name: 'praveen manik', email: 'praveen@gmail.com', role: 'AGENT EXEC', designation: 'field executive', status: 'Inactive', onboarding: 'Done' },
-    { id: 'NUOGM-AGM-001', name: 'kamal', email: 'kamal@gmail.com', role: 'AGENT MANAGER', designation: 'field agent manager', status: 'Active', onboarding: 'Done' },
-    { id: 'NUOGM-SLM-003', name: 'kiran jha', email: 'kiranjha@gmail.com', role: 'SECURED LOAN MANAGER', designation: 'field supervisor', status: 'Inactive', onboarding: 'Done' },
-    { id: 'NUOGM-RM-002', name: 'lucky singh', email: 'luckys@gmail.com', role: 'REPORTING MANAGER', designation: 'field executives reporting manager', status: 'Active', onboarding: 'Done' },
-    { id: 'NUOGM-TC-001', name: 'avni saha', email: 'avnis@gmail.com', role: 'TELECALLER', designation: 'telecaller', status: 'Inactive', onboarding: 'Done' },
-    { id: 'NUOGM-STC-001', name: 'sitaram', email: 'sitaram@gmail.com', role: 'SENIOR TELECALLER', designation: 'senior telecaller', status: 'Inactive', onboarding: 'Done' },
-  ];
+  // Fetch employees from backend
+  const fetchEmployees = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // Adding search filter if present
+      let url = 'http://localhost:5000/api/employees';
+      if (searchTerm) {
+        url += `?search=${searchTerm}`;
+      }
 
-  const [employees, setEmployees] = useState(() => {
-    const saved = localStorage.getItem('employees');
-    if (saved) return JSON.parse(saved);
-    
-    // Save defaults to localStorage initially
-    localStorage.setItem('employees', JSON.stringify(defaultEmployees));
-    return defaultEmployees;
-  });
+      const res = await fetch(url, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // The backend returns an array of Employee documents
+        // We will map MongoDB `_id` to `id` for frontend consistency, 
+        // and keep `empId` as it is (e.g. NUOGM-SEC-004)
+        const formatted = data.map(emp => ({
+          id: emp._id,
+          empId: emp.empId,
+          name: emp.name,
+          email: emp.email,
+          role: emp.role,
+          designation: emp.designation,
+          status: emp.status,
+          onboarding: emp.onboardingStatus, // 'Pending', 'Submitted', 'Done'
+        }));
+        setEmployees(formatted);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load employees');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const filteredEmployees = employees.filter(emp => 
-    emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    emp.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    emp.role.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  useEffect(() => {
+    // Debounce the search input to avoid too many API calls
+    const timeoutId = setTimeout(() => {
+      fetchEmployees();
+    }, 500);
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm]);
 
   const getRoleBadgeStyle = (role) => {
     switch(role) {
@@ -85,17 +105,59 @@ export default function ManageEmployees() {
       confirmButtonColor: currentStatus === 'Active' ? '#ef4444' : '#10b981',
       cancelButtonColor: '#64748b',
       confirmButtonText: `Yes, ${actionText}`
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        const newEmployees = employees.map(emp => {
-          if (emp.id === id) {
-            return { ...emp, status: currentStatus === 'Active' ? 'Inactive' : 'Active' };
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`http://localhost:5000/api/employees/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (res.ok) {
+            const updatedEmployee = await res.json();
+            // Update local state to reflect new status instantly without reloading entire list
+            setEmployees(employees.map(emp => 
+              emp.id === id ? { ...emp, status: updatedEmployee.status } : emp
+            ));
+            toast.success(`Employee ${actionText.toLowerCase()}d successfully`);
+          } else {
+            toast.error('Failed to change status');
           }
-          return emp;
-        });
-        setEmployees(newEmployees);
-        localStorage.setItem('employees', JSON.stringify(newEmployees));
-        toast.success(`Employee ${actionText.toLowerCase()}d successfully`);
+        } catch (error) {
+          toast.error('Server error');
+        }
+      }
+    });
+  };
+
+  const handleDeleteEmployee = (id) => {
+    Swal.fire({
+      title: 'Delete Employee?',
+      text: "This action cannot be undone! The employee will be permanently removed.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, Delete'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`http://localhost:5000/api/employees/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          
+          if (res.ok) {
+            setEmployees(employees.filter(emp => emp.id !== id));
+            toast.success('Employee deleted successfully');
+          } else {
+            toast.error('Failed to delete employee');
+          }
+        } catch (error) {
+          toast.error('Server error');
+        }
       }
     });
   };
@@ -151,7 +213,7 @@ export default function ManageEmployees() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {filteredEmployees.map((emp) => (
+                {employees.map((emp) => (
                   <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors">
                     <td className="py-3 px-4">
                       <div>
@@ -160,7 +222,7 @@ export default function ManageEmployees() {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      <p className="text-[13px] text-gray-500 font-medium">{emp.id}</p>
+                      <p className="text-[13px] text-gray-500 font-medium">{emp.empId}</p>
                     </td>
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${getRoleBadgeStyle(emp.role)}`}>
@@ -185,7 +247,7 @@ export default function ManageEmployees() {
                       </div>
                     </td>
                     <td className="py-3 px-4">
-                      {emp.onboarding === 'Done' || emp.onboardingStatus === 'Active' || emp.onboardingStatus === 'Submitted' ? (
+                      {emp.onboarding === 'Done' || emp.onboarding === 'Submitted' ? (
                         <div className="flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md w-fit">
                           <Check size={14} strokeWidth={3} />
                           <span className="text-[11px] font-bold tracking-wide">Done</span>
@@ -198,8 +260,8 @@ export default function ManageEmployees() {
                       )}
                     </td>
                     <td className="py-3 px-4">
-                      <div className="flex items-center gap-3">
-                        {(!emp.onboardingStatus && emp.onboarding !== 'Done') || emp.onboardingStatus === 'Pending' ? (
+                      <div className="flex items-center gap-2">
+                        {emp.onboarding !== 'Done' && emp.onboarding !== 'Submitted' ? (
                           copiedId === emp.id ? (
                             <button 
                               className="flex items-center gap-1.5 px-3 py-1.5 bg-[#16a34a] text-white rounded-md transition-colors text-[12px] font-medium"
@@ -217,21 +279,49 @@ export default function ManageEmployees() {
                             </button>
                           )
                         ) : (
-                          <span className="text-[13px] text-gray-400 font-medium">
-                            {emp.onboardingStatus === 'Submitted' ? 'Under Review' : 'Activated'}
-                          </span>
+                          <div className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-600 rounded-md text-[12px] font-bold border border-green-100 w-fit">
+                            <Check size={14} strokeWidth={3} />
+                            Activated
+                          </div>
                         )}
+                        <button 
+                          onClick={() => navigate(`/employees/${emp.id}`)}
+                          className="flex items-center justify-center p-1.5 border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 hover:text-blue-600 transition-colors"
+                          title="View Profile & Documents"
+                        >
+                          <Eye size={16} />
+                        </button>
+                        <button 
+                          onClick={() => navigate(`/employees/${emp.id}/edit`)}
+                          className="flex items-center justify-center p-1.5 border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 hover:text-orange-500 transition-colors"
+                          title="Edit Employee"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button 
+                          onClick={() => handleDeleteEmployee(emp.id)}
+                          className="flex items-center justify-center p-1.5 border border-gray-200 text-gray-600 rounded-md hover:bg-gray-50 hover:text-red-500 transition-colors"
+                          title="Delete Employee"
+                        >
+                          <Trash2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
                 ))}
-                {filteredEmployees.length === 0 && (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan="7" className="py-12 text-center">
+                      <p className="text-gray-500 text-sm font-medium">Loading employees...</p>
+                    </td>
+                  </tr>
+                ) : employees.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="py-12 text-center">
                       <p className="text-gray-500 text-sm font-medium">No employees found matching your search.</p>
                     </td>
                   </tr>
-                )}
+                ) : null}
               </tbody>
             </table>
           </div>

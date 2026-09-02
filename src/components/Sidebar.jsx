@@ -52,191 +52,156 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     setUserSubRole(subRole);
   }, []);
 
+  // Helper: check if permission is granted for current user
+  const can = (permission) => {
+    try {
+      const stored = localStorage.getItem('permissions');
+      if (stored) {
+        const perms = JSON.parse(stored);
+        if (Array.isArray(perms) && perms.length > 0) {
+          return perms.includes(permission);
+        }
+      }
+      return false;
+    } catch { return false; }
+  };
+
   const getNavGroups = () => {
-    const allGroups = [
-      {
-        title: "",
-        items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }],
-        roles: ['Super Admin', 'Operation Admin', 'Sales Admin', 'Accountant Admin', 'Credit Admin']
-      },
-      {
-        title: "CORE HR",
-        items: [
-          { name: "Dashboard", icon: LayoutDashboard, path: "/" },
-          { name: "Employees Data", icon: Users, path: "/employees" },
-          { name: "Recruit & Onboard", icon: UserPlus, path: "/hr/onboarding" },
-        ],
-        roles: ['HR Admin']
-      },
-      {
-        title: "TIME & PAYROLL",
-        items: [
-          { name: "Attendance & Time", icon: ListChecks, path: "/employees/attendance" },
-          { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
-          { name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" },
-        ],
-        roles: ['HR Admin']
-      },
-      {
-        title: "PERFORMANCE & ANALYTICS",
-        items: [
-          { name: "Performance Mgmt", icon: Target, path: "/employees/performance" },
-          { name: "Targets & Achiev", icon: Target, path: "/hr/targets" },
-          { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
-        ],
-        roles: ['HR Admin']
-      },
-      {
-        title: "SELF SERVICE",
-        items: [
-          { name: "ESS Portal", icon: MonitorSmartphone, path: "/hr/ess" },
-        ],
-        roles: ['HR Admin']
-      },
-      {
-        // title: "DASHBOARD",
-        items: [
-          // { name: "Common Dashboard", icon: LayoutDashboard, path: "/" },
-        ],
-        roles: ['Operation Admin', 'Ops Head', 'Ops Manager', 'Ops Executive', 'National Head', 'Founder']
-      },
-      {
-        title: "LEAD & CRM",
-        items: [
-          { name: "All Leads", icon: Users, path: "/ops/leads" },
-          { name: "Add Lead", icon: UserPlus, path: "/ops/leads/add" },
-          { name: "Lead Assignment", icon: UserCog, path: "/ops/leads/assignment" },
-          { name: "Follow-Ups", icon: CalendarRange, path: "/ops/leads/followups" },
-          { name: "Lead Reports", icon: BarChart3, path: "/ops/leads/reports" },
-        ],
-        roles: ['Operation Admin', 'Ops Head', 'Ops Manager', 'Ops Executive', 'National Head']
-      },
-      {
-        title: "LOAN ORIGINATION (LOS)",
-        items: [
-          { name: "Applications", icon: FileText, path: "/ops/los/applications" },
-          { name: "Data Collection", icon: FolderOpen, path: "/ops/los/data" },
-          { name: "Document Verification", icon: ShieldCheck, path: "/ops/los/verification" },
-          { name: "Field Verification", icon: MapPin, path: "/ops/los/field-verification" },
-          { name: "Credit Scoring", icon: CreditCard, path: "/ops/los/scoring" },
-          { name: "Underwriting", icon: Briefcase, path: "/ops/los/underwriting" },
-          { name: "Collateral / Security", icon: Lock, path: "/ops/los/collateral" },
-          { name: "Approval", icon: CheckSquare, path: "/ops/los/approval" },
-          { name: "Legal Documentation", icon: Gavel, path: "/ops/los/legal" },
-          { name: "Disbursement", icon: Landmark, path: "/ops/los/disbursement" },
-        ],
-        roles: ['Operation Admin', 'Ops Head', 'Ops Manager', 'National Head']
-      },
-      {
-        title: "LOAN SERVICING",
-        items: [
-          { name: "Active Loans", icon: CheckCircle2, path: "/ops/servicing/active" },
-          { name: "EMI", icon: CircleDollarSign, path: "/ops/servicing/emi" },
-          { name: "Part Payment", icon: Wallet, path: "/ops/servicing/part-payment" },
-          { name: "Pre-Closure", icon: XOctagon, path: "/ops/servicing/closure" },
-          { name: "Restructuring", icon: History, path: "/ops/servicing/restructuring" },
-          { name: "NOC", icon: FileCheck, path: "/ops/servicing/noc" },
-        ],
-        roles: ['Operation Admin', 'Ops Head', 'Ops Manager', 'National Head']
-      },
-      {
-        title: "COLLECTIONS",
-        items: [
-          { name: "Collection Dashboard", icon: LayoutDashboard, path: "/ops/collections" },
-          { name: "Tele-Calling", icon: PhoneCall, path: "/ops/collections/tele-calling" },
-          { name: "Field Recovery", icon: MapPin, path: "/ops/collections/field" },
-          { name: "Notice", icon: Bell, path: "/ops/collections/notice" },
-          { name: "Settlement", icon: UserCheck, path: "/ops/collections/settlement" },
-          { name: "Legal Action", icon: Gavel, path: "/ops/collections/legal" },
-        ],
-        roles: ['Operation Admin', 'Ops Head', 'National Head']
-      },
-      {
-        title: "REPORTS & ANALYTICS",
-        items: [
-          { name: "Portfolio", icon: BarChart3, path: "/ops/reports/portfolio" },
-          { name: "Disbursement", icon: Landmark, path: "/ops/reports/disbursement" },
-          { name: "Collection", icon: CircleDollarSign, path: "/ops/reports/collection" },
-          { name: "NPA", icon: AlertCircle, path: "/ops/reports/npa" },
-          { name: "Defaulters", icon: UserX, path: "/ops/reports/defaulters" },
-          { name: "Performance", icon: Target, path: "/ops/reports/performance" },
-        ],
-        roles: ['Operation Admin', 'Ops Head', 'National Head', 'Founder']
-      },
-      {
-        title: "HR EXECUTIVE",
-        items: [
-          { name: "Dashboard", icon: LayoutDashboard, path: "/" },
-          { name: "Recruitment", icon: Users, path: "/hr/recruitment" },
-          { name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" },
-          { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
-        ],
-        roles: ['HR Executive']
-      },
-      {
-        title: "EMPLOYEE MANAGEMENT",
-        items: [
-          { name: "Manage Employees", icon: Users, path: "/employees" },
-          { name: "Departments", icon: Building2, path: "/employees/departments" },
-          { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
-          { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
-          { name: "Activity Logs", icon: History, path: "/employees/activity" },
-        ],
-        roles: ['Super Admin']
-      },
-      {
-        title: "HR REPORTS & ALERTS",
-        items: [
-          { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
-          { name: "Notifications", icon: Bell, path: "/hr/notifications" },
-        ],
-        roles: ['Super Admin']
-      },
-      {
-        title: "LEAD & APPLICATION",
-        items: [
-          { name: "Lead Management", icon: Target, path: "/leads" },
-          { name: "Loan Application", icon: FileText, path: "/loans" },
-          { name: "View Documents", icon: FolderOpen, path: "/loans/documents" },
-          { name: "Verify Documents", icon: ShieldCheck, path: "/verify-documents" },
-        ],
-        roles: ['Super Admin', 'Sales Admin']
-      },
-      {
-        title: "ADMIN PANEL",
-        items: [
-          { name: "Manage Users", icon: UserCheck, path: "/users" },
-          { name: "Application Decision", icon: CheckCircle2, path: "/application-decision" },
-          { name: "Request Documents", icon: FilePlus, path: "/request-documents" },
-          { name: "Assign Leads", icon: ClipboardList, path: "/leads/assignment" },
-          { name: "Permission Management", icon: Lock, path: "/users/roles" },
-          { name: "Manage Complaints", icon: MessageSquare, path: "/complaints" },
-        ],
-        roles: ['Super Admin', 'Credit Admin']
-      },
+    const isSuperAdmin = userRole === 'Super Admin';
+
+    // ── SUPER ADMIN: full role-based sidebar (unchanged) ────────────────────
+    if (isSuperAdmin) {
+      return [
+        {
+          title: "",
+          items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }],
+        },
+        {
+          title: "EMPLOYEE MANAGEMENT",
+          items: [
+            { name: "Departments", icon: Building2, path: "/employees/departments" },
+            { name: "Manage Employees", icon: Users, path: "/employees" },
+          ],
+        },
+        {
+          title: "HR REPORTS & ALERTS",
+          items: [
+            { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
+          ],
+        },
+        {
+          title: "LEAD & APPLICATION",
+          items: [
+            { name: "Lead Management", icon: Target, path: "/leads" },
+            { name: "Loan Application", icon: FileText, path: "/loans" },
+          ],
+        },
+        {
+          title: "ADMIN PANEL",
+          items: [
+            { name: "Manage Users", icon: UserCheck, path: "/users" },
+            { name: "Permission Management", icon: Lock, path: "/users/roles" },
+            { name: "Manage Complaints", icon: MessageSquare, path: "/complaints" },
+            { name: "Notifications", icon: Bell, path: "/notifications" },
+          ],
+        },
+        {
+          title: "ACCOUNT",
+          items: [
+            { name: "My Profile", icon: User, path: "/profile" },
+            { name: "Change Password", icon: Lock, path: "/change-password" },
+            { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          ],
+        },
+      ];
+    }
+
+    // ── ALL OTHER ROLES: permission-based sidebar ───────────────────────────
+    // Each permission granted by SuperAdmin maps to exactly these sidebar items.
+    // Dashboard + Account always visible regardless of permissions.
+
+    // Build sidebar items dynamically based on granted permissions
+    const items = {
+      // USER MANAGEMENT
+      manageUsers:        can('Manage Users'),
+      manageEmployees:    can('Manage Employees'),
+      rolePermissions:    can('Role & Permission Management'),
+
+      // LEAD MANAGEMENT
+      leadManagement:     can('Lead Management'),
+      assignLead:         can('Assign Lead to Employee'),
+      statusMgmt:         can('Status Management'),
+
+      // LOAN MANAGEMENT
+      viewLoans:          can('View Loan Applications'),
+      approveLoans:       can('Approve/Reject/Hold Loan'),
+      verifyDocs:         can('Verify Documents'),
+      downloadDocs:       can('Download Documents'),
+
+      // REPORTS & ANALYTICS
+      viewReports:        can('View Reports'),
+      exportData:         can('Export Data'),
+      payroll:            can('Payroll/Salary'),
+      sendReminders:      can('Send Reminders/SMS'),
+    };
+
+    // Group: USER MANAGEMENT PANEL
+    const userMgmtItems = [
+      ...(items.manageUsers      ? [{ name: "Manage Users",          icon: UserCheck,       path: "/users" }]         : []),
+      ...(items.manageEmployees  ? [{ name: "Departments",            icon: Building2,       path: "/employees/departments" }] : []),
+      ...(items.manageEmployees  ? [{ name: "Manage Employees",       icon: Users,           path: "/employees" }]     : []),
+      ...(items.rolePermissions  ? [{ name: "Permission Management",  icon: Lock,            path: "/users/roles" }]   : []),
+    ];
+
+    // Group: LEAD MANAGEMENT
+    const leadItems = [
+      ...(items.leadManagement || items.assignLead || items.statusMgmt
+        ? [{ name: "Lead Management", icon: Target, path: "/leads" }]
+        : []),
+    ];
+
+    // Group: LOAN MANAGEMENT
+    const loanItems = [
+      ...(items.viewLoans || items.approveLoans || items.verifyDocs || items.downloadDocs
+        ? [{ name: "Loan Applications", icon: FileText, path: "/loans" }]
+        : []),
+    ];
+
+    // Group: REPORTS & PAYROLL
+    const reportItems = [
+      ...(items.viewReports || items.exportData  ? [{ name: "Reports & Analytics", icon: BarChart3,         path: "/hr/reports" }]  : []),
+      ...(items.payroll                          ? [{ name: "Payroll & Salary",     icon: CircleDollarSign, path: "/hr/payroll" }]  : []),
+      ...(items.sendReminders || items.viewReports ? [{ name: "Notifications",      icon: Bell,             path: "/notifications" }]: []),
+    ];
+
+    const groups = [
+      // Dashboard — always
+      { title: "", items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }] },
+
+      // User Management
+      ...(userMgmtItems.length > 0 ? [{ title: "USER MANAGEMENT", items: userMgmtItems }] : []),
+
+      // Lead
+      ...(leadItems.length > 0 ? [{ title: "LEAD MANAGEMENT", items: leadItems }] : []),
+
+      // Loan
+      ...(loanItems.length > 0 ? [{ title: "LOAN MANAGEMENT", items: loanItems }] : []),
+
+      // Reports / Payroll / Notifications
+      ...(reportItems.length > 0 ? [{ title: "REPORTS & ANALYTICS", items: reportItems }] : []),
+
+      // Account — always
       {
         title: "ACCOUNT",
         items: [
-          { name: "My Profile", icon: User, path: "/profile" },
-          { name: "Change Password", icon: Lock, path: "/change-password" },
-          { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          { name: "My Profile",       icon: User,   path: "/profile" },
+          { name: "Change Password",  icon: Lock,   path: "/change-password" },
+          { name: "Logout",           icon: LogOut, path: "/login", isDanger: true },
         ],
-        roles: ['Super Admin', 'HR Admin', 'HR Executive', 'Operation Admin', 'Ops Head', 'Ops Manager', 'Ops Executive', 'Sales Admin', 'Accountant Admin', 'Credit Admin']
-      }
+      },
     ];
 
-    let filteredGroups = allGroups.filter(group => group.roles.includes(userRole));
-
-    if (userRole === 'Sales Admin' && userSubRole === 'Tele callers operator') {
-      filteredGroups = filteredGroups.map(g => {
-        if (g.title === "LEAD & APPLICATION") {
-          return { ...g, items: g.items.filter(i => i.name === 'Lead Management') };
-        }
-        return g;
-      });
-    }
-
-    return filteredGroups;
+    return groups;
   };
 
   const navGroups = getNavGroups();
@@ -244,14 +209,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   return (
     <>
       {isOpen && (
-        <div 
-          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden" 
+        <div
+          className="fixed inset-0 bg-slate-900/50 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
         />
       )}
-      
-      <div className={`fixed lg:static inset-y-0 left-0 z-50 h-screen bg-[#F0FAFF] flex flex-col overflow-hidden shrink-0 transition-all duration-300 border-r border-[var(--color-brand-border)] ${isOpen ? 'w-[250px] translate-x-0' : 'w-[250px] -translate-x-full lg:w-[80px] lg:translate-x-0'}`}>
-        
+
+      <div className={`fixed lg:static inset-y-0 left-0 z-50 h-screen bg-[var(--color-brand-sky-pale)] flex flex-col overflow-hidden shrink-0 transition-all duration-300 border-r border-[var(--color-brand-border)] ${isOpen ? 'w-[250px] translate-x-0' : 'w-[250px] -translate-x-full lg:w-[80px] lg:translate-x-0'}`}>
+
         <div className={`py-6 pb-4 shrink-0 flex items-center justify-center transition-all duration-300 bg-white ${isOpen ? 'px-6' : 'px-2'}`}>
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-[var(--color-brand-sky-light)] rounded-xl flex items-center justify-center shrink-0">
@@ -282,21 +247,19 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                     (location.pathname === "/" && item.path === "/");
 
                   return (
-                      <NavLink
-                        key={itemIdx}
-                        to={item.path}
-                        onClick={() => {
-                          if (window.innerWidth < 1024) setIsOpen && setIsOpen(false);
-                        }}
-                        title={!isOpen ? item.name : undefined}
-                        className={`flex items-center px-3 py-2.5 rounded-[10px] transition-all duration-200 group ${
-                          isOpen ? 'gap-3' : 'justify-center'
-                        } ${
-                          isActive
-                            ? "bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] shadow-sm border border-[var(--color-brand-border)]"
-                            : "text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-sky-light)]/50 hover:text-[var(--color-brand-blue-dark)]"
+                    <NavLink
+                      key={itemIdx}
+                      to={item.path}
+                      onClick={() => {
+                        if (window.innerWidth < 1024) setIsOpen && setIsOpen(false);
+                      }}
+                      title={!isOpen ? item.name : undefined}
+                      className={`flex items-center px-3 py-2.5 rounded-[10px] transition-all duration-200 group ${isOpen ? 'gap-3' : 'justify-center'
+                        } ${isActive
+                          ? "bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] shadow-sm border border-[var(--color-brand-border)]"
+                          : "text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-sky-light)]/50 hover:text-[var(--color-brand-blue-dark)]"
                         }`}
-                      >
+                    >
                       <Icon
                         size={18}
                         strokeWidth={isActive ? 2.5 : 2}

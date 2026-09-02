@@ -70,8 +70,8 @@ export default function PublicOnboarding() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f4f7fb] py-8 px-4 font-sans text-gray-800">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[#f4f7fb] py-6 px-4 font-sans text-gray-800">
+      <div className="max-w-3xl mx-auto space-y-5">
         
         {/* Header Card */}
         <div className="bg-white rounded-2xl p-4 flex items-center justify-between shadow-sm border border-gray-100">
@@ -90,24 +90,24 @@ export default function PublicOnboarding() {
         </div>
 
         {/* Welcome Banner */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 text-white shadow-md">
-          <h2 className="text-3xl font-bold mb-3 flex items-center gap-2">
-            Welcome, {employeeDetails.fullName}! <span className="text-2xl">👋</span>
+        <div className="bg-blue-600 rounded-2xl p-6 text-white shadow-sm border border-blue-700">
+          <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
+            Welcome, {employeeDetails.fullName}! <span className="text-xl">👋</span>
           </h2>
-          <p className="text-[15px] text-blue-50 max-w-3xl leading-relaxed">
+          <p className="text-[14px] text-blue-50 max-w-3xl leading-relaxed">
             You have been onboarded as a member of NuoG Housing Payment's Limited. Please review your details below and click <strong>Proceed to Form</strong> to complete your onboarding process.
           </p>
         </div>
 
         {/* Your Details */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-            <User size={18} className="text-blue-500" />
-            <h3 className="font-bold text-[15px]">Your Details</h3>
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+            <User size={16} className="text-blue-500" />
+            <h3 className="font-bold text-[14px]">Your Details</h3>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 gap-y-4">
-              <div className="flex justify-between py-2 border-b border-gray-50">
+          <div className="p-5">
+            <div className="grid grid-cols-1 gap-y-3">
+              <div className="flex justify-between py-1.5 border-b border-gray-50">
                 <span className="text-gray-500 text-[14px] font-medium">Employee ID</span>
                 <span className="text-gray-900 font-bold text-[14px]">{employeeDetails.employeeId}</span>
               </div>
@@ -159,35 +159,35 @@ export default function PublicOnboarding() {
 
         {/* Salary Structure */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-            <Wallet size={18} className="text-green-500" />
-            <h3 className="font-bold text-[15px]">Your Salary Structure</h3>
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+            <Wallet size={16} className="text-green-500" />
+            <h3 className="font-bold text-[14px]">Your Salary Structure</h3>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="border border-gray-100 rounded-xl p-4 shadow-sm">
-                <p className="text-gray-500 text-[13px] font-medium mb-1">Gross Monthly</p>
-                <p className="text-2xl font-bold text-blue-600">₹{salaryStructure.grossMonthly}</p>
+          <div className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="border border-gray-100 rounded-xl p-3 shadow-sm">
+                <p className="text-gray-500 text-[12px] font-medium mb-0.5">Gross Monthly</p>
+                <p className="text-lg font-bold text-blue-600">₹{salaryStructure.grossMonthly}</p>
               </div>
-              <div className="border border-gray-100 rounded-xl p-4 shadow-sm">
-                <p className="text-gray-500 text-[13px] font-medium mb-1">Gross Yearly</p>
-                <p className="text-2xl font-bold text-blue-600">₹{salaryStructure.grossYearly}</p>
+              <div className="border border-gray-100 rounded-xl p-3 shadow-sm">
+                <p className="text-gray-500 text-[12px] font-medium mb-0.5">Gross Yearly</p>
+                <p className="text-lg font-bold text-blue-600">₹{salaryStructure.grossYearly}</p>
               </div>
-              <div className="border border-gray-100 rounded-xl p-4 shadow-sm">
-                <p className="text-gray-500 text-[13px] font-medium mb-1">Transportation Allowance</p>
-                <p className="text-2xl font-bold text-gray-900">₹{salaryStructure.transportation}</p>
+              <div className="border border-gray-100 rounded-xl p-3 shadow-sm">
+                <p className="text-gray-500 text-[12px] font-medium mb-0.5">Transportation</p>
+                <p className="text-lg font-bold text-gray-900">₹{salaryStructure.transportation}</p>
               </div>
-              <div className="border border-gray-100 rounded-xl p-4 shadow-sm">
-                <p className="text-gray-500 text-[13px] font-medium mb-1">Performance Bonus</p>
-                <p className="text-2xl font-bold text-gray-900">₹{salaryStructure.performance}</p>
+              <div className="border border-gray-100 rounded-xl p-3 shadow-sm">
+                <p className="text-gray-500 text-[12px] font-medium mb-0.5">Perf. Bonus</p>
+                <p className="text-lg font-bold text-gray-900">₹{salaryStructure.performance}</p>
               </div>
-              <div className="border border-gray-100 rounded-xl p-4 shadow-sm">
-                <p className="text-gray-500 text-[13px] font-medium mb-1">Achievement Bonus</p>
-                <p className="text-2xl font-bold text-gray-900">₹{salaryStructure.achievement}</p>
+              <div className="border border-gray-100 rounded-xl p-3 shadow-sm">
+                <p className="text-gray-500 text-[12px] font-medium mb-0.5">Achieve. Bonus</p>
+                <p className="text-lg font-bold text-gray-900">₹{salaryStructure.achievement}</p>
               </div>
-              <div className="border border-gray-100 rounded-xl p-4 shadow-sm">
-                <p className="text-gray-500 text-[13px] font-medium mb-1">Business Incentives</p>
-                <p className="text-2xl font-bold text-gray-900">₹{salaryStructure.incentives}</p>
+              <div className="border border-gray-100 rounded-xl p-3 shadow-sm">
+                <p className="text-gray-500 text-[12px] font-medium mb-0.5">Incentives</p>
+                <p className="text-lg font-bold text-gray-900">₹{salaryStructure.incentives}</p>
               </div>
             </div>
           </div>
@@ -195,22 +195,22 @@ export default function PublicOnboarding() {
 
         {/* Documents You'll Need */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center gap-2">
-            <Building2 size={18} className="text-purple-500" />
-            <h3 className="font-bold text-[15px]">Documents You'll Need</h3>
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+            <Building2 size={16} className="text-purple-500" />
+            <h3 className="font-bold text-[14px]">Documents You'll Need</h3>
           </div>
-          <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-8">
+          <div className="p-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-3 gap-x-8">
               {requiredDocuments.map((doc, index) => (
-                <div key={index} className="flex items-center gap-3">
+                <div key={index} className="flex items-center gap-2.5">
                   {doc.status ? (
-                    <div className="w-5 h-5 bg-green-500 rounded-[4px] flex items-center justify-center text-white flex-shrink-0">
-                      <Check size={14} strokeWidth={3} />
+                    <div className="w-4 h-4 bg-green-500 rounded-[3px] flex items-center justify-center text-white flex-shrink-0">
+                      <Check size={12} strokeWidth={3} />
                     </div>
                   ) : (
-                    <div className="w-5 h-5 border-[2px] border-gray-300 rounded-[4px] flex-shrink-0"></div>
+                    <div className="w-4 h-4 border-[2px] border-gray-300 rounded-[3px] flex-shrink-0"></div>
                   )}
-                  <span className="text-[14px] text-gray-700 font-medium">{doc.name}</span>
+                  <span className="text-[13px] text-gray-700 font-medium">{doc.name}</span>
                 </div>
               ))}
             </div>
@@ -218,16 +218,16 @@ export default function PublicOnboarding() {
         </div>
 
         {/* Action Bottom */}
-        <div className="pt-8 pb-12 flex flex-col items-center">
-          <p className="text-gray-500 text-[14px] mb-6">
+        <div className="pt-6 pb-10 flex flex-col items-center">
+          <p className="text-gray-500 text-[13px] mb-4">
             Please keep all documents ready. The form has 9 steps and takes about 10-15 minutes.
           </p>
           <Link 
             to={`/onboarding/${id}/form`}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-[12px] font-bold shadow-md shadow-blue-200 flex items-center gap-2 transition-transform hover:scale-[1.02]"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 text-[14px] rounded-lg font-bold shadow-sm flex items-center gap-2 transition-transform hover:scale-[1.02]"
           >
-            Proceed to Onboarding Form
-            <ArrowRight size={18} />
+            Proceed to Form
+            <ArrowRight size={16} />
           </Link>
         </div>
 

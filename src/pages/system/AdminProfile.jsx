@@ -1,5 +1,5 @@
-import React, { useState, useRef, useCallback } from "react";
-import { User, Mail, Phone, MapPin, Camera, Save, KeyRound, Shield, CheckCircle2, X } from "lucide-react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
+import { User, Mail, Phone, MapPin, Camera, Save, KeyRound, Shield, CheckCircle2, X, Navigation } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import Cropper from "react-easy-crop";
@@ -9,9 +9,11 @@ export default function AdminProfile() {
   const [activeTab, setActiveTab] = useState("profile");
   const [isSaving, setIsSaving] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   
   // Load initial data from localStorage if exists
-  const initialRole = localStorage.getItem("userRole") || "Super Admin";
+  const initialRole = localStorage.getItem("userRole") || "Admin";
   const picKey = `adminPic_${initialRole}`;
   const nameKey = `adminName_${initialRole}`;
 
@@ -29,10 +31,10 @@ export default function AdminProfile() {
   const [isCropping, setIsCropping] = useState(false);
 
   const [profileData, setProfileData] = useState({
-    name: initialName,
-    email: localStorage.getItem("userEmail") || "admin@ngm.com",
-    phone: "+91 9876543210",
-    location: "Lucknow, UP"
+    name: "",
+    email: "",
+    phone: "",
+    location: ""
   });
 
   const [securityData, setSecurityData] = useState({
@@ -41,20 +43,107 @@ export default function AdminProfile() {
     confirmPassword: ""
   });
 
-  const handleProfileUpdate = (e) => {
-    e.preventDefault();
-    setIsSaving(true);
-    setTimeout(() => {
-      setIsSaving(false);
-      setIsEditing(false);
-      localStorage.setItem(nameKey, profileData.name);
-      localStorage.setItem(picKey, profilePic);
-      window.dispatchEvent(new Event('profileUpdated'));
-      toast.success("Profile information updated successfully!");
-    }, 800);
+  const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+  const handleGetLocation = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+    setIsFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+          const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`);
+          const data = await res.json();
+          if (data.status === 'OK' && data.results.length > 0) {
+            setProfileData(prev => ({
+              ...prev,
+              location: data.results[0].formatted_address
+            }));
+            toast.success('Location fetched successfully!');
+          } else {
+            toast.error('Could not resolve address from coordinates');
+          }
+        } catch (error) {
+          toast.error('Error fetching location details');
+        } finally {
+          setIsFetchingLocation(false);
+        }
+      },
+      (error) => {
+        toast.error('Failed to get location. Please allow location access.');
+        setIsFetchingLocation(false);
+      }
+    );
   };
 
-  const handleSecurityUpdate = (e) => {
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_URL}/admin/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setProfileData({
+            name: data.name || "",
+            email: data.email || "",
+            phone: data.phone || "",
+            location: data.location || ""
+          });
+          if (data.avatar) {
+            // Need absolute URL for the image
+            const avatarUrl = data.avatar.startsWith('http') ? data.avatar : `http://localhost:5000${data.avatar}`;
+            setProfilePic(avatarUrl);
+            localStorage.setItem(picKey, avatarUrl);
+          }
+          localStorage.setItem(nameKey, data.name);
+          window.dispatchEvent(new Event('profileUpdated'));
+        }
+      } catch (error) {
+        console.error("Failed to fetch profile", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
+
+  const handleProfileUpdate = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/admin/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(profileData)
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsEditing(false);
+        localStorage.setItem(nameKey, data.name);
+        window.dispatchEvent(new Event('profileUpdated'));
+        toast.success("Profile information updated successfully!");
+      } else {
+        const err = await res.json();
+        toast.error(err.message || "Failed to update profile");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSecurityUpdate = async (e) => {
     e.preventDefault();
     if (securityData.newPassword !== securityData.confirmPassword) {
       toast.error("New passwords do not match!");
@@ -66,11 +155,31 @@ export default function AdminProfile() {
     }
     
     setIsSaving(true);
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/admin/profile/password`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: securityData.currentPassword,
+          newPassword: securityData.newPassword
+        })
+      });
+      if (res.ok) {
+        setSecurityData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        toast.success("Password changed successfully!");
+      } else {
+        const err = await res.json();
+        toast.error(err.message || "Failed to change password");
+      }
+    } catch (error) {
+      toast.error("Network error");
+    } finally {
       setIsSaving(false);
-      setSecurityData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      toast.success("Password changed successfully!");
-    }, 800);
+    }
   };
 
   const handleImageUpload = () => {
@@ -97,20 +206,54 @@ export default function AdminProfile() {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
+  const dataURLtoBlob = (dataurl) => {
+    let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while(n--){
+        u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], {type:mime});
+  }
+
   const showCroppedImage = useCallback(async () => {
     try {
-      const croppedImage = await getCroppedImg(imageSrc, croppedAreaPixels);
-      setProfilePic(croppedImage);
-      localStorage.setItem(picKey, croppedImage);
-      window.dispatchEvent(new Event('profileUpdated'));
-      toast.success("Profile picture updated successfully!");
+      const croppedImageBase64 = await getCroppedImg(imageSrc, croppedAreaPixels);
+      const blob = dataURLtoBlob(croppedImageBase64);
+      
+      const formData = new FormData();
+      formData.append('avatar', blob, 'avatar.jpg');
+
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_URL}/admin/profile/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const avatarUrl = data.avatar.startsWith('http') ? data.avatar : `http://localhost:5000${data.avatar}`;
+        setProfilePic(avatarUrl);
+        localStorage.setItem(picKey, avatarUrl);
+        window.dispatchEvent(new Event('profileUpdated'));
+        toast.success("Profile picture updated successfully!");
+      } else {
+        toast.error("Failed to upload profile picture");
+      }
+      
       setIsCropping(false);
       setImageSrc(null);
     } catch (e) {
       console.error(e);
-      toast.error("Failed to crop image.");
+      toast.error("Failed to process image.");
     }
   }, [imageSrc, croppedAreaPixels]);
+
+  if (isLoading) {
+    return <div className="p-8 text-center text-slate-500">Loading profile...</div>;
+  }
 
   return (
     <div className="w-full h-full flex flex-col space-y-6 pb-10">
@@ -241,7 +384,24 @@ export default function AdminProfile() {
                   </div>
 
                   <div>
-                    <label className="block text-[12px] font-bold text-slate-700 mb-2">Location</label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-[12px] font-bold text-slate-700">Location</label>
+                      {isEditing && (
+                        <button
+                          type="button"
+                          onClick={handleGetLocation}
+                          disabled={isFetchingLocation}
+                          className="flex items-center gap-1 text-[11px] font-bold text-[#489b0d] hover:text-[#3e850b] disabled:opacity-70"
+                        >
+                          {isFetchingLocation ? (
+                            <span className="w-3 h-3 border-2 border-[#489b0d] border-t-transparent rounded-full animate-spin"></span>
+                          ) : (
+                            <Navigation size={12} />
+                          )}
+                          Get Location
+                        </button>
+                      )}
+                    </div>
                     <div className="relative">
                       <MapPin size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <input 

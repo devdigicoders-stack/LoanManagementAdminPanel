@@ -1,78 +1,39 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Bell, CheckCircle2, AlertCircle, Info, FileText, 
   UserPlus, CreditCard, Trash2, Check, Send, Users, 
-  Target, Activity, XCircle
+  Target, Activity, XCircle, Clock
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
-const initialNotifications = [
-  {
-    id: 1,
-    title: "New Loan Application",
-    description: "Rohit Kumar has submitted a new Personal Loan application (APP-2025-1250).",
-    time: "10 mins ago",
-    type: "action",
-    icon: <FileText size={18} className="text-blue-500" />,
-    bg: "bg-blue-50",
-    isRead: false,
-  },
-  {
-    id: 2,
-    title: "EMI Payment Overdue",
-    description: "Amit Verma has missed the EMI payment for Business Loan (LN-089).",
-    time: "2 hours ago",
-    type: "alert",
-    icon: <AlertCircle size={18} className="text-red-500" />,
-    bg: "bg-red-50",
-    isRead: false,
-  },
-  {
-    id: 3,
-    title: "Loan Approved",
-    description: "Application for Priya Sharma (APP-2025-1249) has been approved by the manager.",
-    time: "5 hours ago",
-    type: "success",
-    icon: <CheckCircle2 size={18} className="text-[#489b0d]" />,
-    bg: "bg-[#489b0d]/10",
-    isRead: true,
-  },
-  {
-    id: 4,
-    title: "New Lead Assigned",
-    description: "You have been assigned a new lead from Website form.",
-    time: "1 day ago",
-    type: "info",
-    icon: <UserPlus size={18} className="text-purple-500" />,
-    bg: "bg-purple-50",
-    isRead: true,
-  },
-  {
-    id: 5,
-    title: "Disbursement Successful",
-    description: "₹12,00,000 has been disbursed to Priya Sharma's account.",
-    time: "1 day ago",
-    type: "success",
-    icon: <CreditCard size={18} className="text-[#489b0d]" />,
-    bg: "bg-[#489b0d]/10",
-    isRead: true,
-  },
-  {
-    id: 6,
-    title: "System Maintenance",
-    description: "Scheduled system downtime on Sunday, 25 May from 2:00 AM to 4:00 AM.",
-    time: "2 days ago",
-    type: "info",
-    icon: <Info size={18} className="text-orange-500" />,
-    bg: "bg-orange-50",
-    isRead: true,
+const getIcon = (type) => {
+  switch(type) {
+    case 'application': return <UserPlus size={18} className="text-emerald-500" />;
+    case 'pending': return <Clock size={18} className="text-amber-500" />;
+    case 'document': return <FileText size={18} className="text-purple-500" />;
+    case 'overdue': return <AlertCircle size={18} className="text-red-500" />;
+    case 'success': return <CheckCircle2 size={18} className="text-[#489b0d]" />;
+    case 'alert': return <AlertCircle size={18} className="text-red-500" />;
+    default: return <Info size={18} className="text-blue-500" />;
   }
-];
+};
+
+const getBg = (type) => {
+  switch(type) {
+    case 'application': return "bg-emerald-50";
+    case 'pending': return "bg-amber-50";
+    case 'document': return "bg-purple-50";
+    case 'overdue': return "bg-red-50";
+    case 'success': return "bg-[#489b0d]/10";
+    case 'alert': return "bg-red-50";
+    default: return "bg-blue-50";
+  }
+};
 
 export default function Notifications() {
   const [activeTab, setActiveTab] = useState("inbox"); // 'inbox', 'send'
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all"); // 'all', 'unread'
   
   // Send Form State
@@ -81,76 +42,127 @@ export default function Notifications() {
   const [priority, setPriority] = useState("info");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  const fetchNotifications = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/notifications', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const formatted = data.map(n => ({
+          id: n._id,
+          title: n.title,
+          description: n.type === 'system' ? 'System Notification' : 'New update received',
+          time: new Date(n.createdAt).toLocaleString('en-IN', {
+            day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true
+          }),
+          type: n.type,
+          icon: getIcon(n.type),
+          bg: getBg(n.type),
+          isRead: n.isRead,
+        }));
+        setNotifications(formatted);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load notifications');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
+    // In a real app, you would make a backend call to mark all as read
     setNotifications(notifications.map(n => ({ ...n, isRead: true })));
-    toast.success("All notifications marked as read.");
+    toast.success("All notifications marked as read locally.");
   };
 
-  const toggleReadStatus = (id) => {
-    setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
+  const toggleReadStatus = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: true } : n));
+      }
+    } catch (error) {
+      toast.error('Failed to mark read');
+    }
   };
 
   const deleteNotification = (id) => {
     Swal.fire({
-      title: 'Delete Notification?',
-      text: "You won't be able to revert this!",
+      title: 'Hide Notification?',
+      text: "This will remove it from your view.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#cbd5e1',
-      confirmButtonText: 'Yes, delete it!'
+      confirmButtonText: 'Yes, hide it!'
     }).then((result) => {
       if (result.isConfirmed) {
         setNotifications(notifications.filter(n => n.id !== id));
-        toast.success("Notification deleted");
+        toast.success("Notification hidden");
       }
     });
   };
 
-  const handleSendNotification = (e) => {
+  const handleSendNotification = async (e) => {
     e.preventDefault();
-    if (!title || !message) {
-      toast.error("Please fill in both title and message");
+    if (!title) {
+      toast.error("Please fill in the title");
       return;
     }
 
     setIsSubmitting(true);
-    
-    // Simulate sending
-    setTimeout(() => {
-      setIsSubmitting(false);
-      
-      // Inject to local state for demo purposes
-      const newNotif = {
-        id: Date.now(),
-        title: title,
-        description: message,
-        time: "Just now",
-        type: priority,
-        icon: priority === 'alert' ? <AlertCircle size={18} className="text-red-500" /> : priority === 'success' ? <CheckCircle2 size={18} className="text-[#489b0d]" /> : <Info size={18} className="text-blue-500" />,
-        bg: priority === 'alert' ? "bg-red-50" : priority === 'success' ? "bg-[#489b0d]/10" : "bg-blue-50",
-        isRead: false,
-      };
-
-      setNotifications([newNotif, ...notifications]);
-      
-      Swal.fire({
-        title: 'Sent!',
-        text: 'Notification broadcasted successfully.',
-        icon: 'success',
-        confirmButtonColor: '#489b0d'
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/notifications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title,
+          message,
+          type: priority
+        })
       });
-      
-      // Reset form
-      setTitle("");
-      setMessage("");
-      setTargetAudience("all");
-      setPriority("info");
-      setActiveTab("inbox");
-    }, 1500);
+
+      if (res.ok) {
+        Swal.fire({
+          title: 'Sent!',
+          text: 'Notification broadcasted successfully.',
+          icon: 'success',
+          confirmButtonColor: '#489b0d'
+        });
+        
+        setTitle("");
+        setMessage("");
+        setTargetAudience("all");
+        setPriority("info");
+        setActiveTab("inbox");
+        fetchNotifications();
+      } else {
+        toast.error('Failed to send notification');
+      }
+    } catch (error) {
+      toast.error('Error sending notification');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredNotifications = filter === "unread" 
@@ -225,7 +237,9 @@ export default function Notifications() {
 
               {/* Inbox List */}
               <div className="flex-1 overflow-y-auto">
-                {filteredNotifications.length > 0 ? (
+                {isLoading ? (
+                  <div className="flex-1 flex items-center justify-center h-full pt-20 text-slate-400">Loading notifications...</div>
+                ) : filteredNotifications.length > 0 ? (
                   <div className="divide-y divide-slate-100">
                     {filteredNotifications.map((notif) => (
                       <div 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReactImport from 'highcharts-react-official';
 import { Download, Filter, Calendar, Users, FileText, CheckCircle2, TrendingUp, Award, Clock, Zap } from 'lucide-react';
@@ -18,6 +18,45 @@ export default function HRReports() {
   const [reportType, setReportType] = useState('employee');
   const [department, setDepartment] = useState('All');
   const [dateRange, setDateRange] = useState('This Month');
+  const [reportData, setReportData] = useState(null);
+  const [employees, setEmployees] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    fetchReportData();
+    fetchEmployees();
+  }, [reportType]);
+
+  const fetchEmployees = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/employees', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) setEmployees(await res.json());
+    } catch (e) {}
+  };
+
+  const fetchReportData = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const endpoint = reportType === 'leave' ? 'leaves' : reportType;
+      const res = await fetch(`http://localhost:5000/api/reports/${endpoint}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReportData(data);
+      } else {
+        toast.error('Failed to load report data');
+      }
+    } catch (e) {
+      toast.error('Server error');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // --- Premium Highcharts Configs ---
 
@@ -34,7 +73,7 @@ export default function HRReports() {
     ...commonChartOptions,
     chart: { type: 'pie', backgroundColor: 'transparent', height: 320, margin: [0,0,0,0] },
     title: { 
-      text: `<div style="text-align:center"><span style="font-size:24px;font-weight:900;color:#0f172a">127</span><br/><span style="font-size:12px;color:#64748b;font-weight:500">Total</span></div>`, 
+      text: `<div style="text-align:center"><span style="font-size:24px;font-weight:900;color:#0f172a">${reportData?.totalEmployees || 0}</span><br/><span style="font-size:12px;color:#64748b;font-weight:500">Total</span></div>`, 
       align: 'center', verticalAlign: 'middle', y: 15, useHTML: true
     },
     plotOptions: {
@@ -46,22 +85,20 @@ export default function HRReports() {
     colors: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899'],
     series: [{
       name: 'Employees',
-      data: [
-        { name: 'Sales', y: 45 }, { name: 'Operations', y: 30 }, { name: 'HR', y: 12 }, { name: 'Credit', y: 25 }, { name: 'Accounts', y: 15 }
-      ]
+      data: reportData?.departmentChartData || []
     }]
   };
 
   const employeeGrowthOptions = {
     ...commonChartOptions,
     chart: { type: 'areaspline', backgroundColor: 'transparent', height: 320 },
-    xAxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    xAxis: { categories: reportData?.growthCategories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: {
       areaspline: { fillOpacity: 0.1, marker: { radius: 4, symbol: 'circle', lineWidth: 2, lineColor: '#fff' }, lineWidth: 3 }
     },
     series: [{
-      name: 'New Hires', data: [5, 8, 3, 12, 7, 15], color: '#3b82f6', 
+      name: 'New Hires', data: reportData?.growthData || [], color: '#3b82f6', 
       fillColor: { linearGradient: [0, 0, 0, 300], stops: [[0, 'rgba(59, 130, 246, 0.2)'], [1, 'rgba(59, 130, 246, 0)']] }
     }]
   };
@@ -70,25 +107,25 @@ export default function HRReports() {
   const attendanceMonthlyOptions = {
     ...commonChartOptions,
     chart: { type: 'column', backgroundColor: 'transparent', height: 320 },
-    xAxis: { categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    xAxis: { categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { column: { stacking: 'normal', borderRadius: 4, borderWidth: 0 } },
     colors: ['#10b981', '#f59e0b', '#ef4444'],
     series: [
-      { name: 'Present', data: [110, 105, 115, 120] },
-      { name: 'Late/Half Day', data: [10, 15, 5, 2] },
-      { name: 'Absent/Leave', data: [4, 4, 4, 2] }
+      { name: 'Present', data: reportData?.attendanceWeekly?.present || [] },
+      { name: 'Late/Half Day', data: reportData?.attendanceWeekly?.late || [] },
+      { name: 'Absent/Leave', data: reportData?.attendanceWeekly?.absent || [] }
     ]
   };
 
   const lateDepartmentOptions = {
     ...commonChartOptions,
     chart: { type: 'bar', backgroundColor: 'transparent', height: 320 },
-    xAxis: { categories: ['Sales', 'Operations', 'HR', 'Credit', 'Accounts'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    xAxis: { categories: reportData?.lateDepartment?.categories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { bar: { borderRadius: 4, borderWidth: 0, colorByPoint: true } },
     colors: ['#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#fef3c7'],
-    series: [{ name: 'Late Incidents', data: [12, 5, 2, 8, 1] }],
+    series: [{ name: 'Late Incidents', data: reportData?.lateDepartment?.data || [] }],
     legend: { enabled: false }
   };
 
@@ -98,17 +135,17 @@ export default function HRReports() {
     chart: { type: 'pie', backgroundColor: 'transparent', height: 320 },
     plotOptions: { pie: { innerSize: '75%', borderWidth: 0, showInLegend: true, dataLabels: { enabled: false } } },
     colors: ['#10b981', '#f59e0b', '#ef4444'],
-    series: [{ name: 'Leaves', data: [{ name: 'Approved', y: 45 }, { name: 'Pending', y: 15 }, { name: 'Rejected', y: 5 }] }]
+    series: [{ name: 'Leaves', data: reportData?.leaveSummaryData || [] }]
   };
 
   const leaveTypesOptions = {
     ...commonChartOptions,
     chart: { type: 'column', backgroundColor: 'transparent', height: 320 },
-    xAxis: { categories: ['Sick Leave', 'Casual Leave', 'Earned Leave', 'Emergency Leave'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    xAxis: { categories: reportData?.leaveTypesCategories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { column: { borderRadius: 4, borderWidth: 0, colorByPoint: true } },
     colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe'],
-    series: [{ name: 'Days Taken', data: [35, 60, 20, 15] }],
+    series: [{ name: 'Days Taken', data: reportData?.leaveTypesData || [] }],
     legend: { enabled: false }
   };
 
@@ -118,17 +155,17 @@ export default function HRReports() {
     chart: { type: 'pie', backgroundColor: 'transparent', height: 320 },
     plotOptions: { pie: { innerSize: '75%', borderWidth: 0, showInLegend: true, dataLabels: { enabled: false } } },
     colors: ['#10b981', '#f59e0b', '#ef4444'],
-    series: [{ name: 'Documents', data: [{ name: 'Verified', y: 320 }, { name: 'Pending', y: 45 }, { name: 'Rejected', y: 12 }] }]
+    series: [{ name: 'Documents', data: reportData?.documentStatusData || [] }]
   };
 
   const documentUploadsOptions = {
     ...commonChartOptions,
     chart: { type: 'column', backgroundColor: 'transparent', height: 320 },
-    xAxis: { categories: ['Sales', 'Operations', 'HR', 'Credit', 'Accounts'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    xAxis: { categories: reportData?.uploadsDepartment?.categories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { column: { borderRadius: 4, borderWidth: 0, colorByPoint: true } },
     colors: ['#8b5cf6', '#a78bfa', '#c4b5fd', '#ddd6fe', '#ede9fe'],
-    series: [{ name: 'Uploads', data: [150, 90, 30, 80, 27] }],
+    series: [{ name: 'Uploads', data: reportData?.uploadsDepartment?.data || [] }],
     legend: { enabled: false }
   };
 
@@ -140,17 +177,17 @@ export default function HRReports() {
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { column: { borderRadius: 4, borderWidth: 0, colorByPoint: true } },
     colors: ['#10b981', '#34d399', '#6ee7b7', '#fcd34d'],
-    series: [{ name: 'Employees', data: [15, 35, 60, 10] }],
+    series: [{ name: 'Employees', data: reportData?.performanceRatingsData || [] }],
     legend: { enabled: false }
   };
 
   const kpiAchievementOptions = {
     ...commonChartOptions,
     chart: { type: 'areaspline', backgroundColor: 'transparent', height: 320 },
-    xAxis: { categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    xAxis: { categories: reportData?.kpiCategories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash', max: 100 },
     plotOptions: { areaspline: { fillOpacity: 0.1, marker: { radius: 4, symbol: 'circle', lineWidth: 2, lineColor: '#fff' }, lineWidth: 3 } },
-    series: [{ name: 'Avg Score', data: [78, 82, 85, 81, 88, 92], color: '#8b5cf6', fillColor: { linearGradient: [0, 0, 0, 300], stops: [[0, 'rgba(139, 92, 246, 0.2)'], [1, 'rgba(139, 92, 246, 0)']] } }]
+    series: [{ name: 'Avg Score', data: reportData?.kpiData || [], color: '#8b5cf6', fillColor: { linearGradient: [0, 0, 0, 300], stops: [[0, 'rgba(139, 92, 246, 0.2)'], [1, 'rgba(139, 92, 246, 0)']] } }]
   };
 
   const handleExport = (type) => {
@@ -247,7 +284,7 @@ export default function HRReports() {
         {reportType === 'employee' && (
           <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[{ label: 'Total Employees', val: '127', icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' }, { label: 'Active Employees', val: '120', icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' }, { label: 'New Joiners (Month)', val: '12', icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' }, { label: 'Inactive/Left', val: '7', icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' }].map((stat, i) => (
+              {[{ label: 'Total Employees', val: reportData?.totalEmployees || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50', border: 'border-blue-100' }, { label: 'Active Employees', val: reportData?.totalEmployees || 0, icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50', border: 'border-emerald-100' }, { label: 'New Joiners (Month)', val: reportData?.growthData?.[reportData?.growthData?.length - 1] || 0, icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' }, { label: 'Inactive/Left', val: 0, icon: AlertCircle, color: 'text-rose-600', bg: 'bg-rose-50', border: 'border-rose-100' }].map((stat, i) => (
                 <Card key={i} className="flex flex-col relative overflow-hidden group">
                    <div className="flex items-center justify-between mb-4">
                       <div className={`w-12 h-12 rounded-2xl ${stat.bg} ${stat.color} flex items-center justify-center shrink-0 border ${stat.border}`}>
@@ -269,6 +306,33 @@ export default function HRReports() {
                 <HighchartsReact highcharts={Highcharts} options={employeeGrowthOptions} />
               </Card>
             </div>
+
+            {/* Employee Table */}
+            <Card>
+              <h3 className="text-lg font-extrabold text-slate-900 mb-4">All Employees</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      {['Emp ID','Name','Role','Division','Status','Onboarding'].map(h => (<th key={h} className="py-3 px-3 font-bold text-slate-500 text-[11px] uppercase tracking-wide whitespace-nowrap">{h}</th>))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employees.map(emp => (
+                      <tr key={emp._id} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                        <td className="py-3 px-3 font-mono text-[12px] text-slate-500">{emp.empId}</td>
+                        <td className="py-3 px-3 font-semibold text-slate-800">{emp.name}</td>
+                        <td className="py-3 px-3 text-slate-600">{emp.role}</td>
+                        <td className="py-3 px-3 text-slate-600">{emp.division || 'N/A'}</td>
+                        <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[11px] font-bold ${emp.status === 'Active' ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}`}>{emp.status}</span></td>
+                        <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[11px] font-bold ${emp.onboardingStatus === 'Done' ? 'bg-emerald-50 text-emerald-700' : emp.onboardingStatus === 'Submitted' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>{emp.onboardingStatus}</span></td>
+                      </tr>
+                    ))}
+                    {employees.length === 0 && <tr><td colSpan={6} className="py-8 text-center text-slate-400">No employees found</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
         )}
 
@@ -292,13 +356,43 @@ export default function HRReports() {
                 <HighchartsReact highcharts={Highcharts} options={lateDepartmentOptions} />
               </Card>
             </div>
+
+            {/* Attendance Table */}
+            <Card>
+              <h3 className="text-lg font-extrabold text-slate-900 mb-4">Attendance Log (All Employees)</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      {['Employee','Division','Date','Status','In Time','Out Time','Remarks'].map(h => (<th key={h} className="py-3 px-3 font-bold text-slate-500 text-[11px] uppercase tracking-wide whitespace-nowrap">{h}</th>))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employees.flatMap(emp => (emp.attendance || []).map(att => ({ ...att, empName: emp.name, division: emp.division })))
+                      .sort((a,b) => new Date(b.date) - new Date(a.date)).slice(0,50)
+                      .map((row, i) => (
+                        <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-3 font-semibold text-slate-800">{row.empName}</td>
+                          <td className="py-3 px-3 text-slate-500">{row.division || 'N/A'}</td>
+                          <td className="py-3 px-3 text-slate-600">{row.date}</td>
+                          <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[11px] font-bold ${row.status === 'Present' ? 'bg-emerald-50 text-emerald-700' : row.status === 'Absent' ? 'bg-rose-50 text-rose-700' : row.status === 'Leave' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>{row.status}</span></td>
+                          <td className="py-3 px-3 text-slate-500">{row.inTime || '-'}</td>
+                          <td className="py-3 px-3 text-slate-500">{row.outTime || '-'}</td>
+                          <td className="py-3 px-3 text-slate-500">{row.remarks || '-'}</td>
+                        </tr>
+                    ))}
+                    {employees.every(e => !e.attendance?.length) && <tr><td colSpan={7} className="py-8 text-center text-slate-400">No attendance records found</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
         )}
 
         {reportType === 'leave' && (
           <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6">
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[{ label: 'Total Leaves Taken', val: '130', color: 'text-slate-800' }, { label: 'Approved Requests', val: '45', color: 'text-emerald-600' }, { label: 'Pending Requests', val: '15', color: 'text-amber-500' }, { label: 'Rejected Requests', val: '5', color: 'text-rose-500' }].map((stat, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[{ label: 'Total Leaves Taken', val: (reportData?.leaveSummaryData?.[0]?.y || 0) + (reportData?.leaveSummaryData?.[1]?.y || 0) + (reportData?.leaveSummaryData?.[2]?.y || 0), color: 'text-slate-800' }, { label: 'Approved Requests', val: reportData?.leaveSummaryData?.[0]?.y || 0, color: 'text-emerald-600' }, { label: 'Pending Requests', val: reportData?.leaveSummaryData?.[1]?.y || 0, color: 'text-amber-500' }, { label: 'Rejected Requests', val: reportData?.leaveSummaryData?.[2]?.y || 0, color: 'text-rose-500' }].map((stat, i) => (
                 <Card key={i} className="flex flex-col">
                    <p className="text-[13px] font-bold text-slate-500 mb-1">{stat.label}</p>
                    <h3 className={`text-3xl font-black tracking-tight ${stat.color}`}>{stat.val}</h3>
@@ -315,13 +409,46 @@ export default function HRReports() {
                 <HighchartsReact highcharts={Highcharts} options={leaveTypesOptions} />
               </Card>
             </div>
+
+            {/* Leave Table */}
+            <Card>
+              <h3 className="text-lg font-extrabold text-slate-900 mb-4">Leave Requests (All Employees)</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      {['Employee','Leave Type','From','To','Days','Status','Reason'].map(h => (<th key={h} className="py-3 px-3 font-bold text-slate-500 text-[11px] uppercase tracking-wide whitespace-nowrap">{h}</th>))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employees.flatMap(emp => (emp.leaves || []).map(lv => ({ ...lv, empName: emp.name })))
+                      .sort((a,b) => new Date(b.startDate) - new Date(a.startDate))
+                      .map((row, i) => {
+                        const days = row.startDate && row.endDate ? Math.round((new Date(row.endDate) - new Date(row.startDate)) / (1000*60*60*24)) + 1 : '-';
+                        return (
+                          <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                            <td className="py-3 px-3 font-semibold text-slate-800">{row.empName}</td>
+                            <td className="py-3 px-3 text-slate-600">{row.type || 'N/A'}</td>
+                            <td className="py-3 px-3 text-slate-500">{row.startDate}</td>
+                            <td className="py-3 px-3 text-slate-500">{row.endDate}</td>
+                            <td className="py-3 px-3 font-semibold">{days}</td>
+                            <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[11px] font-bold ${row.status === 'Approved' ? 'bg-emerald-50 text-emerald-700' : row.status === 'Rejected' ? 'bg-rose-50 text-rose-700' : 'bg-amber-50 text-amber-700'}`}>{row.status}</span></td>
+                            <td className="py-3 px-3 text-slate-500 max-w-[180px] truncate">{row.reason || '-'}</td>
+                          </tr>
+                        );
+                      })}
+                    {employees.every(e => !e.leaves?.length) && <tr><td colSpan={7} className="py-8 text-center text-slate-400">No leave requests found</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
         )}
 
         {reportType === 'documents' && (
           <div className="animate-in fade-in zoom-in-95 duration-300 space-y-6">
-             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[{ label: 'Total Documents', val: '377', color: 'text-slate-800' }, { label: 'Verified', val: '320', color: 'text-emerald-600' }, { label: 'Pending', val: '45', color: 'text-amber-500' }, { label: 'Rejected', val: '12', color: 'text-rose-500' }].map((stat, i) => (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[{ label: 'Total Documents', val: (reportData?.documentStatusData?.[0]?.y || 0) + (reportData?.documentStatusData?.[1]?.y || 0) + (reportData?.documentStatusData?.[2]?.y || 0), color: 'text-slate-800' }, { label: 'Verified', val: reportData?.documentStatusData?.[0]?.y || 0, color: 'text-emerald-600' }, { label: 'Pending', val: reportData?.documentStatusData?.[1]?.y || 0, color: 'text-amber-500' }, { label: 'Rejected', val: reportData?.documentStatusData?.[2]?.y || 0, color: 'text-rose-500' }].map((stat, i) => (
                 <Card key={i} className="flex flex-col">
                    <p className="text-[13px] font-bold text-slate-500 mb-1">{stat.label}</p>
                    <h3 className={`text-3xl font-black tracking-tight ${stat.color}`}>{stat.val}</h3>
@@ -338,6 +465,35 @@ export default function HRReports() {
                 <HighchartsReact highcharts={Highcharts} options={documentUploadsOptions} />
               </Card>
             </div>
+
+            {/* Document Table */}
+            <Card>
+              <h3 className="text-lg font-extrabold text-slate-900 mb-4">Document Status (All Employees)</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      {['Employee','Division','Document Name','Type/Key','Uploaded On','Status'].map(h => (<th key={h} className="py-3 px-3 font-bold text-slate-500 text-[11px] uppercase tracking-wide whitespace-nowrap">{h}</th>))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employees.flatMap(emp => (emp.documents || []).map(doc => ({ ...doc, empName: emp.name, division: emp.division })))
+                      .sort((a,b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))
+                      .map((row, i) => (
+                        <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-3 font-semibold text-slate-800">{row.empName}</td>
+                          <td className="py-3 px-3 text-slate-500">{row.division || 'N/A'}</td>
+                          <td className="py-3 px-3 text-slate-600 max-w-[160px] truncate" title={row.name}>{row.name}</td>
+                          <td className="py-3 px-3 text-slate-500 capitalize">{row.key}</td>
+                          <td className="py-3 px-3 text-slate-500">{row.uploadedAt ? new Date(row.uploadedAt).toLocaleDateString() : '-'}</td>
+                          <td className="py-3 px-3"><span className={`px-2 py-0.5 rounded text-[11px] font-bold ${row.status === 'Verified' ? 'bg-emerald-50 text-emerald-700' : row.status === 'Rejected' ? 'bg-rose-50 text-rose-700' : row.status === 'Re-upload Required' ? 'bg-orange-50 text-orange-700' : 'bg-amber-50 text-amber-700'}`}>{row.status}</span></td>
+                        </tr>
+                    ))}
+                    {employees.every(e => !e.documents?.length) && <tr><td colSpan={6} className="py-8 text-center text-slate-400">No documents found</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
         )}
 
@@ -361,6 +517,38 @@ export default function HRReports() {
                 <HighchartsReact highcharts={Highcharts} options={kpiAchievementOptions} />
               </Card>
             </div>
+
+            {/* Performance/Salary Table */}
+            <Card>
+              <h3 className="text-lg font-extrabold text-slate-900 mb-4">Salary & Incentive Summary</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-[13px]">
+                  <thead>
+                    <tr className="border-b border-slate-100">
+                      {['Employee','Role','Gross Monthly','Transport','Performance','Achievement','Incentives','Total CTC'].map(h => (<th key={h} className="py-3 px-3 font-bold text-slate-500 text-[11px] uppercase tracking-wide whitespace-nowrap">{h}</th>))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {employees.map((emp, i) => {
+                      const ctc = (emp.grossMonthly||0)+(emp.transportation||0)+(emp.performance||0)+(emp.achievement||0)+(emp.incentives||0);
+                      return (
+                        <tr key={i} className="border-b border-slate-50 hover:bg-slate-50 transition-colors">
+                          <td className="py-3 px-3 font-semibold text-slate-800">{emp.name}</td>
+                          <td className="py-3 px-3 text-slate-500 text-[12px]">{emp.role}</td>
+                          <td className="py-3 px-3 font-semibold">₹{(emp.grossMonthly||0).toLocaleString()}</td>
+                          <td className="py-3 px-3 text-slate-600">₹{(emp.transportation||0).toLocaleString()}</td>
+                          <td className="py-3 px-3 text-slate-600">₹{(emp.performance||0).toLocaleString()}</td>
+                          <td className="py-3 px-3 text-slate-600">₹{(emp.achievement||0).toLocaleString()}</td>
+                          <td className="py-3 px-3 text-slate-600">₹{(emp.incentives||0).toLocaleString()}</td>
+                          <td className="py-3 px-3 font-black text-blue-600">₹{ctc.toLocaleString()}</td>
+                        </tr>
+                      );
+                    })}
+                    {employees.length === 0 && <tr><td colSpan={8} className="py-8 text-center text-slate-400">No employee data found</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
           </div>
         )}
 

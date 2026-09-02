@@ -38,10 +38,10 @@ import Recruitment from "./pages/hr/Recruitment";
 
 // Lead Management Imports
 import ManageLeads from "./pages/leads/ManageLeads";
+import AdminLeadDetails from "./pages/leads/LeadDetails";
 import AddLead from "./pages/leads/AddLead";
 import LeadSources from "./pages/leads/LeadSources";
 import LeadStatus from "./pages/leads/LeadStatus";
-import AssignLead from "./pages/leads/AssignLead";
 import FollowUps from "./pages/leads/FollowUps";
 
 // Work Management Imports
@@ -52,6 +52,7 @@ import WorkCalendar from './pages/work/WorkCalendar';
 // Loan Management Imports
 import LoanDashboard from './pages/loans/LoanDashboard';
 import ManageApplications from './pages/loans/ManageApplications';
+import LoanApplicationDetails from './pages/loans/LoanApplicationDetails';
 import ActiveLoans from './pages/loans/ActiveLoans';
 import RepaymentSchedule from './pages/loans/RepaymentSchedule';
 import EMICollections from './pages/loans/EMICollections';
@@ -62,8 +63,7 @@ import TopUpRequests from './pages/loans/TopUpRequests';
 import LoanClosure from './pages/loans/LoanClosure';
 import DocumentCenter from './pages/loans/DocumentCenter';
 import VerifyDocuments from './pages/loans/VerifyDocuments';
-import ApplicationDecision from './pages/loans/ApplicationDecision';
-import RequestDocuments from './pages/loans/RequestDocuments';
+import DocumentViewer from './pages/loans/DocumentViewer';
 
 // System Imports
 import Settings from './pages/system/Settings';
@@ -297,9 +297,9 @@ function App() {
           {/* Lead Management Routes */}
           <Route path="leads" element={<ManageLeads />} />
           <Route path="leads/add" element={<AddLead />} />
+          <Route path="leads/:id" element={<AdminLeadDetails />} />
           <Route path="leads/sources" element={<LeadSources />} />
           <Route path="leads/status" element={<LeadStatus />} />
-          <Route path="leads/assignment" element={<AssignLead />} />
           <Route path="leads/follow-ups" element={<FollowUps />} />
 
           {/* Work Management Routes */}
@@ -310,6 +310,7 @@ function App() {
           {/* Loan Management Routes */}
           <Route path="loans/dashboard" element={<LoanDashboard />} />
           <Route path="loans" element={<ManageApplications />} />
+          <Route path="loans/:id" element={<LoanApplicationDetails />} />
           <Route path="loans/active" element={<ActiveLoans />} />
           <Route path="loans/repayments" element={<RepaymentSchedule />} />
           <Route path="loans/collections" element={<EMICollections />} />
@@ -386,8 +387,7 @@ function App() {
           {/* Placeholder Routes for missing pages */}
           <Route path="user-profile/:id" element={<UserProfile />} />
           <Route path="verify-documents" element={<VerifyDocuments />} />
-          <Route path="application-decision" element={<ApplicationDecision />} />
-          <Route path="request-documents" element={<RequestDocuments />} />
+          <Route path="verify-document/:userId/:docIndex" element={<DocumentViewer />} />
           <Route path="change-password" element={<ChangePassword />} />
         </Route>
         {/* Accountant Routes */}

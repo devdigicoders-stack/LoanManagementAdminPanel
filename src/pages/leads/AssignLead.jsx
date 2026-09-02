@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Search, UserCheck, Users, FileText, ChevronRight, CheckCircle2,
   Phone, Globe, IndianRupee, Tag, ShieldAlert, X, Eye, Trash2
@@ -6,15 +6,10 @@ import {
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
-const initialLeads = [
-  { id: "LID-2025-1268", name: "Rohit Kumar", mobile: "+91 9876543210", source: "Website", amount: "₹5,00,000", status: "Unassigned" },
-  { id: "LID-2025-1269", name: "Priya Sharma", mobile: "+91 9123456789", source: "Referral", amount: "₹15,00,000", status: "Unassigned" },
-  { id: "LID-2025-1270", name: "Amit Verma", mobile: "+91 9988776655", source: "Social Media", amount: "₹8,50,000", status: "Unassigned" },
-  { id: "LID-2025-1271", name: "Neha Singh", mobile: "+91 9876501234", source: "Walk-in", amount: "₹2,00,000", status: "Unassigned" },
-];
-
 export default function AssignLead() {
-  const [leads, setLeads] = useState(initialLeads);
+  const [leads, setLeads] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   
   // Modal State
@@ -27,9 +22,44 @@ export default function AssignLead() {
   const [priority, setPriority] = useState("Medium");
   const [remarks, setRemarks] = useState("");
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const [leadsRes, empRes] = await Promise.all([
+          fetch('http://localhost:5000/api/leads', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('http://localhost:5000/api/employees', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+        
+        if (leadsRes.ok && empRes.ok) {
+          const leadsData = await leadsRes.json();
+          const empData = await empRes.json();
+          
+          const mappedLeads = leadsData
+            .filter(lead => lead.status === 'New' || lead.status === 'Unassigned')
+            .map(lead => ({
+              ...lead,
+              id: lead._id,
+              amount: lead.expectedAmount || "N/A"
+            }));
+            
+          setLeads(mappedLeads);
+          setEmployees(empData);
+        } else {
+          toast.error("Failed to load data");
+        }
+      } catch (error) {
+        toast.error("Server error");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const filteredLeads = leads.filter(lead => 
-    lead.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    lead.id.toLowerCase().includes(searchQuery.toLowerCase())
+    lead.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    lead.leadId?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const openAssignModal = (lead) => {
@@ -44,32 +74,56 @@ export default function AssignLead() {
     setSelectedLead(null);
   };
 
-  const handleAssign = (e) => {
+  const handleAssign = async (e) => {
     e.preventDefault();
     if (!employee && !team) {
       toast.error("Please select an employee or a team to assign the lead.");
       return;
     }
 
+    const selectedEmp = employees.find(emp => emp._id === employee);
+    const assignData = {
+      assignedTo: selectedEmp ? selectedEmp.name : null,
+      assignedToId: employee || null,
+      assignedTeam: team || null,
+      priority,
+      assignmentRemarks: remarks
+    };
+
     Swal.fire({
       title: 'Confirm Assignment',
-      text: `Are you sure you want to assign ${selectedLead.name} to ${employee || team}?`,
+      text: `Are you sure you want to assign ${selectedLead.name} to ${selectedEmp?.name || team}?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#489b0d',
       cancelButtonColor: '#cbd5e1',
       confirmButtonText: 'Yes, Assign!'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
         setIsSubmitting(true);
-        // Simulate API call
-        setTimeout(() => {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`http://localhost:5000/api/leads/${selectedLead.id}/assign`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(assignData)
+          });
+          
+          if (res.ok) {
+            setLeads(prev => prev.filter(l => l.id !== selectedLead.id));
+            toast.success("Lead assigned successfully!");
+            closeAssignModal();
+          } else {
+            toast.error("Failed to assign lead");
+          }
+        } catch (error) {
+          toast.error("Server error");
+        } finally {
           setIsSubmitting(false);
-          // Remove assigned lead from the list
-          setLeads(prev => prev.filter(l => l.id !== selectedLead.id));
-          toast.success("Lead assigned successfully!");
-          closeAssignModal();
-        }, 1000);
+        }
       }
     });
   };
@@ -97,7 +151,7 @@ export default function AssignLead() {
       html: `
         <div class="text-left space-y-3 mt-4">
           <p><strong>Name:</strong> ${lead.name}</p>
-          <p><strong>ID:</strong> ${lead.id}</p>
+          <p><strong>ID:</strong> ${lead.leadId}</p>
           <p><strong>Mobile:</strong> ${lead.mobile}</p>
           <p><strong>Source:</strong> ${lead.source}</p>
           <p><strong>Expected Amount:</strong> <span class="text-[#489b0d] font-bold">${lead.amount}</span></p>
@@ -154,7 +208,7 @@ export default function AssignLead() {
               {filteredLeads.map(lead => (
                 <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="py-4 px-6">
-                    <span className="text-[13px] font-bold text-slate-700">{lead.id}</span>
+                    <span className="text-[13px] font-bold text-slate-700">{lead.leadId}</span>
                   </td>
                   <td className="py-4 px-6">
                     <p className="text-[13px] font-bold text-slate-800">{lead.name}</p>
@@ -216,7 +270,7 @@ export default function AssignLead() {
                 <h3 className="font-extrabold text-slate-800 text-[16px] flex items-center gap-2">
                   <UserCheck size={18} className="text-[#489b0d]"/> Assign Lead
                 </h3>
-                <p className="text-[12px] text-slate-500 font-medium mt-0.5">Assigning {selectedLead.name} ({selectedLead.id})</p>
+                <p className="text-[12px] text-slate-500 font-medium mt-0.5">Assigning {selectedLead.name} ({selectedLead.leadId})</p>
               </div>
               <button onClick={closeAssignModal} className="text-slate-400 hover:text-slate-600 transition-colors p-1 bg-slate-200/50 rounded-full hover:bg-slate-200">
                 <X size={18} />
@@ -250,9 +304,9 @@ export default function AssignLead() {
                       className="w-full h-11 pl-10 pr-4 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#489b0d] bg-white appearance-none"
                     >
                       <option value="">Select individual employee</option>
-                      <option value="Ravi Kumar">Ravi Kumar (Loan Officer)</option>
-                      <option value="Neha Singh">Neha Singh (Loan Officer)</option>
-                      <option value="Suresh Patel">Suresh Patel (Branch Manager)</option>
+                      {employees.map(emp => (
+                        <option key={emp._id} value={emp._id}>{emp.name} ({emp.designation})</option>
+                      ))}
                     </select>
                   </div>
                 </div>

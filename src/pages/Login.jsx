@@ -2,12 +2,13 @@ import { useState, useEffect } from 'react';
 import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, Users, BarChart3, FileCheck, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { storePermissions, ROLE_PERMISSIONS, clearPermissions } from '../utils/permissions';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('Super Admin');
+  const [role, setRole] = useState('Admin');
   const [subRole, setSubRole] = useState('Tele callers operator');
   const navigate = useNavigate();
 
@@ -17,58 +18,118 @@ const LoginPage = () => {
     localStorage.removeItem('userRole');
     localStorage.removeItem('userSubRole');
     localStorage.removeItem('userEmail');
+    clearPermissions();
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // In a real scenario, API call should be made. For now, simple mock login
-    if (email === 'admin@gmail.com' && password === '123456') {
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userRole', role);
-      localStorage.setItem('userEmail', email);
-      if (role === 'Sales Admin') {
-        localStorage.setItem('userSubRole', subRole);
-      }
-      toast.success(`Login Successful! Welcome, ${role}.`);
-      navigate('/');
-    } else if (email === "tele@gmail.com" || email === "admin@tele.com") {
-      localStorage.setItem("isAuthenticated", "true");
-      localStorage.setItem("userRole", "Telecaller Operator");
-      localStorage.setItem("userSubRole", "Sales");
-      localStorage.setItem("adminPic_Telecaller Operator", "https://api.dicebear.com/7.x/avataaars/svg?seed=Telecaller&backgroundColor=dff3ff");
-      localStorage.setItem("adminName_Telecaller Operator", "Telecaller Admin");
-      navigate("/telecaller");
-    } else if (email === "admin@agent.com" || email === "agent@gmail.com" || email === "admin@accountant.com") {
-      if (email === "admin@agent.com" && password === "123456") {
-        localStorage.setItem("userRole", "agent");
-        localStorage.setItem("adminName_agent", "Agent Operator");
-        localStorage.setItem("adminPic_agent", "https://api.dicebear.com/7.x/avataaars/svg?seed=Agent&backgroundColor=dff3ff");
-        toast.success("Agent Login successful");
-        navigate("/agent");
-        return;
-      }
+    const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
 
-      if (email === "admin@accountant.com" && password === "123456") {
-        localStorage.setItem("userRole", "accountant");
-        localStorage.setItem("adminName_accountant", "Accountant Admin");
-        localStorage.setItem("adminPic_accountant", "https://api.dicebear.com/7.x/avataaars/svg?seed=Accountant&backgroundColor=dff3ff");
-        toast.success("Accountant Login successful");
-        navigate("/accountant");
-        return;
+    if (role === 'Super Admin' || role === 'Admin') {
+      try {
+        let response = await fetch(`${API_URL}/admin/login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        
+        let data = await response.json();
+        
+        // If Admin login fails in admin collection, fallback to employee collection
+        if (!response.ok && role === 'Admin') {
+          response = await fetch(`${API_URL}/employees/login`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password })
+          });
+          data = await response.json();
+        }
+        
+        if (response.ok) {
+          // For Super Admin, do strict role check
+          if (role === 'Super Admin') {
+            const backendRoleStr = (data.role || '').toLowerCase().replace(/ /g, '');
+            const uiRoleStr = 'superadmin';
+            if (backendRoleStr !== uiRoleStr && backendRoleStr !== 'super admin') {
+              toast.error(`Invalid role selected. This account is assigned as ${data.role || 'another role'}.`);
+              return;
+            }
+          }
+
+          const actualRole = data.role || role;
+          localStorage.setItem('isAuthenticated', 'true');
+          // For Admin, use their actual role from DB so sidebar filters correctly
+          localStorage.setItem('userRole', role === 'Super Admin' ? 'Super Admin' : actualRole);
+          localStorage.setItem('userEmail', data.email);
+          localStorage.setItem('token', data.token);
+          
+          // Store permissions from backend (the ones SuperAdmin granted them)
+          const roleKey = actualRole.toLowerCase().replace(/ /g, '_');
+          storePermissions(data.permissions || ROLE_PERMISSIONS[roleKey] || []);
+          toast.success(`Login Successful! Welcome, ${actualRole}.`);
+          navigate('/');
+        } else {
+          toast.error(data.message || 'Invalid email or password.');
+        }
+      } catch (error) {
+        toast.error('Server error. Please check if backend is running.');
       }
-    } else if (email === 'admin@operator.com' && password === '123456') {
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('userRole', 'Operation Admin');
-      localStorage.setItem('userEmail', email);
-      toast.success(`Login Successful! Welcome, Operation Admin.`);
-      navigate('/');
-    } else {
-      toast.error('Invalid email or password. Please try again.');
+      return;
+    }
+
+    const effectiveRole = (role === 'Sales Admin') ? subRole : role;
+
+    try {
+      const response = await fetch(`${API_URL}/employees/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok) {
+        const backendRoleStr = (data.role || '').toLowerCase().replace(/ /g, '');
+        const uiRoleStr = effectiveRole.toLowerCase().replace(/ /g, '');
+
+        if (backendRoleStr !== uiRoleStr) {
+          toast.error(`Invalid role selected. This account is assigned as ${data.role || 'another role'}.`);
+          return;
+        }
+
+        localStorage.setItem('isAuthenticated', 'true');
+        localStorage.setItem('userRole', effectiveRole);
+        localStorage.setItem('userEmail', data.email);
+        localStorage.setItem('token', data.token);
+        
+        // Store permissions from backend
+        storePermissions(data.permissions || ROLE_PERMISSIONS[uiRoleStr] || []);
+        
+        toast.success(`Login Successful! Welcome, ${effectiveRole}.`);
+
+        // Route to different dashboards based on role
+        if (effectiveRole === 'Tele callers operator') {
+          navigate("/telecaller");
+        } else if (effectiveRole === 'Agent operator') {
+          navigate("/agent");
+        } else if (effectiveRole === 'Accountant Admin') {
+          navigate("/accountant");
+        } else if (effectiveRole === 'HR Admin') {
+          navigate("/employees");
+        } else {
+          navigate("/");
+        }
+      } else {
+        toast.error(data.message || 'Invalid email or password.');
+      }
+    } catch (error) {
+      toast.error('Server error. Please check if backend is running.');
     }
   };
 
   const roles = [
     'Super Admin',
+    'Admin',
     'HR Admin',
     'Operation Admin',
     'Sales Admin',

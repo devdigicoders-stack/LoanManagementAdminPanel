@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, TrendingDown, FileText, CheckCircle, XCircle, Clock, 
   CreditCard, Users, User, Briefcase, FileCheck, ArrowRight, UserPlus, 
@@ -7,42 +7,13 @@ import {
 import Highcharts from 'highcharts';
 import { HighchartsReact } from 'highcharts-react-official';
 import { useNavigate } from 'react-router-dom';
-import { mockUsers } from './ManageUsers';
-
-// Disable accessibility module warning
-Highcharts.setOptions({ accessibility: { enabled: false } });
-
-// --- Computed Data ---
-const totalApps = mockUsers.reduce((sum, u) => sum + (u.totalApplications || 0), 0);
-const approvedApps = mockUsers.reduce((sum, u) => sum + (u.approvedApplications || 0), 0);
-const pendingApps = mockUsers.reduce((sum, u) => sum + (u.underReviewApplications || 0), 0);
-const rejectedApps = mockUsers.reduce((sum, u) => sum + (u.rejectedApplications || 0), 0);
-
-const recentApplications = mockUsers.slice(0, 5).map((user, idx) => ({
-  id: `APP-2025-10${idx}`,
-  userId: user.id,
-  name: user.name,
-  type: ['Personal Loan', 'Home Loan', 'Business Loan', 'Education Loan'][idx % 4],
-  amount: `₹${(idx + 1) * 2},50,000`,
-  status: ['Pending', 'Approved', 'Pending', 'Rejected', 'Approved'][idx % 5],
-  date: `1${idx} May 2025`
-}));
-
-const topLoanTypes = [
-  { name: 'Personal Loan', percentage: 40, color: 'bg-gradient-to-r from-emerald-500 to-emerald-400' },
-  { name: 'Home Loan', percentage: 30, color: 'bg-gradient-to-r from-blue-500 to-blue-400' },
-  { name: 'Business Loan', percentage: 20, color: 'bg-gradient-to-r from-purple-500 to-purple-400' },
-  { name: 'Education Loan', percentage: 10, color: 'bg-gradient-to-r from-orange-500 to-orange-400' },
-];
-
+// Removed static mock variables
 const quickActions = [
   { title: 'Add New User', subtitle: 'Create a new system user', icon: UserPlus, color: 'text-emerald-600 bg-emerald-50 border-emerald-100', action: 'addUser' },
   { title: 'New Loan Application', subtitle: 'Add a new loan application', icon: FileText, color: 'text-blue-600 bg-blue-50 border-blue-100', action: 'newLoan' },
   { title: 'Assign Lead', subtitle: 'Assign lead to employee', icon: UserCheck, color: 'text-purple-600 bg-purple-50 border-purple-100', action: 'assignLead' },
   { title: 'Request Documents', subtitle: 'Request documents from applicant', icon: FileCheck, color: 'text-orange-600 bg-orange-50 border-orange-100', action: 'reqDoc' },
 ];
-
-// --- Helper Components ---
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`bg-white rounded-[20px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 ${noPadding ? '' : 'p-6'} ${className}`}>
     {children}
@@ -59,50 +30,58 @@ const Trend = ({ value, isUp }) => (
 export default function Dashboard() {
   const navigate = useNavigate();
   const [timeFilter, setTimeFilter] = useState('This Month');
+  const [dashboardData, setDashboardData] = useState({
+    kpis: {
+      totalApps: 0,
+      approvedApps: 0,
+      pendingApps: 0,
+      rejectedApps: 0,
+      disbursedAmount: "0",
+      totalCustomers: 0,
+      activeLoans: 0,
+      closedLoans: 0,
+      overdueLoans: 0,
+      employees: 0,
+      complaints: 0
+    },
+    chartsData: {
+      'This Month': { categories: [], total: [], approved: [], pending: [], rejected: [], areaData: [] },
+      'Last Month': { categories: [], total: [], approved: [], pending: [], rejected: [], areaData: [] },
+      'This Year': { categories: [], total: [], approved: [], pending: [], rejected: [], areaData: [] },
+      'All Time': { categories: [], total: [], approved: [], pending: [], rejected: [], areaData: [] },
+    },
+    topLoanTypes: [],
+    recentApplications: [],
+    recentActivities: [],
+    notifications: []
+  });
+  const [loading, setLoading] = useState(true);
 
-  // Dynamic Chart Options based on timeFilter
-  const getDynamicData = (filter) => {
-    switch(filter) {
-      case 'This Year':
-        return {
-          categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
-          total: [80, 95, 110, 105, 120, 135, 125, 140, 130, 115, 125, 145],
-          approved: [40, 50, 60, 55, 70, 80, 75, 85, 80, 70, 80, 95],
-          pending: [30, 35, 30, 35, 30, 35, 30, 35, 30, 25, 25, 30],
-          rejected: [10, 10, 20, 15, 20, 20, 20, 20, 20, 20, 20, 20],
-          areaData: [100, 200, 150, 300, 250, 400, 350, 450, 400, 500, 450, 600]
-        };
-      case 'Last Month':
-        return {
-          categories: ['01 Apr', '06 Apr', '11 Apr', '16 Apr', '21 Apr', '26 Apr', '30 Apr'],
-          total: [30, 40, 35, 50, 45, 60, 55],
-          approved: [15, 20, 18, 25, 22, 30, 28],
-          pending: [10, 15, 12, 18, 15, 20, 18],
-          rejected: [5, 5, 5, 7, 8, 10, 9],
-          areaData: [15, 25, 20, 35, 30, 45, 40]
-        };
-      case 'All Time':
-        return {
-          categories: ['2020', '2021', '2022', '2023', '2024', '2025'],
-          total: [500, 800, 1200, 1500, 2000, 1350],
-          approved: [250, 400, 600, 800, 1200, 800],
-          pending: [150, 200, 400, 400, 500, 350],
-          rejected: [100, 200, 200, 300, 300, 200],
-          areaData: [500, 800, 1200, 1500, 2000, 1350]
-        };
-      default: // This Month
-        return {
-          categories: ['01 May', '04 May', '07 May', '10 May', '13 May', '16 May', '19 May', '22 May', '25 May', '28 May', '31 May'],
-          total: [20, 50, 40, 55, 45, 70, 55, 80, 65, 85, 75],
-          approved: [10, 30, 20, 35, 25, 45, 35, 60, 55, 70, 55],
-          pending: [5, 15, 10, 25, 15, 30, 20, 40, 35, 40, 30],
-          rejected: [2, 5, 8, 10, 12, 15, 10, 18, 20, 25, 20],
-          areaData: [10, 20, 15, 30, 25, 40, 35, 50, 45, 60, 55]
-        };
-    }
-  };
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        if (response.ok) {
+          setDashboardData(data);
+        }
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDashboardData();
+  }, []);
 
-  const dynamicData = getDynamicData(timeFilter);
+  const { kpis, chartsData, topLoanTypes, recentApplications, recentActivities, notifications } = dashboardData;
+
+  const dynamicData = chartsData[timeFilter] || chartsData['This Month'];
 
   const lineChartOptions = {
     chart: { type: 'areaspline', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 320 },
@@ -148,16 +127,16 @@ export default function Dashboard() {
     credits: { enabled: false }, 
     plotOptions: { column: { borderRadius: 4, borderWidth: 0, pointPadding: 0.2 } },
     series: [
-      { name: 'Approved', data: [400, 500, 600, 550, 700, 800, 750, 850, 800, 700, 800, 950], color: '#10b981' },
-      { name: 'Pending', data: [300, 350, 300, 350, 300, 350, 300, 350, 300, 250, 250, 300], color: '#f59e0b' },
-      { name: 'Rejected', data: [100, 100, 200, 150, 200, 200, 200, 200, 200, 200, 200, 200], color: '#ef4444' }
+      { name: 'Approved', data: dynamicData.approved, color: '#10b981' },
+      { name: 'Pending', data: dynamicData.pending, color: '#f59e0b' },
+      { name: 'Rejected', data: dynamicData.rejected, color: '#ef4444' }
     ]
   };
 
   const donutChartOptions = {
     chart: { type: 'pie', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 220, margin: [0, 0, 0, 0] },
     title: { 
-      text: `<div style="text-align:center"><span style="font-size:24px;font-weight:900;color:#0f172a">${totalApps}</span><br/><span style="font-size:12px;color:#64748b;font-weight:500">Total</span></div>`, 
+      text: `<div style="text-align:center"><span style="font-size:24px;font-weight:900;color:#0f172a">${kpis.totalApps}</span><br/><span style="font-size:12px;color:#64748b;font-weight:500">Total</span></div>`, 
       align: 'center', verticalAlign: 'middle', y: 15, useHTML: true
     },
     credits: { enabled: false },
@@ -170,12 +149,15 @@ export default function Dashboard() {
     series: [{
       name: 'Applications',
       data: [
-        { name: 'Approved', y: approvedApps },
-        { name: 'Pending', y: pendingApps },
-        { name: 'Rejected', y: rejectedApps }
+        { name: 'Approved', y: kpis.approvedApps },
+        { name: 'Pending', y: kpis.pendingApps },
+        { name: 'Rejected', y: kpis.rejectedApps }
       ]
     }]
   };
+
+  if (loading) return <div className="p-8">Loading dashboard...</div>;
+
 
   return (
     <div className="w-full space-y-8 pb-12 bg-slate-50/50 min-h-screen">
@@ -209,7 +191,7 @@ export default function Dashboard() {
             <Trend value="+12.5%" isUp={true} />
           </div>
           <p className="text-[13px] font-bold text-slate-500 mb-1">Total Applications</p>
-          <h3 className="text-3xl font-black text-slate-800 tracking-tight">{totalApps}</h3>
+          <h3 className="text-3xl font-black text-slate-800 tracking-tight">{kpis.totalApps}</h3>
         </Card>
 
         <Card className="flex flex-col relative overflow-hidden group">
@@ -221,7 +203,7 @@ export default function Dashboard() {
             <Trend value="+8.2%" isUp={true} />
           </div>
           <p className="text-[13px] font-bold text-slate-500 mb-1">Pending Applications</p>
-          <h3 className="text-3xl font-black text-slate-800 tracking-tight">{pendingApps}</h3>
+          <h3 className="text-3xl font-black text-slate-800 tracking-tight">{kpis.pendingApps}</h3>
         </Card>
 
         <Card className="flex flex-col relative overflow-hidden group">
@@ -233,7 +215,7 @@ export default function Dashboard() {
             <Trend value="+15.3%" isUp={true} />
           </div>
           <p className="text-[13px] font-bold text-slate-500 mb-1">Approved Applications</p>
-          <h3 className="text-3xl font-black text-slate-800 tracking-tight">{approvedApps}</h3>
+          <h3 className="text-3xl font-black text-slate-800 tracking-tight">{kpis.approvedApps}</h3>
         </Card>
 
         <Card className="flex flex-col relative overflow-hidden group">
@@ -245,7 +227,7 @@ export default function Dashboard() {
             <Trend value="-5.1%" isUp={false} />
           </div>
           <p className="text-[13px] font-bold text-slate-500 mb-1">Rejected Applications</p>
-          <h3 className="text-3xl font-black text-slate-800 tracking-tight">{rejectedApps}</h3>
+          <h3 className="text-3xl font-black text-slate-800 tracking-tight">{kpis.rejectedApps}</h3>
         </Card>
 
         <Card className="flex flex-col relative overflow-hidden group bg-gradient-to-br from-slate-900 to-slate-800 border-none !text-white shadow-xl">
@@ -259,7 +241,7 @@ export default function Dashboard() {
             </span>
           </div>
           <p className="text-[13px] font-medium text-slate-300 mb-1 relative z-10">Disbursed Amount</p>
-          <h3 className="text-3xl font-black text-white tracking-tight relative z-10">₹24.75 Cr</h3>
+          <h3 className="text-3xl font-black text-white tracking-tight relative z-10">₹{kpis.disbursedAmount}</h3>
         </Card>
 
       </div>
@@ -297,15 +279,15 @@ export default function Dashboard() {
             <div className="flex flex-col gap-4 w-full">
               <div className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]"></div><span className="text-sm font-bold text-slate-700">Approved</span></div>
-                <span className="text-sm font-black text-slate-900">684 <span className="text-slate-400 font-semibold ml-1.5">(54.8%)</span></span>
+                <span className="text-sm font-black text-slate-900">{kpis.approvedApps}</span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]"></div><span className="text-sm font-bold text-slate-700">Pending</span></div>
-                <span className="text-sm font-black text-slate-900">268 <span className="text-slate-400 font-semibold ml-1.5">(21.5%)</span></span>
+                <span className="text-sm font-black text-slate-900">{kpis.pendingApps}</span>
               </div>
               <div className="flex items-center justify-between p-3 rounded-xl hover:bg-slate-50 transition-colors">
                 <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]"></div><span className="text-sm font-bold text-slate-700">Rejected</span></div>
-                <span className="text-sm font-black text-slate-900">296 <span className="text-slate-400 font-semibold ml-1.5">(23.7%)</span></span>
+                <span className="text-sm font-black text-slate-900">{kpis.rejectedApps}</span>
               </div>
             </div>
           </div>
@@ -336,7 +318,7 @@ export default function Dashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {recentApplications.map((app, idx) => (
+                {dashboardData.recentApplications.map((app, idx) => (
                   <tr key={idx} className="hover:bg-slate-50/50 transition-colors group">
                     <td className="py-4 px-5 text-[13px] font-bold text-slate-800 whitespace-nowrap">{app.id}</td>
                     <td className="py-4 px-5 whitespace-nowrap">
@@ -394,7 +376,7 @@ export default function Dashboard() {
           <div>
             <p className="text-[12px] font-bold text-slate-500 mb-0.5">Total Customers</p>
             <div className="flex items-baseline gap-2">
-              <h4 className="text-xl font-black text-slate-900">2,547</h4>
+              <h4 className="text-xl font-black text-slate-900">{kpis.totalCustomers}</h4>
             </div>
           </div>
         </Card>
@@ -406,7 +388,7 @@ export default function Dashboard() {
           <div>
             <p className="text-[12px] font-bold text-slate-500 mb-0.5">Active Loans</p>
             <div className="flex items-baseline gap-2">
-              <h4 className="text-xl font-black text-slate-900">1,856</h4>
+              <h4 className="text-xl font-black text-slate-900">{kpis.activeLoans}</h4>
             </div>
           </div>
         </Card>
@@ -418,7 +400,7 @@ export default function Dashboard() {
           <div>
             <p className="text-[12px] font-bold text-slate-500 mb-0.5">Closed Loans</p>
             <div className="flex items-baseline gap-2">
-              <h4 className="text-xl font-black text-slate-900">691</h4>
+              <h4 className="text-xl font-black text-slate-900">{kpis.closedLoans}</h4>
             </div>
           </div>
         </Card>
@@ -430,7 +412,7 @@ export default function Dashboard() {
           <div>
             <p className="text-[12px] font-bold text-slate-500 mb-0.5">Overdue Loans</p>
             <div className="flex items-baseline gap-2">
-              <h4 className="text-xl font-black text-slate-900">145</h4>
+              <h4 className="text-xl font-black text-slate-900">{kpis.overdueLoans}</h4>
             </div>
           </div>
         </Card>
@@ -442,7 +424,7 @@ export default function Dashboard() {
           <div>
             <p className="text-[12px] font-bold text-slate-500 mb-0.5">Employees</p>
             <div className="flex items-baseline gap-2">
-              <h4 className="text-xl font-black text-slate-900">24</h4>
+              <h4 className="text-xl font-black text-slate-900">{kpis.employees}</h4>
             </div>
           </div>
         </Card>
@@ -454,7 +436,7 @@ export default function Dashboard() {
           <div>
             <p className="text-[12px] font-bold text-slate-500 mb-0.5">Complaints</p>
             <div className="flex items-baseline gap-2">
-              <h4 className="text-xl font-black text-slate-900">12</h4>
+              <h4 className="text-xl font-black text-slate-900">{kpis.complaints}</h4>
             </div>
           </div>
         </Card>
@@ -468,51 +450,46 @@ export default function Dashboard() {
         <Card className="xl:col-span-1 flex flex-col">
           <h3 className="text-lg font-extrabold text-slate-900 mb-6">Recent Activities</h3>
           <div className="space-y-6 flex-1">
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                <CheckCircle size={14} strokeWidth={2.5} />
+            {recentActivities.length > 0 ? recentActivities.map((activity, idx) => {
+              // Map activity type to icon
+              const getIcon = (type) => {
+                switch(type) {
+                  case 'submission': return <CheckCircle size={14} strokeWidth={2.5} />;
+                  case 'approval': return <CheckCircle size={14} strokeWidth={2.5} />;
+                  case 'document': return <FileText size={14} strokeWidth={2.5} />;
+                  case 'assignment': return <User size={14} strokeWidth={2.5} />;
+                  case 'rejection': return <XCircle size={14} strokeWidth={2.5} />;
+                  default: return <Clock size={14} strokeWidth={2.5} />;
+                }
+              };
+              const getColorClass = (type) => {
+                switch(type) {
+                  case 'submission': return 'bg-emerald-50 text-emerald-600 border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white';
+                  case 'approval': return 'bg-emerald-50 text-emerald-600 border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white';
+                  case 'document': return 'bg-slate-100 text-slate-600 border-slate-200 group-hover:bg-slate-500 group-hover:text-white';
+                  case 'assignment': return 'bg-blue-50 text-blue-600 border-blue-100 group-hover:bg-blue-500 group-hover:text-white';
+                  case 'rejection': return 'bg-rose-50 text-rose-600 border-rose-100 group-hover:bg-rose-500 group-hover:text-white';
+                  default: return 'bg-slate-100 text-slate-600 border-slate-200 group-hover:bg-slate-500 group-hover:text-white';
+                }
+              };
+
+              return (
+                <div key={idx} className="flex gap-4 group cursor-pointer">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border transition-colors ${getColorClass(activity.type)}`}>
+                    {getIcon(activity.type)}
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">{activity.title}</p>
+                    <p className="text-[11px] font-bold text-slate-400 mt-1">{activity.time}</p>
+                  </div>
+                </div>
+              );
+            }) : (
+              <div className="text-center text-slate-400 py-8 text-sm font-medium flex flex-col items-center">
+                <Clock size={32} className="opacity-20 mb-3" />
+                No recent activities
               </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">New application APP-2025-1250 submitted by Ravi Kumar</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1">10 May 2025, 10:30 AM</p>
-              </div>
-            </div>
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                <CheckCircle size={14} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">Application APP-2025-1249 approved by Super Admin</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1">10 May 2025, 09:45 AM</p>
-              </div>
-            </div>
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-600 flex items-center justify-center shrink-0 border border-slate-200 group-hover:bg-slate-500 group-hover:text-white transition-colors">
-                <FileText size={14} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">Documents requested for APP-2025-1248</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1">09 May 2025, 04:15 PM</p>
-              </div>
-            </div>
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-blue-500 group-hover:text-white transition-colors">
-                <User size={14} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">Lead assigned to John Doe for APP-2025-1247</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1">09 May 2025, 11:20 AM</p>
-              </div>
-            </div>
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                <XCircle size={14} strokeWidth={2.5} />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">Application APP-2025-1246 rejected by Admin</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1">08 May 2025, 03:50 PM</p>
-              </div>
-            </div>
+            )}
           </div>
         </Card>
 
@@ -523,42 +500,43 @@ export default function Dashboard() {
             <button className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">View All</button>
           </div>
           <div className="space-y-6 flex-1">
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white transition-colors">
-                <UserPlus size={18} />
+            {notifications.length > 0 ? notifications.map((notif, idx) => {
+              const getIcon = (type) => {
+                switch(type) {
+                  case 'application': return <UserPlus size={18} />;
+                  case 'pending': return <Clock size={18} />;
+                  case 'document': return <FileCheck size={18} />;
+                  case 'overdue': return <AlertCircle size={18} />;
+                  default: return <Clock size={18} />;
+                }
+              };
+              const getColorClass = (type) => {
+                switch(type) {
+                  case 'application': return 'bg-emerald-50 text-emerald-600 border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white';
+                  case 'pending': return 'bg-amber-50 text-amber-500 border-amber-100 group-hover:bg-amber-500 group-hover:text-white';
+                  case 'document': return 'bg-purple-50 text-purple-600 border-purple-100 group-hover:bg-purple-500 group-hover:text-white';
+                  case 'overdue': return 'bg-rose-50 text-rose-600 border-rose-100 group-hover:bg-rose-500 group-hover:text-white';
+                  default: return 'bg-slate-50 text-slate-500 border-slate-100 group-hover:bg-slate-500 group-hover:text-white';
+                }
+              };
+
+              return (
+                <div key={idx} className="flex gap-4 group cursor-pointer">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${getColorClass(notif.type)}`}>
+                    {getIcon(notif.type)}
+                  </div>
+                  <div>
+                    <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">{notif.title}</p>
+                    <p className="text-[11px] font-bold text-slate-400 mt-1.5">{notif.time}</p>
+                  </div>
+                </div>
+              );
+            }) : (
+              <div className="text-center text-slate-400 py-8 text-sm font-medium flex flex-col items-center">
+                <AlertCircle size={32} className="opacity-20 mb-3" />
+                No new notifications
               </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">5 new applications submitted today</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1.5">10 May 2025, 10:30 AM</p>
-              </div>
-            </div>
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 border border-amber-100 group-hover:bg-amber-500 group-hover:text-white transition-colors">
-                <Clock size={18} />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">3 applications are pending for approval</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1.5">10 May 2025, 09:15 AM</p>
-              </div>
-            </div>
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100 group-hover:bg-purple-500 group-hover:text-white transition-colors">
-                <FileCheck size={18} />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">2 documents are pending for verification</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1.5">09 May 2025, 04:00 PM</p>
-              </div>
-            </div>
-            <div className="flex gap-4 group cursor-pointer">
-              <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center shrink-0 border border-rose-100 group-hover:bg-rose-500 group-hover:text-white transition-colors">
-                <AlertCircle size={18} />
-              </div>
-              <div>
-                <p className="text-[13px] font-semibold text-slate-700 leading-snug group-hover:text-slate-900 transition-colors">1 loan payment is overdue</p>
-                <p className="text-[11px] font-bold text-slate-400 mt-1.5">09 May 2025, 02:30 PM</p>
-              </div>
-            </div>
+            )}
           </div>
         </Card>
 
@@ -572,7 +550,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-[13px] font-medium text-slate-300 mb-1">Total Disbursed (MTD)</p>
-            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">₹24.75 Cr</h2>
+            <h2 className="text-3xl font-black text-white mb-2 tracking-tight">₹{kpis.disbursedAmount}</h2>
             <div className="flex items-center gap-2">
               <span className="text-[12px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded-md backdrop-blur-sm">+18.7%</span>
               <span className="text-[11px] font-medium text-slate-400">vs last month</span>

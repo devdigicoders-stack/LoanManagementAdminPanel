@@ -12,6 +12,8 @@ export default function Header({ toggleSidebar }) {
   const [adminPic, setAdminPic] = useState(localStorage.getItem(picKey) || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc");
   const [adminRole, setAdminRole] = useState(currentRole);
 
+  const [unreadCount, setUnreadCount] = useState(0);
+
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     
@@ -24,6 +26,24 @@ export default function Header({ toggleSidebar }) {
       setAdminRole(role);
     };
 
+    const fetchUnreadCount = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch('http://localhost:5000/api/notifications', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const unread = data.filter(n => !n.isRead).length;
+          setUnreadCount(unread);
+        }
+      } catch (error) {
+        console.error('Failed to fetch unread notifications count:', error);
+      }
+    };
+
+    fetchUnreadCount();
     window.addEventListener('profileUpdated', handleProfileUpdate);
     
     return () => {
@@ -79,9 +99,11 @@ export default function Header({ toggleSidebar }) {
           {/* Notification Bell */}
           <Link to="/notifications" className="relative p-2 text-slate-500 hover:text-slate-800 transition-colors group">
             <Bell size={24} strokeWidth={2} className="group-hover:animate-swing" />
-            <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#489b0d] border-[2px] border-white text-white text-[9px] font-bold flex items-center justify-center rounded-full">
-              6
-            </span>
+            {unreadCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-[#489b0d] border-[2px] border-white text-white text-[9px] font-bold flex items-center justify-center rounded-full">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
           </Link>
           
           <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>

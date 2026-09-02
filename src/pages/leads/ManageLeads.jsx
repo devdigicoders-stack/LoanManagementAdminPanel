@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import toast from 'react-hot-toast';
 import { Link } from "react-router-dom";
 import {
@@ -22,6 +22,7 @@ import {
   XCircle,
   MessageSquare,
   Edit,
+  Users
 } from "lucide-react";
 
 // --- Mock Data ---
@@ -149,10 +150,52 @@ const mockLeads = [
 ];
 
 export default function ManageLeads() {
-  const [leadsList, setLeadsList] = useState(mockLeads);
-  const [selectedLeadId, setSelectedLeadId] = useState(null);
-  const [activeTab, setActiveTab] = useState("Overview");
-  
+  const [leadsList, setLeadsList] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Assign Modal State
+  const [selectedLeadForAssign, setSelectedLeadForAssign] = useState(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [employee, setEmployee] = useState("");
+  const [team, setTeam] = useState("");
+  const [priority, setPriority] = useState("Medium");
+  const [remarks, setRemarks] = useState("");
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const [leadsRes, empRes] = await Promise.all([
+          fetch('http://localhost:5000/api/leads', { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch('http://localhost:5000/api/employees', { headers: { 'Authorization': `Bearer ${token}` } })
+        ]);
+
+        if (leadsRes.ok) {
+          const data = await leadsRes.json();
+          const mappedData = data.map(lead => ({
+            ...lead,
+            id: lead._id,
+            createdOn: new Date(lead.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+            avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name)}&background=random`
+          }));
+          setLeadsList(mappedData);
+        } else {
+          toast.error('Failed to fetch leads');
+        }
+
+        if (empRes.ok) {
+          setEmployees(await empRes.json());
+        }
+      } catch (error) {
+        toast.error('Server error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
   const [filterSource, setFilterSource] = useState("All Sources");
   const [filterStatus, setFilterStatus] = useState("All Status");
 
@@ -162,13 +205,80 @@ export default function ManageLeads() {
     return matchSource && matchStatus;
   });
 
-  const selectedLead = selectedLeadId
-    ? leadsList.find((l) => l.id === selectedLeadId)
-    : null;
+  const updateLeadStatus = async (id, newStatus) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/leads/${id}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        setLeadsList(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
+        toast.success(`Lead status updated to ${newStatus}`);
+      } else {
+        toast.error('Failed to update status');
+      }
+    } catch (error) {
+      toast.error('Server error');
+    }
+  };
 
-  const updateLeadStatus = (id, newStatus) => {
-    setLeadsList(prev => prev.map(l => l.id === id ? { ...l, status: newStatus } : l));
-    toast.success(`Lead status updated to ${newStatus}`);
+  const openAssignModal = (lead) => {
+    setSelectedLeadForAssign(lead);
+    setEmployee("");
+    setTeam("");
+    setPriority("Medium");
+    setRemarks("");
+  };
+
+  const closeAssignModal = () => {
+    setSelectedLeadForAssign(null);
+  };
+
+  const handleAssign = async (e) => {
+    e.preventDefault();
+    if (!employee && !team) {
+      toast.error("Please select an employee or a team to assign the lead.");
+      return;
+    }
+
+    const selectedEmp = employees.find(emp => emp._id === employee);
+    const assignData = {
+      assignedTo: selectedEmp ? selectedEmp.name : null,
+      assignedToId: employee || null,
+      assignedTeam: team || null,
+      priority,
+      assignmentRemarks: remarks
+    };
+
+    setIsAssigning(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/leads/${selectedLeadForAssign.id}/assign`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(assignData)
+      });
+      
+      if (res.ok) {
+        setLeadsList(prev => prev.map(l => l.id === selectedLeadForAssign.id ? { ...l, status: 'Assigned', assignedTo: assignData.assignedTo } : l));
+        toast.success("Lead assigned successfully!");
+        closeAssignModal();
+      } else {
+        toast.error("Failed to assign lead");
+      }
+    } catch (error) {
+      toast.error("Server error");
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   const getStatusBadge = (status) => {
@@ -183,6 +293,18 @@ export default function ManageLeads() {
         return (
           <span className="text-blue-500 bg-blue-50 px-2 py-0.5 rounded text-[11px] font-bold">
             Contacted
+          </span>
+        );
+      case "Assigned":
+        return (
+          <span className="text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded text-[11px] font-bold">
+            Assigned
+          </span>
+        );
+      case "Rejected":
+        return (
+          <span className="text-rose-500 bg-rose-50 px-2 py-0.5 rounded text-[11px] font-bold">
+            Rejected
           </span>
         );
       case "Qualified":
@@ -253,9 +375,11 @@ export default function ManageLeads() {
           >
             <option>All Status</option>
             <option>New</option>
+            <option>Assigned</option>
             <option>Contacted</option>
             <option>Qualified</option>
             <option>Converted</option>
+            <option>Rejected</option>
             <option>Lost</option>
           </select>
 
@@ -282,7 +406,7 @@ export default function ManageLeads() {
             <tbody className="divide-y divide-slate-100">
               {filteredLeads.map((lead) => (
                 <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-4 px-6"><span className="text-[13px] font-bold text-slate-700">{lead.id}</span></td>
+                  <td className="py-4 px-6"><span className="text-[13px] font-bold text-slate-700">{lead.leadId}</span></td>
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
                       <img src={lead.avatar} alt={lead.name} className="w-8 h-8 rounded-full border border-slate-200" />
@@ -303,9 +427,18 @@ export default function ManageLeads() {
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2 transition-opacity">
-                      <button onClick={() => setSelectedLeadId(lead.id)} className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded transition-colors tooltip-trigger" title="View Details">
+                      {(lead.status === 'New' || lead.status === 'Unassigned' || lead.status === 'Rejected') && (
+                        <button 
+                          onClick={() => openAssignModal(lead)}
+                          className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors tooltip-trigger" 
+                          title="Assign Lead"
+                        >
+                          <UserCheck size={16} strokeWidth={2.5} />
+                        </button>
+                      )}
+                      <Link to={`/leads/${lead.id}`} className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded transition-colors tooltip-trigger" title="View Details">
                         <Eye size={16} strokeWidth={2.5} />
-                      </button>
+                      </Link>
                     </div>
                   </td>
                 </tr>
@@ -320,193 +453,99 @@ export default function ManageLeads() {
         </div>
       </div>
 
-      {/* Modal / Slide-over for Lead Details */}
-      {selectedLead && (
-        <>
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity" onClick={() => setSelectedLeadId(null)} />
-          <div className="fixed inset-y-0 right-0 w-full max-w-[600px] bg-slate-50 shadow-2xl z-50 transform transition-transform duration-300 flex flex-col">
-            {/* Modal Header */}
-            <div className="px-6 py-4 bg-white border-b border-slate-100 flex justify-between items-center shrink-0">
-              <h2 className="text-[16px] font-extrabold text-slate-800">Lead Details</h2>
-              <button onClick={() => setSelectedLeadId(null)} className="p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-600 rounded-md transition-colors">
-                <X size={18} strokeWidth={2.5} />
+      {/* Assign Modal */}
+      {selectedLeadForAssign && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-[600px] overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <div>
+                <h3 className="font-extrabold text-slate-800 text-[16px] flex items-center gap-2">
+                  <UserCheck size={18} className="text-[#489b0d]"/> Assign Lead
+                </h3>
+                <p className="text-[12px] text-slate-500 font-medium mt-0.5">Assigning {selectedLeadForAssign.name} ({selectedLeadForAssign.leadId})</p>
+              </div>
+              <button onClick={closeAssignModal} className="text-slate-400 hover:text-slate-600 transition-colors p-1 bg-slate-200/50 rounded-full hover:bg-slate-200">
+                <X size={18} />
               </button>
             </div>
             
-            {/* Modal Content */}
-            <div className="flex-1 overflow-y-auto custom-scrollbar flex">
-              {/* Sidebar Actions */}
-              <div className="w-[180px] bg-white border-r border-slate-100 p-4 shrink-0 flex flex-col gap-1">
-                <div className="mb-4">
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Update Status</p>
-                  <div className="space-y-1">
-                    <button onClick={() => updateLeadStatus(selectedLead.id, 'New')} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 py-1.5 px-2 w-full rounded hover:bg-slate-50 transition-colors cursor-pointer text-left">
-                      <CheckCircle2 size={14} className="text-[#489b0d]" /> New
-                    </button>
-                    <button onClick={() => updateLeadStatus(selectedLead.id, 'Contacted')} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 py-1.5 px-2 w-full rounded hover:bg-slate-50 transition-colors cursor-pointer text-left">
-                      <CheckCircle2 size={14} className="text-blue-500" /> Contacted
-                    </button>
-                    <button onClick={() => updateLeadStatus(selectedLead.id, 'Qualified')} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 py-1.5 px-2 w-full rounded hover:bg-slate-50 transition-colors cursor-pointer text-left">
-                      <CheckCircle2 size={14} className="text-purple-500" /> Qualified
-                    </button>
-                    <button onClick={() => updateLeadStatus(selectedLead.id, 'Converted')} className="flex items-center gap-2 text-[12px] font-bold text-slate-600 py-1.5 px-2 w-full rounded hover:bg-slate-50 transition-colors cursor-pointer text-left">
-                      <CheckCircle2 size={14} className="text-green-600" /> Converted
-                    </button>
+            <div className="p-6 overflow-y-auto">
+              <form id="assign-form" onSubmit={handleAssign} className="space-y-5">
+                <div>
+                  <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
+                    Select Employee <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <UserCheck size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <select 
+                      value={employee}
+                      onChange={(e) => { setEmployee(e.target.value); setTeam(""); }}
+                      className="w-full h-11 pl-10 pr-4 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#489b0d] bg-white appearance-none"
+                    >
+                      <option value="">Select individual employee</option>
+                      {employees.map(emp => (
+                        <option key={emp._id} value={emp._id}>{emp.name} ({emp.designation})</option>
+                      ))}
+                    </select>
                   </div>
                 </div>
 
-                <div className="mt-2 pt-4 border-t border-slate-100">
-                  <button onClick={() => updateLeadStatus(selectedLead.id, 'Lost')} className="flex items-center gap-2 text-[12px] font-bold text-red-500 py-1 transition-colors cursor-pointer w-full text-left">
-                    <XCircle size={14} /> Mark as Lost
-                  </button>
-                  <button onClick={() => setActiveTab('Notes')} className="flex items-center justify-center gap-2 mt-auto w-full py-2.5 border border-[#489b0d]/20 bg-[#489b0d]/5 text-[#489b0d] rounded-lg text-[12px] font-bold hover:bg-[#489b0d]/10 transition-colors cursor-pointer">
-                    <MessageSquare size={14} /> Add Note
-                  </button>
+                <div>
+                  <label className="block text-[12px] font-bold text-slate-700 mb-2">
+                    Lead Priority
+                  </label>
+                  <div className="flex gap-3">
+                    {['Low', 'Medium', 'High'].map(p => (
+                      <div 
+                        key={p}
+                        onClick={() => setPriority(p)}
+                        className={`flex-1 h-10 flex items-center justify-center gap-2 rounded border-2 cursor-pointer transition-all ${priority === p ? (p === 'High' ? 'border-red-500 bg-red-50 text-red-600' : p === 'Medium' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-[#489b0d] bg-[#489b0d]/10 text-[#489b0d]') : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
+                      >
+                        {priority === p && <CheckCircle2 size={14} />}
+                        <span className="font-bold text-[12px]">{p}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              {/* Tab Content */}
-              <div className="p-6">
-                {activeTab === "Overview" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Contact Information */}
-                    <div className="space-y-4">
-                      <h4 className="text-[13px] font-extrabold text-slate-800 mb-4 pb-2 border-b border-slate-100">
-                        Contact Information
-                      </h4>
-
-                      <div className="flex items-start gap-3">
-                        <Mail
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Email
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedLead.email}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <Phone
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Phone
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedLead.mobile}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-3">
-                        <MapPin
-                          size={14}
-                          className="text-slate-400 mt-0.5 shrink-0"
-                        />
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-0.5">
-                            Address
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800 leading-relaxed">
-                            {selectedLead.address}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Status & Loan Info */}
-                    <div className="space-y-4">
-                      <h4 className="text-[13px] font-extrabold text-slate-800 mb-4 pb-2 border-b border-slate-100">
-                        Status
-                      </h4>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-1">
-                            Created On
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedLead.createdOn}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-1">
-                            Next Follow Up
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedLead.nextFollowUp}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-1">
-                            Expected Loan Amount
-                          </p>
-                          <p className="text-[14px] font-extrabold text-[#489b0d]">
-                            {selectedLead.expectedAmount}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-[11px] font-semibold text-slate-500 mb-1">
-                            Loan Purpose
-                          </p>
-                          <p className="text-[13px] font-bold text-slate-800">
-                            {selectedLead.loanPurpose}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div>
+                  <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
+                    Assignment Remarks (Optional)
+                  </label>
+                  <textarea
+                    value={remarks}
+                    onChange={(e) => setRemarks(e.target.value)}
+                    placeholder="Add instructions or notes..."
+                    rows="3"
+                    className="w-full p-3 rounded-md border border-slate-200 text-[13px] text-slate-700 focus:outline-none focus:border-[#489b0d] bg-white resize-none"
+                  ></textarea>
+                </div>
+              </form>
+            </div>
+            
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 shrink-0">
+              <button 
+                type="button"
+                onClick={closeAssignModal}
+                className="h-10 px-5 rounded-md border border-slate-200 text-slate-600 font-bold text-[13px] hover:bg-white transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit"
+                form="assign-form"
+                disabled={isAssigning}
+                className="h-10 px-6 rounded-md bg-[#489b0d] text-white font-bold text-[13px] hover:bg-[#3e850b] transition-colors shadow-sm disabled:opacity-70 flex items-center gap-2"
+              >
+                {isAssigning ? (
+                  <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span> Processing...</>
+                ) : (
+                  <><UserCheck size={16}/> Confirm Assignment</>
                 )}
-
-                {activeTab === "Activity" && (
-                  <div className="space-y-4">
-                    <h4 className="text-[13px] font-extrabold text-slate-800 mb-4 pb-2 border-b border-slate-100">Activity Log</h4>
-                    <div className="pl-2 border-l-2 border-slate-100 space-y-4 relative">
-                      <div className="relative">
-                        <div className="absolute w-2 h-2 bg-[#489b0d] rounded-full -left-[13px] top-1.5 ring-4 ring-white"></div>
-                        <p className="text-[12px] font-bold text-slate-800">Lead assigned to {selectedLead.assignedTo}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{selectedLead.createdOn}</p>
-                      </div>
-                      <div className="relative">
-                        <div className="absolute w-2 h-2 bg-slate-300 rounded-full -left-[13px] top-1.5 ring-4 ring-white"></div>
-                        <p className="text-[12px] font-bold text-slate-800">Lead created from {selectedLead.source}</p>
-                        <p className="text-[11px] text-slate-500 mt-0.5">{selectedLead.createdOn}</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {activeTab === "Notes" && (
-                  <div className="space-y-4">
-                    <h4 className="text-[13px] font-extrabold text-slate-800 mb-4 pb-2 border-b border-slate-100">Notes & Comments</h4>
-                    <textarea rows="3" placeholder="Type a note here..." className="w-full border border-slate-200 rounded p-3 text-[12px] text-slate-700 focus:outline-none focus:border-[#489b0d] resize-none"></textarea>
-                    <button onClick={() => toast.success('Note saved!')} className="px-4 py-2 bg-[#489b0d] text-white rounded font-bold text-[11px] hover:bg-[#3d830b] transition-colors cursor-pointer">Save Note</button>
-                  </div>
-                )}
-                {activeTab === "Follow Ups" && (
-                  <div className="space-y-4">
-                    <h4 className="text-[13px] font-extrabold text-slate-800 mb-4 pb-2 border-b border-slate-100">Follow Ups</h4>
-                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-md">
-                      <p className="text-[12px] font-bold text-blue-800 mb-1">Upcoming Follow-up</p>
-                      <p className="text-[11px] text-blue-600">Scheduled for: {selectedLead.nextFollowUp}</p>
-                    </div>
-                  </div>
-                )}
-                {["Documents", "Applications"].includes(activeTab) && (
-                  <div className="flex flex-col items-center justify-center h-40 text-slate-400">
-                    <p className="text-[13px] font-bold">No data available for {activeTab}</p>
-                  </div>
-                )}
-              </div>
+              </button>
             </div>
           </div>
-        </>
+        </div>
       )}
     </div>
   );

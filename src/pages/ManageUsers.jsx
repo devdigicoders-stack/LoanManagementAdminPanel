@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Swal from "sweetalert2";
 import {
   ChevronRight,
@@ -402,7 +402,28 @@ const topKpis = [
 
 export default function ManageUsers() {
   const navigate = useNavigate();
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState([]);
+  
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch("http://localhost:5000/api/users", {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setUsers(data.map(u => ({...u, id: u.userId})));
+        } else if (response.status === 403) {
+          console.warn('No permission to view users');
+        }
+      } catch (error) {
+        console.error("Error fetching users:", error);
+      }
+    };
+    fetchUsers();
+  }, []);
   
   // Filters state
   const [searchTerm, setSearchTerm] = useState("");
@@ -454,7 +475,7 @@ export default function ManageUsers() {
     { label: "Blocked Users", value: blockedCount, change: "-2.1%", isUp: false, icon: UserX, color: "text-purple-500", bg: "bg-purple-50" },
   ];
 
-  const handleDelete = (e, id) => {
+  const handleDelete = async (e, id) => {
     e.stopPropagation();
     Swal.fire({
       title: 'Are you sure?',
@@ -464,18 +485,29 @@ export default function ManageUsers() {
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
       confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        const updated = users.filter(u => u.id !== id);
-        setUsers(updated);
-        const newTotalPages = Math.ceil(updated.length / itemsPerPage) || 1;
-        if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
-        Swal.fire('Deleted!', 'User has been deleted.', 'success');
+        try {
+          const response = await fetch(`http://localhost:5000/api/users/${id}`, {
+            method: 'DELETE'
+          });
+          if (response.ok) {
+            const updated = users.filter(u => u.id !== id);
+            setUsers(updated);
+            const newTotalPages = Math.ceil(updated.length / itemsPerPage) || 1;
+            if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
+            Swal.fire('Deleted!', 'User has been deleted.', 'success');
+          } else {
+            Swal.fire('Error!', 'Failed to delete user.', 'error');
+          }
+        } catch (error) {
+          Swal.fire('Error!', 'An error occurred.', 'error');
+        }
       }
     });
   };
 
-  const handleToggleBlock = (e, id, currentStatus) => {
+  const handleToggleBlock = async (e, id, currentStatus) => {
     e.stopPropagation();
     const newStatus = currentStatus === "Blocked" ? "Active" : "Blocked";
     const confirmMsg = currentStatus === "Blocked" ? "Are you sure you want to unblock this user?" : "Are you sure you want to block this user?";
@@ -487,10 +519,23 @@ export default function ManageUsers() {
       confirmButtonColor: '#489b0d',
       cancelButtonColor: '#d33',
       confirmButtonText: 'Yes, proceed!'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u));
-        Swal.fire('Updated!', `User status changed to ${newStatus}.`, 'success');
+        try {
+          const response = await fetch(`http://localhost:5000/api/users/${id}/status`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+          if (response.ok) {
+            setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u));
+            Swal.fire('Updated!', `User status changed to ${newStatus}.`, 'success');
+          } else {
+            Swal.fire('Error!', 'Failed to update status.', 'error');
+          }
+        } catch (error) {
+          Swal.fire('Error!', 'An error occurred.', 'error');
+        }
       }
     });
   };
