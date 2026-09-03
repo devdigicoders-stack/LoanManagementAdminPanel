@@ -77,7 +77,7 @@ export default function Payroll() {
     const { name, value } = e.target;
     setEditFormData(prev => ({
       ...prev,
-      [name]: value === '' ? 0 : Number(value)
+      [name]: value === '' ? '' : Number(value)
     }));
   };
 
