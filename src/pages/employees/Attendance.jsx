@@ -13,7 +13,7 @@ export default function Attendance() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/employees/attendance?date=' + date, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/attendance?date=` + date, {
         headers: {
           'Authorization': 'Bearer ' + token
         }
@@ -130,7 +130,7 @@ export default function Attendance() {
 
         try {
           const token = localStorage.getItem('token');
-          const response = await fetch('http://localhost:5000/api/employees/' + record.id + '/attendance', {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/` + record.id + '/attendance', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

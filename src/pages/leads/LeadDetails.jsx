@@ -20,7 +20,7 @@ export default function LeadDetails() {
   const fetchLeadDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/leads/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -45,7 +45,7 @@ export default function LeadDetails() {
   const updateLeadStatus = async (newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/leads/${id}/status`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

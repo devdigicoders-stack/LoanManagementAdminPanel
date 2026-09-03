@@ -25,7 +25,7 @@ export default function UserProfile() {
   useEffect(() => {
     const fetchUser = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/users/${id}`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${id}`);
         if (response.ok) {
           const data = await response.json();
           setUser(data);

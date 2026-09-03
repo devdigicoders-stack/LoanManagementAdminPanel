@@ -20,7 +20,7 @@ export default function EmployeeDetails() {
     const fetchEmployee = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:5000/api/employees/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -58,7 +58,7 @@ export default function EmployeeDetails() {
   const handleDocumentAction = async (docId, status) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/employees/${id}/documents/${docId}/status`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/documents/${docId}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -126,7 +126,7 @@ export default function EmployeeDetails() {
       if (result.isConfirmed) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/employees/${id}/attendance`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/attendance`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify(result.value)
@@ -146,7 +146,7 @@ export default function EmployeeDetails() {
   const handleUpdateLeaveStatus = async (leaveId, status) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/employees/${id}/leaves/${leaveId}/status`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/leaves/${leaveId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status })
@@ -173,7 +173,7 @@ export default function EmployeeDetails() {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/employees/${id}/remind-hr`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/remind-hr`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ pendingDocs })
@@ -671,7 +671,7 @@ export default function EmployeeDetails() {
                 <div className="bg-[var(--color-brand-page-bg)] rounded-xl mt-2 p-8 flex flex-col items-center justify-center border-2 border-dashed border-[var(--color-brand-border)]">
                   {selectedDoc.fileUrl ? (
                     <a 
-                      href={`http://localhost:5000/${selectedDoc.fileUrl}`} 
+                      href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedDoc.fileUrl}`} 
                       target="_blank" 
                       rel="noopener noreferrer" 
                       className="bg-[var(--color-brand-blue-primary)] hover:bg-[var(--color-brand-blue-dark)] text-white px-6 py-3 rounded-xl font-bold text-[14px] shadow-sm transition-colors flex items-center gap-2"

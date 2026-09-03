@@ -22,7 +22,7 @@ export default function EditEmployee() {
     const fetchEmployee = async () => {
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`http://localhost:5000/api/employees/${id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -60,7 +60,7 @@ export default function EditEmployee() {
   const handleUpdate = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/employees/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',

@@ -12,7 +12,7 @@ export default function LoanApplicationDetails() {
   const fetchApplicationDetails = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/loans/${id}`, {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans/${id}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -46,7 +46,7 @@ export default function LoanApplicationDetails() {
       if (result.isConfirmed) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/loans/${id}/documents/${docId}/status`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans/${id}/documents/${docId}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ status: action === 'Approve' ? 'Approved' : 'Rejected' })
@@ -77,7 +77,7 @@ export default function LoanApplicationDetails() {
       if (result.isConfirmed) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/loans/${id}/remind`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans/${id}/remind`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ message: "Please re-upload your rejected document.", docId })

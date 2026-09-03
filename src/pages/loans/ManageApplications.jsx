@@ -39,7 +39,7 @@ export default function ManageApplications() {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch("http://localhost:5000/api/employees", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (response.ok) {
@@ -54,7 +54,7 @@ export default function ManageApplications() {
   const fetchApplications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch("http://localhost:5000/api/loans", {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -103,7 +103,7 @@ export default function ManageApplications() {
   const handleStatusChange = async (newStatus) => {
     if (!selectedApp) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/loans/${selectedApp._id}/status`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans/${selectedApp._id}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus })
@@ -131,7 +131,7 @@ export default function ManageApplications() {
     const employee = employees.find(e => e._id === selectedEmp);
     if (!employee) return;
     try {
-      const res = await fetch(`http://localhost:5000/api/loans/${appToAssign._id}/assign`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans/${appToAssign._id}/assign`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ assignedTo: employee.name, assignedToId: employee._id })

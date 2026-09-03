@@ -26,7 +26,7 @@ export default function AddLead() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/leads', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

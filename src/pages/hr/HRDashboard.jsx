@@ -49,7 +49,7 @@ export default function HRDashboard() {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/dashboard/hr', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard/hr`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

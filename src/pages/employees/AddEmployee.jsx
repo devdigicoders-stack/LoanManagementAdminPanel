@@ -122,7 +122,7 @@ export default function AddEmployee() {
           if (badgeRole === 'SECURED EXECUTIVE') badgeRole = 'SECURED EXEC';
           if (badgeRole === 'HR MANAGER') badgeRole = 'HR';
           
-          const res = await fetch('http://localhost:5000/api/employees', {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

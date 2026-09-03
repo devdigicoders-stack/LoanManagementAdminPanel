@@ -29,7 +29,7 @@ export default function HRReports() {
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/employees', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) setEmployees(await res.json());
@@ -41,7 +41,7 @@ export default function HRReports() {
     try {
       const token = localStorage.getItem('token');
       const endpoint = reportType === 'leave' ? 'leaves' : reportType;
-      const res = await fetch(`http://localhost:5000/api/reports/${endpoint}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/reports/${endpoint}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {

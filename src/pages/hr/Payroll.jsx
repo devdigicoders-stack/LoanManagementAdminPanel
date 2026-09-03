@@ -11,7 +11,7 @@ export default function Payroll() {
   const fetchPayrollData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/payroll', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/payroll`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -51,7 +51,7 @@ export default function Payroll() {
   const handleSaveClick = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/payroll/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/payroll/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

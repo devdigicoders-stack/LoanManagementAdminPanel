@@ -409,7 +409,7 @@ export default function ManageUsers() {
     const fetchUsers = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch("http://localhost:5000/api/users", {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (response.ok) {
@@ -488,7 +488,7 @@ export default function ManageUsers() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await fetch(`http://localhost:5000/api/users/${id}`, {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${id}`, {
             method: 'DELETE'
           });
           if (response.ok) {
@@ -522,7 +522,7 @@ export default function ManageUsers() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await fetch(`http://localhost:5000/api/users/${id}/status`, {
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${id}/status`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status: newStatus })

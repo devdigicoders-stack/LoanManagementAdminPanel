@@ -51,7 +51,7 @@ export default function Notifications() {
   const fetchNotifications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/notifications', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -89,7 +89,7 @@ export default function Notifications() {
   const toggleReadStatus = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/notifications/${id}/read`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/${id}/read`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -128,7 +128,7 @@ export default function Notifications() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/notifications', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

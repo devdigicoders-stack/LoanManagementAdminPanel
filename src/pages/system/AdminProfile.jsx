@@ -43,7 +43,7 @@ export default function AdminProfile() {
     confirmPassword: ""
   });
 
-  const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+  const API_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_BASE_URL}`;
 
   const handleGetLocation = () => {
     if (!navigator.geolocation) {
@@ -97,7 +97,7 @@ export default function AdminProfile() {
           });
           if (data.avatar) {
             // Need absolute URL for the image
-            const avatarUrl = data.avatar.startsWith('http') ? data.avatar : `http://localhost:5000${data.avatar}`;
+            const avatarUrl = data.avatar.startsWith('http') ? data.avatar : `${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}${data.avatar}`;
             setProfilePic(avatarUrl);
             localStorage.setItem(picKey, avatarUrl);
           }
@@ -234,7 +234,7 @@ export default function AdminProfile() {
 
       if (res.ok) {
         const data = await res.json();
-        const avatarUrl = data.avatar.startsWith('http') ? data.avatar : `http://localhost:5000${data.avatar}`;
+        const avatarUrl = data.avatar.startsWith('http') ? data.avatar : `${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}${data.avatar}`;
         setProfilePic(avatarUrl);
         localStorage.setItem(picKey, avatarUrl);
         window.dispatchEvent(new Event('profileUpdated'));

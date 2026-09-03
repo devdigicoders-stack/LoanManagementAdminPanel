@@ -11,7 +11,7 @@ export default function LeaveManagement() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/employees/leaves', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/leaves`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -47,7 +47,7 @@ export default function LeaveManagement() {
       if (result.isConfirmed) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/employees/${leave.employeeId}/leaves/${leave.id}/status`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${leave.employeeId}/leaves/${leave.id}/status`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export default function LeaveManagement() {
       if (result.isConfirmed) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/employees/${leave.employeeId}/leaves/${leave.id}/status`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${leave.employeeId}/leaves/${leave.id}/status`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

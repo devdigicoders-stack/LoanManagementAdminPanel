@@ -191,7 +191,7 @@ export default function Recruitment() {
 
   const fetchJobs = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/recruitment/jobs');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/jobs`);
       const data = await res.json();
       setJobs(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -202,7 +202,7 @@ export default function Recruitment() {
   const fetchApplications = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/recruitment/applications', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/applications`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -217,8 +217,8 @@ export default function Recruitment() {
     try {
       const token = localStorage.getItem('token');
       const url = editingJob 
-        ? `http://localhost:5000/api/recruitment/jobs/${editingJob._id}`
-        : 'http://localhost:5000/api/recruitment/jobs';
+        ? `${import.meta.env.VITE_API_BASE_URL}/recruitment/jobs/${editingJob._id}`
+        : `${import.meta.env.VITE_API_BASE_URL}/recruitment/jobs`;
       
       const method = editingJob ? 'PUT' : 'POST';
       
@@ -255,7 +255,7 @@ export default function Recruitment() {
       if (result.isConfirmed) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/recruitment/jobs/${id}`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/jobs/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -273,7 +273,7 @@ export default function Recruitment() {
   const handleUpdateAppStatus = async (id, newStatus) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/recruitment/applications/${id}/status`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/applications/${id}/status`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -296,7 +296,7 @@ export default function Recruitment() {
   const handleSaveAppEdit = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/recruitment/applications/${selectedApp._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/applications/${selectedApp._id}`, {
         method: 'PUT',
         headers: { 
           'Content-Type': 'application/json',
@@ -600,7 +600,7 @@ export default function Recruitment() {
                 <div className="col-span-1 space-y-4">
                    <div className="flex flex-col items-center p-4 border border-gray-200 rounded-xl bg-gray-50">
                      {selectedApp.profilePhotoUrl ? (
-                       <img src={`http://localhost:5000/${selectedApp.profilePhotoUrl}`} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-sm" />
+                       <img src={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.profilePhotoUrl}`} alt="Profile" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-sm" />
                      ) : (
                        <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-gray-400"><Users size={32} /></div>
                      )}
@@ -634,17 +634,17 @@ export default function Recruitment() {
                    <div className="p-4 border border-gray-200 rounded-xl">
                       <h4 className="text-sm font-bold text-gray-900 mb-2">Documents</h4>
                       {selectedApp.resumeUrl && (
-                        <a href={`http://localhost:5000/${selectedApp.resumeUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded text-xs font-bold mb-2 hover:bg-blue-100">
+                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.resumeUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded text-xs font-bold mb-2 hover:bg-blue-100">
                           <FileText size={14} /> View Resume
                         </a>
                       )}
                       {selectedApp.coverLetterUrl && (
-                        <a href={`http://localhost:5000/${selectedApp.coverLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-purple-50 text-purple-700 rounded text-xs font-bold mb-2 hover:bg-purple-100">
+                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.coverLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-purple-50 text-purple-700 rounded text-xs font-bold mb-2 hover:bg-purple-100">
                           <FileText size={14} /> View Cover Letter
                         </a>
                       )}
                       {selectedApp.salarySlipUrl && (
-                        <a href={`http://localhost:5000/${selectedApp.salarySlipUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded text-xs font-bold hover:bg-green-100">
+                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.salarySlipUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded text-xs font-bold hover:bg-green-100">
                           <FileText size={14} /> View Salary Slip
                         </a>
                       )}

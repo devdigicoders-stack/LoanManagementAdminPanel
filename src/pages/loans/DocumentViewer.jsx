@@ -18,7 +18,7 @@ export default function DocumentViewer() {
     const fetchUserAndDocument = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${userId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await response.json();
@@ -38,7 +38,7 @@ export default function DocumentViewer() {
   const updateStatus = async (status) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`http://localhost:5000/api/users/${userId}/documents/${docIndex}/status`, {
+      await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${userId}/documents/${docIndex}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ status })

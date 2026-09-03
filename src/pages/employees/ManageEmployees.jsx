@@ -17,7 +17,7 @@ export default function ManageEmployees() {
     try {
       const token = localStorage.getItem('token');
       // Adding search filter if present
-      let url = 'http://localhost:5000/api/employees';
+      let url = `${import.meta.env.VITE_API_BASE_URL}/employees`;
       if (searchTerm) {
         url += `?search=${searchTerm}`;
       }
@@ -118,7 +118,7 @@ export default function ManageEmployees() {
       if (result.isConfirmed) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/employees/${id}/status`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/status`, {
             method: 'PUT',
             headers: { 'Authorization': `Bearer ${token}` }
           });
@@ -153,7 +153,7 @@ export default function ManageEmployees() {
       if (result.isConfirmed) {
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/employees/${id}`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}`, {
             method: 'DELETE',
             headers: { 'Authorization': `Bearer ${token}` }
           });

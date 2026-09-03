@@ -25,7 +25,7 @@ export default function Departments() {
     if (!window.confirm('Are you sure you want to delete this department? Employees inside this division will remain unaffected.')) return;
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/departments/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/departments/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -50,7 +50,7 @@ export default function Departments() {
     setIsUpdating(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`http://localhost:5000/api/departments/${editDept._id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/departments/${editDept._id}`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -83,7 +83,7 @@ export default function Departments() {
   const fetchDepartments = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/departments', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/departments`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -129,7 +129,7 @@ export default function Departments() {
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch('http://localhost:5000/api/departments', {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/departments`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,

@@ -27,8 +27,8 @@ export default function AssignLead() {
       try {
         const token = localStorage.getItem('token');
         const [leadsRes, empRes] = await Promise.all([
-          fetch('http://localhost:5000/api/leads', { headers: { 'Authorization': `Bearer ${token}` } }),
-          fetch('http://localhost:5000/api/employees', { headers: { 'Authorization': `Bearer ${token}` } })
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/leads`, { headers: { 'Authorization': `Bearer ${token}` } }),
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         
         if (leadsRes.ok && empRes.ok) {
@@ -103,7 +103,7 @@ export default function AssignLead() {
         setIsSubmitting(true);
         try {
           const token = localStorage.getItem('token');
-          const res = await fetch(`http://localhost:5000/api/leads/${selectedLead.id}/assign`, {
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${selectedLead.id}/assign`, {
             method: 'PUT',
             headers: {
               'Content-Type': 'application/json',

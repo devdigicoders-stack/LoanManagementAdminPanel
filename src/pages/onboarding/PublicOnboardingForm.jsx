@@ -131,7 +131,7 @@ export default function PublicOnboardingForm() {
   useEffect(() => {
     const fetchEmployee = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/employees/onboarding/${id}`);
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/onboarding/${id}`);
         if (res.ok) {
           const data = await res.json();
             setEmployeeDetails({
@@ -251,7 +251,7 @@ export default function PublicOnboardingForm() {
       
       formDataToSend.append('documents', JSON.stringify(serializedDocs));
 
-      const res = await fetch(`http://localhost:5000/api/employees/onboarding/${id}`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/onboarding/${id}`, {
         method: 'POST',
         // Omit Content-Type, fetch will automatically set it to multipart/form-data with the correct boundary
         body: formDataToSend
