@@ -1,18 +1,40 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { CalendarClock, CheckCircle, XCircle, Users, Eye, Check, X } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 
 export default function LeaveManagement() {
-  // Mock data for leave requests
-  const [leaveRequests, setLeaveRequests] = useState([
-    { id: 'LR-1001', employee: 'Ravi Kumar', department: 'Sales', type: 'Sick Leave', startDate: '2023-11-20', endDate: '2023-11-21', days: 2, reason: 'Viral fever and weakness', status: 'Pending', appliedDate: '2023-11-19' },
-    { id: 'LR-1002', employee: 'Priya Singh', department: 'HR', type: 'Casual Leave', startDate: '2023-12-01', endDate: '2023-12-05', days: 5, reason: 'Family function out of station', status: 'Approved', appliedDate: '2023-11-15' },
-    { id: 'LR-1003', employee: 'Amit Sharma', department: 'Operations', type: 'Earned Leave', startDate: '2023-11-10', endDate: '2023-11-12', days: 3, reason: 'Personal work', status: 'Rejected', appliedDate: '2023-11-05' },
-    { id: 'LR-1004', employee: 'Neha Gupta', department: 'Accounts', type: 'Emergency Leave', startDate: '2023-11-22', endDate: '2023-11-22', days: 1, reason: 'Medical emergency at home', status: 'Pending', appliedDate: '2023-11-21' },
-  ]);
+  const [leaveRequests, setLeaveRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleApprove = (id) => {
+  const fetchLeaves = useCallback(async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/employees/leaves', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLeaveRequests(data);
+      } else {
+        toast.error('Failed to fetch leave requests');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Error connecting to server');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLeaves();
+  }, [fetchLeaves]);
+
+  const handleApprove = (leave) => {
     Swal.fire({
       title: 'Approve Leave?',
       text: 'Are you sure you want to approve this leave request?',
@@ -21,17 +43,33 @@ export default function LeaveManagement() {
       confirmButtonColor: '#10b981',
       cancelButtonColor: '#64748b',
       confirmButtonText: 'Yes, Approve'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setLeaveRequests(leaveRequests.map(req => 
-          req.id === id ? { ...req, status: 'Approved' } : req
-        ));
-        toast.success('Leave request approved successfully');
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`http://localhost:5000/api/employees/${leave.employeeId}/leaves/${leave.id}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: 'Approved' })
+          });
+          if (res.ok) {
+            toast.success('Leave request approved successfully');
+            fetchLeaves();
+          } else {
+            toast.error('Failed to approve leave');
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error('Error approving leave');
+        }
       }
     });
   };
 
-  const handleReject = (id) => {
+  const handleReject = (leave) => {
     Swal.fire({
       title: 'Reject Leave',
       text: 'Please provide a reason for rejecting this leave:',
@@ -47,29 +85,49 @@ export default function LeaveManagement() {
         }
         return reason;
       }
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setLeaveRequests(leaveRequests.map(req => 
-          req.id === id ? { ...req, status: 'Rejected' } : req
-        ));
-        toast.success('Leave request rejected');
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`http://localhost:5000/api/employees/${leave.employeeId}/leaves/${leave.id}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ status: 'Rejected', adminComment: result.value })
+          });
+          if (res.ok) {
+            toast.success('Leave request rejected');
+            fetchLeaves();
+          } else {
+            toast.error('Failed to reject leave');
+          }
+        } catch (error) {
+          console.error(error);
+          toast.error('Error rejecting leave');
+        }
       }
     });
   };
 
   const handleView = (req) => {
     Swal.fire({
-      title: `Leave Details - ${req.employee}`,
+      title: `Leave Details - ${req.employeeName}`,
       html: `
         <div class="text-left text-sm space-y-3 mt-4">
           <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Department:</span> <span>${req.department}</span></div>
           <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Leave Type:</span> <span>${req.type}</span></div>
-          <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Duration:</span> <span>${req.startDate} to ${req.endDate} (${req.days} Days)</span></div>
-          <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Applied On:</span> <span>${req.appliedDate}</span></div>
+          <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Duration:</span> <span>${new Date(req.startDate).toLocaleDateString()} to ${new Date(req.endDate).toLocaleDateString()} (${req.days} Days)</span></div>
+          <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Applied On:</span> <span>${new Date(req.appliedDate).toLocaleDateString()}</span></div>
           <div class="border-b pb-2">
             <span class="font-bold text-slate-500 block mb-1">Reason:</span> 
             <p class="text-slate-700 bg-slate-50 p-2 rounded">${req.reason}</p>
           </div>
+          ${req.adminComment ? `<div class="border-b pb-2">
+            <span class="font-bold text-slate-500 block mb-1">Admin Comment:</span> 
+            <p class="text-slate-700 bg-slate-50 p-2 rounded">${req.adminComment}</p>
+          </div>` : ''}
           <div class="flex justify-between pt-2"><span class="font-bold text-slate-500">Current Status:</span> <span class="font-bold ${req.status === 'Approved' ? 'text-emerald-600' : req.status === 'Rejected' ? 'text-red-600' : 'text-amber-600'}">${req.status}</span></div>
         </div>
       `,
@@ -81,7 +139,15 @@ export default function LeaveManagement() {
   const pendingCount = leaveRequests.filter(r => r.status === 'Pending').length;
   const approvedCount = leaveRequests.filter(r => r.status === 'Approved').length;
   const rejectedCount = leaveRequests.filter(r => r.status === 'Rejected').length;
-  const onLeaveCount = 8; // Mock value
+  
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const onLeaveCount = leaveRequests.filter(r => {
+    if (r.status !== 'Approved') return false;
+    const start = new Date(r.startDate);
+    const end = new Date(r.endDate);
+    return today >= start && today <= end;
+  }).length;
 
   return (
     <div className="w-full space-y-6 pb-10 bg-[var(--color-brand-page-bg)] min-h-screen">
@@ -89,7 +155,7 @@ export default function LeaveManagement() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-brand-text)] mb-1">Leave Management</h1>
+          <h1 className="text-xl font-bold text-[var(--color-brand-text)] mb-1">Leave Management</h1>
           <p className="text-[13px] text-[var(--color-brand-text-secondary)] font-medium">Manage employee leave requests, approvals, and balances</p>
         </div>
       </div>
@@ -102,7 +168,7 @@ export default function LeaveManagement() {
           </div>
           <div>
             <h4 className="text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider mb-0.5">Pending Requests</h4>
-            <h3 className="text-2xl font-extrabold text-[var(--color-brand-text)]">{pendingCount}</h3>
+            <h3 className="text-xl font-extrabold text-[var(--color-brand-text)]">{pendingCount}</h3>
           </div>
         </div>
         <div className="bg-white p-5 rounded-[14px] border border-[var(--color-brand-border)] flex items-center gap-4 shadow-sm">
@@ -111,7 +177,7 @@ export default function LeaveManagement() {
           </div>
           <div>
             <h4 className="text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider mb-0.5">Approved</h4>
-            <h3 className="text-2xl font-extrabold text-[var(--color-brand-text)]">{approvedCount}</h3>
+            <h3 className="text-xl font-extrabold text-[var(--color-brand-text)]">{approvedCount}</h3>
           </div>
         </div>
         <div className="bg-white p-5 rounded-[14px] border border-[var(--color-brand-border)] flex items-center gap-4 shadow-sm">
@@ -120,7 +186,7 @@ export default function LeaveManagement() {
           </div>
           <div>
             <h4 className="text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider mb-0.5">Rejected</h4>
-            <h3 className="text-2xl font-extrabold text-[var(--color-brand-text)]">{rejectedCount}</h3>
+            <h3 className="text-xl font-extrabold text-[var(--color-brand-text)]">{rejectedCount}</h3>
           </div>
         </div>
         <div className="bg-white p-5 rounded-[14px] border border-[var(--color-brand-border)] flex items-center gap-4 shadow-sm">
@@ -129,7 +195,7 @@ export default function LeaveManagement() {
           </div>
           <div>
             <h4 className="text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider mb-0.5">Employees on Leave</h4>
-            <h3 className="text-2xl font-extrabold text-[var(--color-brand-text)]">{onLeaveCount}</h3>
+            <h3 className="text-xl font-extrabold text-[var(--color-brand-text)]">{onLeaveCount}</h3>
           </div>
         </div>
       </div>
@@ -158,18 +224,18 @@ export default function LeaveManagement() {
               {leaveRequests.map((req) => (
                 <tr key={req.id} className="hover:bg-[var(--color-brand-hover-bg)] transition-colors group">
                   <td className="py-4 px-6">
-                    <p className="text-[14px] font-bold text-[var(--color-brand-text)]">{req.employee}</p>
+                    <p className="text-[14px] font-bold text-[var(--color-brand-text)]">{req.employeeName}</p>
                     <p className="text-[12px] text-[var(--color-brand-text-secondary)] mt-0.5">{req.department}</p>
                   </td>
                   <td className="py-4 px-6">
                     <p className="text-[13px] font-semibold text-[var(--color-brand-text)]">{req.type}</p>
                   </td>
                   <td className="py-4 px-6">
-                    <p className="text-[13px] text-[var(--color-brand-text)]">{req.startDate} to {req.endDate}</p>
+                    <p className="text-[13px] text-[var(--color-brand-text)]">{new Date(req.startDate).toLocaleDateString()} to {new Date(req.endDate).toLocaleDateString()}</p>
                     <p className="text-[12px] font-bold text-[var(--color-brand-text-secondary)] mt-0.5">{req.days} Day(s)</p>
                   </td>
                   <td className="py-4 px-6">
-                    <p className="text-[13px] text-[var(--color-brand-text-secondary)]">{req.appliedDate}</p>
+                    <p className="text-[13px] text-[var(--color-brand-text-secondary)]">{new Date(req.appliedDate).toLocaleDateString()}</p>
                   </td>
                   <td className="py-4 px-6">
                     <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold
@@ -193,14 +259,14 @@ export default function LeaveManagement() {
                       {req.status === 'Pending' && (
                         <>
                           <button 
-                            onClick={() => handleApprove(req.id)}
+                            onClick={() => handleApprove(req)}
                             className="p-1.5 text-[var(--color-brand-text-secondary)] hover:text-emerald-600 hover:bg-emerald-50 rounded-md transition-colors"
                             title="Approve"
                           >
                             <Check size={16} />
                           </button>
                           <button 
-                            onClick={() => handleReject(req.id)}
+                            onClick={() => handleReject(req)}
                             className="p-1.5 text-[var(--color-brand-text-secondary)] hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
                             title="Reject"
                           >

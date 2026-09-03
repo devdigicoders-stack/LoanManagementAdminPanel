@@ -115,7 +115,7 @@ const LoginPage = () => {
         } else if (effectiveRole === 'Accountant Admin') {
           navigate("/accountant");
         } else if (effectiveRole === 'HR Admin') {
-          navigate("/employees");
+          navigate("/"); // Navigates to HRDashboard via RoleBasedDashboard
         } else {
           navigate("/");
         }

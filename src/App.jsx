@@ -28,9 +28,8 @@ import LeaveManagement from "./pages/employees/LeaveManagement";
 import HRDashboard from "./pages/hr/HRDashboard";
 import HRReports from "./pages/hr/HRReports";
 import HRNotifications from "./pages/hr/HRNotifications";
+import EmployeeOnboardingPage from "./pages/EmployeeOnboardingPage";
 import Onboarding from "./pages/hr/Onboarding";
-import PublicOnboarding from "./pages/onboarding/PublicOnboarding";
-import PublicOnboardingForm from "./pages/onboarding/PublicOnboardingForm";
 import Payroll from "./pages/hr/Payroll";
 import Targets from "./pages/hr/Targets";
 import ESS from "./pages/hr/ESS";
@@ -215,8 +214,7 @@ function App() {
       <Toaster position="top-right" />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        <Route path="/onboarding/:id" element={<PublicOnboarding />} />
-        <Route path="/onboarding/:id/form" element={<PublicOnboardingForm />} />
+        <Route path="/onboarding/:id" element={<EmployeeOnboardingPage />} />
         
         {/* Telecaller Routes */}
         <Route path="/telecaller" element={<ProtectedRoute><TelecallerLayout /></ProtectedRoute>}>
@@ -419,3 +417,4 @@ function App() {
 }
 
 export default App;
+

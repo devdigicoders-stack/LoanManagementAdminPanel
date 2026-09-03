@@ -68,6 +68,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
   const getNavGroups = () => {
     const isSuperAdmin = userRole === 'Super Admin';
+    const isHR = userRole === 'HR Admin';
 
     // ── SUPER ADMIN: full role-based sidebar (unchanged) ────────────────────
     if (isSuperAdmin) {
@@ -116,6 +117,44 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       ];
     }
 
+    // ── HR: fixed sidebar bypassing permissions ──────────────────────────────
+    if (isHR) {
+      return [
+        { title: "", items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }] },
+        {
+          title: "EMPLOYEE MANAGEMENT",
+          items: [
+            { name: "Manage Employees", icon: Users, path: "/employees" },
+          ],
+        },
+        {
+          title: "CORE HR",
+          items: [
+            { name: "Recruitment", icon: Users, path: "/hr/recruitment" },
+            { name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" },
+            { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
+            { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
+          ],
+        },
+        {
+          title: "REPORTS & ANALYTICS",
+          items: [
+            { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
+            { name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" },
+            { name: "Notifications", icon: Bell, path: "/notifications" },
+          ],
+        },
+        {
+          title: "ACCOUNT",
+          items: [
+            { name: "My Profile", icon: User, path: "/profile" },
+            { name: "Change Password", icon: Lock, path: "/change-password" },
+            { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          ],
+        },
+      ];
+    }
+
     // ── ALL OTHER ROLES: permission-based sidebar ───────────────────────────
     // Each permission granted by SuperAdmin maps to exactly these sidebar items.
     // Dashboard + Account always visible regardless of permissions.
@@ -143,6 +182,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       exportData:         can('Export Data'),
       payroll:            can('Payroll/Salary'),
       sendReminders:      can('Send Reminders/SMS'),
+
+      // HR MANAGEMENT
+      manageLeaves:       can('Manage Leaves'),
+      attendanceMgmt:     can('Manage Attendance'),
+      recruitment:        can('Recruitment'),
+      onboarding:         can('Onboarding'),
     };
 
     // Group: USER MANAGEMENT PANEL
@@ -174,6 +219,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       ...(items.sendReminders || items.viewReports ? [{ name: "Notifications",      icon: Bell,             path: "/notifications" }]: []),
     ];
 
+    // Group: HR & EMPLOYEES
+    const hrItems = [
+      ...(items.recruitment                      ? [{ name: "Recruitment",          icon: Users,            path: "/hr/recruitment" }] : []),
+      ...(items.onboarding                       ? [{ name: "Onboarding",           icon: UserPlus,         path: "/hr/onboarding" }]  : []),
+      ...(items.attendanceMgmt                   ? [{ name: "Attendance",           icon: ListChecks,       path: "/employees/attendance" }] : []),
+      ...(items.manageLeaves                     ? [{ name: "Leave Management",     icon: CalendarRange,    path: "/employees/leave-management" }] : []),
+    ];
+
     const groups = [
       // Dashboard — always
       { title: "", items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }] },
@@ -186,6 +239,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
       // Loan
       ...(loanItems.length > 0 ? [{ title: "LOAN MANAGEMENT", items: loanItems }] : []),
+
+      // HR & Employees
+      ...(hrItems.length > 0 ? [{ title: "CORE HR", items: hrItems }] : []),
 
       // Reports / Payroll / Notifications
       ...(reportItems.length > 0 ? [{ title: "REPORTS & ANALYTICS", items: reportItems }] : []),

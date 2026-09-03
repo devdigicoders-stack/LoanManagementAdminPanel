@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, Calendar, FileText, Briefcase, Building2, 
   TrendingUp, TrendingDown, ArrowRight, Zap, CheckCircle, XCircle, Clock
@@ -6,52 +6,19 @@ import {
 import Highcharts from 'highcharts';
 import { HighchartsReact } from 'highcharts-react-official';
 import { useNavigate } from 'react-router-dom';
+import toast from 'react-hot-toast';
 
 Highcharts.setOptions({ accessibility: { enabled: false } });
 
-// --- Mock Data for HR ---
-const employeeGrowthData = {
-  categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-  total: [120, 125, 132, 145, 150, 156],
-  newHires: [5, 5, 8, 14, 6, 8]
-};
-
-const departmentData = [
-  { name: 'Engineering', y: 45, color: '#3b82f6' },
-  { name: 'Sales', y: 30, color: '#10b981' },
-  { name: 'Support', y: 25, color: '#f59e0b' },
-  { name: 'HR & Admin', y: 15, color: '#8b5cf6' }
-];
-
-const attendanceData = {
-  categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-  present: [145, 148, 150, 142, 138],
-  absent: [11, 8, 6, 14, 18]
-};
-
-const recentActivities = [
-  { id: 1, action: "New Employee Onboarded", user: "Ravi Kumar (EMP-1001)", time: "10:30 AM, Today", type: "add" },
-  { id: 2, action: "Leave Request Approved", user: "Priya Singh (EMP-1002)", time: "09:15 AM, Today", type: "approve" },
-  { id: 3, action: "Document Verification Pending", user: "Amit Sharma (EMP-1003)", time: "Yesterday, 04:30 PM", type: "doc" },
-  { id: 4, action: "Performance Review Scheduled", user: "Neha Gupta (EMP-1004)", time: "Yesterday, 11:00 AM", type: "calendar" },
-];
-
-const quickActions = [
-  { title: 'Add Employee', subtitle: 'Onboard new staff', icon: Users, color: 'text-emerald-600 bg-emerald-50 border-emerald-100', route: '/hr/employees/new' },
-  { title: 'Leave Requests', subtitle: 'Review pending leaves', icon: Calendar, color: 'text-amber-600 bg-amber-50 border-amber-100', route: '/hr/leaves' },
-  { title: 'Departments', subtitle: 'Manage company structure', icon: Building2, color: 'text-blue-600 bg-blue-50 border-blue-100', route: '/hr/departments' },
-  { title: 'Documents', subtitle: 'Verify employee docs', icon: FileText, color: 'text-purple-600 bg-purple-50 border-purple-100', route: '/hr/documents' },
-];
-
-// --- Shared Components ---
-const Card = ({ children, className = "", noPadding = false }) => (
-  <div className={`bg-white rounded-[20px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 ${noPadding ? '' : 'p-6'} ${className}`}>
+// --- Shared Card Component matching the new design system
+const Card = ({ children, className = "" }) => (
+  <div className={`bg-white rounded-[20px] border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgb(0,0,0,0.08)] transition-all duration-300 p-5 ${className}`}>
     {children}
   </div>
 );
 
 const Trend = ({ value, isUp }) => (
-  <span className={`text-[12px] font-bold flex items-center gap-1 ${isUp ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'} px-2 py-0.5 rounded-full whitespace-nowrap`}>
+  <span className={`text-[12px] font-bold flex items-center gap-1 ${isUp ? 'textemerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'} px-2 py-0.5 rounded-full whitespace-nowrap`}>
     {isUp ? <TrendingUp size={14} strokeWidth={2.5} /> : <TrendingDown size={14} strokeWidth={2.5} />}
     {value}
   </span>
@@ -59,13 +26,56 @@ const Trend = ({ value, isUp }) => (
 
 export default function HRDashboard() {
   const navigate = useNavigate();
-  const [timeFilter, setTimeFilter] = useState('This Month');
+  const [timeFilter, setTimeFilter] = useState('This Year');
+  const [loading, setLoading] = useState(true);
+
+  // Stats State
+  const [stats, setStats] = useState({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    pendingOnboarding: 0,
+    onLeaveToday: 0
+  });
+
+  const [departmentData, setDepartmentData] = useState([]);
+  const [growthData, setGrowthData] = useState({ categories: [], total: [], newHires: [] });
+  const [attendanceData, setAttendanceData] = useState({ categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], present: [0,0,0,0,0], absent: [0,0,0,0,0] });
+  const [activities, setActivities] = useState([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/dashboard/hr', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        
+        // Use the API response directly
+        if (data.stats) setStats(data.stats);
+        if (data.departmentData) setDepartmentData(data.departmentData);
+        if (data.growthData) setGrowthData(data.growthData);
+        if (data.attendanceData) setAttendanceData(data.attendanceData);
+        if (data.activities) setActivities(data.activities);
+        
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to load dashboard data');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // --- Chart Configs ---
   const lineChartOptions = {
-    chart: { type: 'areaspline', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'areaspline', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 240 },
     title: { text: null },
-    xAxis: { categories: employeeGrowthData.categories, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
+    xAxis: { categories: growthData.categories, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     legend: { itemStyle: { color: '#64748b', fontWeight: '600', fontSize: '12px' }, symbolRadius: 6, margin: 20 },
     credits: { enabled: false }, tooltip: { shared: true, backgroundColor: 'rgba(255, 255, 255, 0.95)', borderRadius: 12, borderWidth: 0, shadow: true, padding: 12 },
@@ -77,16 +87,16 @@ export default function HRDashboard() {
       } 
     },
     series: [
-      { name: 'Total Employees', data: employeeGrowthData.total, color: '#3b82f6', fillColor: { linearGradient: [0, 0, 0, 300], stops: [[0, 'rgba(59, 130, 246, 0.2)'], [1, 'rgba(59, 130, 246, 0)']] } },
-      { name: 'New Hires', data: employeeGrowthData.newHires, color: '#10b981', fillColor: { linearGradient: [0, 0, 0, 300], stops: [[0, 'rgba(16, 185, 129, 0.2)'], [1, 'rgba(16, 185, 129, 0)']] } },
+      { name: 'Total Employees', data: growthData.total, color: '#3b82f6', fillColor: { linearGradient: [0, 0, 0, 300], stops: [[0, 'rgba(59, 130, 246, 0.2)'], [1, 'rgba(59, 130, 246, 0)']] } },
+      { name: 'New Hires', data: growthData.newHires, color: '#10b981', fillColor: { linearGradient: [0, 0, 0, 300], stops: [[0, 'rgba(16, 185, 129, 0.2)'], [1, 'rgba(16, 185, 129, 0)']] } },
     ]
   };
 
   const donutChartOptions = {
-    chart: { type: 'pie', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 180, margin: [0, 0, 0, 0] },
+    chart: { type: 'pie', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 150, margin: [0, 0, 0, 0] },
     title: { 
-      text: `<div style="text-align:center"><span style="font-size:24px;font-weight:900;color:#0f172a">156</span><br/><span style="font-size:12px;color:#64748b;font-weight:500">Total</span></div>`, 
-      align: 'center', verticalAlign: 'middle', y: 15, useHTML: true
+      text: `<div style="text-align:center"><span style="font-size:20px;font-weight:900;color:#0f172a">${stats.totalEmployees}</span><br/><span style="font-size:11px;color:#64748b;font-weight:500">Total</span></div>`, 
+      align: 'center', verticalAlign: 'middle', y: 12, useHTML: true
     },
     credits: { enabled: false },
     plotOptions: { 
@@ -102,7 +112,7 @@ export default function HRDashboard() {
   };
 
   const barChartOptions = {
-    chart: { type: 'column', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 240 },
+    chart: { type: 'column', style: { fontFamily: 'inherit' }, backgroundColor: 'transparent', height: 200 },
     title: { text: null },
     xAxis: { categories: attendanceData.categories, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
@@ -124,6 +134,8 @@ export default function HRDashboard() {
       default: return <Clock size={16} strokeWidth={2.5} />;
     }
   };
+
+  if (loading) return <div className="p-10 text-center">Loading Dashboard...</div>;
 
   return (
     <div className="w-full space-y-8 pb-12 bg-slate-50/50 min-h-screen">
@@ -151,49 +163,49 @@ export default function HRDashboard() {
         <Card className="flex flex-col relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-blue-50 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
-              <Users size={22} strokeWidth={2.5} />
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100">
+              <Users size={20} strokeWidth={2.5} />
             </div>
             <Trend value="+4.2%" isUp={true} />
           </div>
-          <p className="text-[13px] font-bold text-slate-500 mb-1">Total Employees</p>
-          <h3 className="text-3xl font-black text-slate-800 tracking-tight">156</h3>
+          <p className="text-[12px] font-bold text-slate-500 mb-1">Total Employees</p>
+          <h3 className="text-2xl font-black text-slate-800 tracking-tight">{stats.totalEmployees}</h3>
         </Card>
 
         <Card className="flex flex-col relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-emerald-50 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
-              <UserCheck size={22} strokeWidth={2.5} />
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0 border border-emerald-100">
+              <UserCheck size={20} strokeWidth={2.5} />
             </div>
             <Trend value="+5.1%" isUp={true} />
           </div>
-          <p className="text-[13px] font-bold text-slate-500 mb-1">Active Employees</p>
-          <h3 className="text-3xl font-black text-slate-800 tracking-tight">142</h3>
+          <p className="text-[12px] font-bold text-slate-500 mb-1">Active Employees</p>
+          <h3 className="text-2xl font-black text-slate-800 tracking-tight">{stats.activeEmployees}</h3>
         </Card>
 
         <Card className="flex flex-col relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-amber-50 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 border border-amber-100">
-              <Calendar size={22} strokeWidth={2.5} />
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center shrink-0 border border-amber-100">
+              <Calendar size={20} strokeWidth={2.5} />
             </div>
             <Trend value="-2.1%" isUp={false} />
           </div>
-          <p className="text-[13px] font-bold text-slate-500 mb-1">On Leave Today</p>
-          <h3 className="text-3xl font-black text-slate-800 tracking-tight">8</h3>
+          <p className="text-[12px] font-bold text-slate-500 mb-1">On Leave Today</p>
+          <h3 className="text-2xl font-black text-slate-800 tracking-tight">{stats.onLeaveToday}</h3>
         </Card>
 
         <Card className="flex flex-col relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-purple-50 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
           <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
-              <FileText size={22} strokeWidth={2.5} />
+            <div className="w-10 h-10 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0 border border-purple-100">
+              <FileText size={20} strokeWidth={2.5} />
             </div>
-            <span className="text-[12px] font-bold flex items-center gap-1 text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full whitespace-nowrap">Needs Action</span>
+            <span className="text-[11px] font-bold flex items-center gap-1 text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full whitespace-nowrap">Needs Action</span>
           </div>
-          <p className="text-[13px] font-bold text-slate-500 mb-1">Pending Documents</p>
-          <h3 className="text-3xl font-black text-slate-800 tracking-tight">12</h3>
+          <p className="text-[12px] font-bold text-slate-500 mb-1">Pending Onboarding</p>
+          <h3 className="text-2xl font-black text-slate-800 tracking-tight">{stats.pendingOnboarding}</h3>
         </Card>
 
       </div>
@@ -226,16 +238,16 @@ export default function HRDashboard() {
         
         {/* Donut Chart */}
         <Card className="xl:col-span-1 flex flex-col">
-          <h3 className="text-lg font-extrabold text-slate-900 mb-6">Department Distribution</h3>
-          <div className="flex-1 flex flex-col items-center justify-center gap-6">
-            <div className="w-[180px] h-[180px] shrink-0 relative">
+          <h3 className="text-md font-extrabold text-slate-900 mb-4">Department Distribution</h3>
+          <div className="flex-1 flex flex-col items-center justify-center gap-4">
+            <div className="w-[150px] h-[150px] shrink-0 relative">
               <HighchartsReact highcharts={Highcharts} options={donutChartOptions} containerProps={{ style: { width: '100%', height: '100%' } }} />
             </div>
-            <div className="flex flex-col gap-3 w-full">
+            <div className="flex flex-col gap-2 w-full">
               {departmentData.map((dept, idx) => (
                 <div key={idx} className="flex items-center justify-between p-2.5 rounded-xl hover:bg-slate-50 transition-colors">
                   <div className="flex items-center gap-3"><div className="w-3 h-3 rounded-full" style={{ backgroundColor: dept.color, boxShadow: `0 0 10px ${dept.color}80` }}></div><span className="text-sm font-bold text-slate-700">{dept.name}</span></div>
-                  <span className="text-sm font-black text-slate-900">{dept.y} <span className="text-slate-400 font-semibold ml-1">({Math.round((dept.y / 156) * 100)}%)</span></span>
+                  <span className="text-sm font-black text-slate-900">{dept.y} <span className="text-slate-400 font-semibold ml-1">({Math.round((dept.y / stats.totalEmployees) * 100) || 0}%)</span></span>
                 </div>
               ))}
             </div>
@@ -259,7 +271,7 @@ export default function HRDashboard() {
             <button className="text-[11px] font-bold text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg hover:bg-blue-100 transition-colors">View All</button>
           </div>
           <div className="space-y-6 flex-1">
-            {recentActivities.map((act) => (
+            {activities.length > 0 ? activities.map((act) => (
               <div key={act.id} className="flex gap-4 group cursor-pointer">
                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border transition-colors ${
                   act.type === 'add' ? 'bg-emerald-50 text-emerald-600 border-emerald-100 group-hover:bg-emerald-500 group-hover:text-white' : 
@@ -275,7 +287,9 @@ export default function HRDashboard() {
                   <p className="text-[11px] font-bold text-slate-400 mt-1">{act.time}</p>
                 </div>
               </div>
-            ))}
+            )) : (
+               <div className="text-sm text-gray-400 text-center py-6 font-medium">No recent activity</div>
+            )}
           </div>
         </Card>
 

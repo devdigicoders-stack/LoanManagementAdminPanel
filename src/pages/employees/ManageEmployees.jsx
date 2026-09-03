@@ -30,7 +30,8 @@ export default function ManageEmployees() {
         // The backend returns an array of Employee documents
         // We will map MongoDB `_id` to `id` for frontend consistency, 
         // and keep `empId` as it is (e.g. NUOGM-SEC-004)
-        const formatted = data.map(emp => ({
+        const currentUserRole = (localStorage.getItem('userRole') || '').toLowerCase();
+        let formatted = Array.isArray(data) ? data.map(emp => ({
           id: emp._id,
           empId: emp.empId,
           name: emp.name,
@@ -39,7 +40,15 @@ export default function ManageEmployees() {
           designation: emp.designation,
           status: emp.status,
           onboarding: emp.onboardingStatus, // 'Pending', 'Submitted', 'Done'
-        }));
+        })) : [];
+
+        if (currentUserRole === 'hr admin') {
+          formatted = formatted.filter(emp => {
+             const r = (emp.role || '').toLowerCase();
+             return !['hr admin', 'hr', 'super admin', 'admin'].includes(r);
+          });
+        }
+
         setEmployees(formatted);
       }
     } catch (error) {

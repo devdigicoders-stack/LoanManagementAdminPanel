@@ -8,24 +8,28 @@ export default function Payroll() {
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
 
-  useEffect(() => {
-    const saved = localStorage.getItem('employees');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      // Ensure all employees have a payroll object
-      const formatted = parsed.map(emp => ({
-        ...emp,
-        payroll: emp.payroll || {
-          grossMonthly: 0,
-          grossYearly: 0,
-          transport: 0,
-          perfBonus: 0,
-          achievement: 0,
-          incentives: 0
+  const fetchPayrollData = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch('http://localhost:5000/api/payroll', {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      }));
-      setEmployees(formatted);
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEmployees(data);
+      } else {
+        toast.error('Failed to load payroll data');
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error('Server error');
     }
+  };
+
+  useEffect(() => {
+    fetchPayrollData();
   }, []);
 
   const filteredEmployees = employees.filter(emp => 
@@ -44,17 +48,29 @@ export default function Payroll() {
     setEditFormData({});
   };
 
-  const handleSaveClick = (id) => {
-    const updatedEmployees = employees.map(emp => {
-      if (emp.id === id) {
-        return { ...emp, payroll: editFormData };
+  const handleSaveClick = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:5000/api/payroll/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editFormData)
+      });
+      
+      if (res.ok) {
+        toast.success("Payroll updated successfully");
+        fetchPayrollData();
+        setEditingId(null);
+      } else {
+        toast.error("Failed to update payroll");
       }
-      return emp;
-    });
-    setEmployees(updatedEmployees);
-    localStorage.setItem('employees', JSON.stringify(updatedEmployees));
-    setEditingId(null);
-    toast.success("Payroll updated successfully");
+    } catch (error) {
+      console.error(error);
+      toast.error("Error updating payroll");
+    }
   };
 
   const handleChange = (e) => {

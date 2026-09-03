@@ -10,7 +10,9 @@ export default function ChangePassword() {
     confirmPassword: ""
   });
 
-  const handleSecurityUpdate = (e) => {
+  const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+
+  const handleSecurityUpdate = async (e) => {
     e.preventDefault();
     if (securityData.newPassword !== securityData.confirmPassword) {
       toast.error("New passwords do not match!");
@@ -22,11 +24,38 @@ export default function ChangePassword() {
     }
     
     setIsSaving(true);
-    setTimeout(() => {
+    try {
+      const token = localStorage.getItem("token");
+      const role = localStorage.getItem("userRole");
+      
+      // Determine endpoint based on role
+      const isAdminRole = role && ['Admin', 'Super Admin', 'HR Admin'].includes(role);
+      const endpoint = isAdminRole ? '/admin/profile/password' : '/employees/profile/password';
+
+      const res = await fetch(`${API_URL}${endpoint}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          currentPassword: securityData.currentPassword,
+          newPassword: securityData.newPassword
+        })
+      });
+
+      if (res.ok) {
+        setSecurityData({ currentPassword: "", newPassword: "", confirmPassword: "" });
+        toast.success("Password changed successfully! Next time you login, please use your new password.");
+      } else {
+        const errorData = await res.json();
+        toast.error(errorData.message || "Failed to update password");
+      }
+    } catch (error) {
+      toast.error("Network error occurred");
+    } finally {
       setIsSaving(false);
-      setSecurityData({ currentPassword: "", newPassword: "", confirmPassword: "" });
-      toast.success("Password changed successfully! Next time you login, please use your new password.");
-    }, 800);
+    }
   };
 
   return (

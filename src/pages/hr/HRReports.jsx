@@ -7,9 +7,8 @@ import toast from 'react-hot-toast';
 const HighchartsReact = HighchartsReactImport.default || HighchartsReactImport;
 Highcharts.setOptions({ accessibility: { enabled: false } });
 
-// Shared Card Component matching the new design system
 const Card = ({ children, className = "" }) => (
-  <div className={`bg-white rounded-[24px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all duration-300 p-6 ${className}`}>
+  <div className={`bg-white rounded-[20px] border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] hover:shadow-[0_4px_20px_rgb(0,0,0,0.08)] transition-all duration-300 p-5 ${className}`}>
     {children}
   </div>
 );
@@ -71,9 +70,9 @@ export default function HRReports() {
   // 1. Employee Report Charts
   const departmentChartOptions = {
     ...commonChartOptions,
-    chart: { type: 'pie', backgroundColor: 'transparent', height: 320, margin: [0,0,0,0] },
+    chart: { type: 'pie', backgroundColor: 'transparent', height: 240, margin: [0,0,0,0] },
     title: { 
-      text: `<div style="text-align:center"><span style="font-size:24px;font-weight:900;color:#0f172a">${reportData?.totalEmployees || 0}</span><br/><span style="font-size:12px;color:#64748b;font-weight:500">Total</span></div>`, 
+      text: `<div style="text-align:center"><span style="font-size:20px;font-weight:900;color:#0f172a">${reportData?.totalEmployees || 0}</span><br/><span style="font-size:11px;color:#64748b;font-weight:500">Total</span></div>`, 
       align: 'center', verticalAlign: 'middle', y: 15, useHTML: true
     },
     plotOptions: {
@@ -91,7 +90,7 @@ export default function HRReports() {
 
   const employeeGrowthOptions = {
     ...commonChartOptions,
-    chart: { type: 'areaspline', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'areaspline', backgroundColor: 'transparent', height: 240 },
     xAxis: { categories: reportData?.growthCategories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: {
@@ -106,7 +105,7 @@ export default function HRReports() {
   // 2. Attendance Report Charts
   const attendanceMonthlyOptions = {
     ...commonChartOptions,
-    chart: { type: 'column', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'column', backgroundColor: 'transparent', height: 240 },
     xAxis: { categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { column: { stacking: 'normal', borderRadius: 4, borderWidth: 0 } },
@@ -120,7 +119,7 @@ export default function HRReports() {
 
   const lateDepartmentOptions = {
     ...commonChartOptions,
-    chart: { type: 'bar', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'bar', backgroundColor: 'transparent', height: 240 },
     xAxis: { categories: reportData?.lateDepartment?.categories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { bar: { borderRadius: 4, borderWidth: 0, colorByPoint: true } },
@@ -132,7 +131,7 @@ export default function HRReports() {
   // 3. Leave Report Charts
   const leaveSummaryOptions = {
     ...commonChartOptions,
-    chart: { type: 'pie', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'pie', backgroundColor: 'transparent', height: 240 },
     plotOptions: { pie: { innerSize: '75%', borderWidth: 0, showInLegend: true, dataLabels: { enabled: false } } },
     colors: ['#10b981', '#f59e0b', '#ef4444'],
     series: [{ name: 'Leaves', data: reportData?.leaveSummaryData || [] }]
@@ -140,7 +139,7 @@ export default function HRReports() {
 
   const leaveTypesOptions = {
     ...commonChartOptions,
-    chart: { type: 'column', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'column', backgroundColor: 'transparent', height: 240 },
     xAxis: { categories: reportData?.leaveTypesCategories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { column: { borderRadius: 4, borderWidth: 0, colorByPoint: true } },
@@ -152,7 +151,7 @@ export default function HRReports() {
   // 4. Document Report Charts
   const documentStatusOptions = {
     ...commonChartOptions,
-    chart: { type: 'pie', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'pie', backgroundColor: 'transparent', height: 240 },
     plotOptions: { pie: { innerSize: '75%', borderWidth: 0, showInLegend: true, dataLabels: { enabled: false } } },
     colors: ['#10b981', '#f59e0b', '#ef4444'],
     series: [{ name: 'Documents', data: reportData?.documentStatusData || [] }]
@@ -160,7 +159,7 @@ export default function HRReports() {
 
   const documentUploadsOptions = {
     ...commonChartOptions,
-    chart: { type: 'column', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'column', backgroundColor: 'transparent', height: 240 },
     xAxis: { categories: reportData?.uploadsDepartment?.categories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { column: { borderRadius: 4, borderWidth: 0, colorByPoint: true } },
@@ -172,7 +171,7 @@ export default function HRReports() {
   // 5. Performance Report Charts
   const performanceRatingsOptions = {
     ...commonChartOptions,
-    chart: { type: 'column', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'column', backgroundColor: 'transparent', height: 240 },
     xAxis: { categories: ['Outstanding', 'Exceeds Expectations', 'Meets Expectations', 'Needs Improvement'], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash' },
     plotOptions: { column: { borderRadius: 4, borderWidth: 0, colorByPoint: true } },
@@ -183,7 +182,7 @@ export default function HRReports() {
 
   const kpiAchievementOptions = {
     ...commonChartOptions,
-    chart: { type: 'areaspline', backgroundColor: 'transparent', height: 320 },
+    chart: { type: 'areaspline', backgroundColor: 'transparent', height: 240 },
     xAxis: { categories: reportData?.kpiCategories || [], labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, lineColor: '#f1f5f9', tickColor: '#f1f5f9' },
     yAxis: { title: { text: null }, labels: { style: { color: '#94a3b8', fontSize: '11px', fontWeight: '500' } }, gridLineColor: '#f8fafc', gridLineDashStyle: 'Dash', max: 100 },
     plotOptions: { areaspline: { fillOpacity: 0.1, marker: { radius: 4, symbol: 'circle', lineWidth: 2, lineColor: '#fff' }, lineWidth: 3 } },
@@ -198,11 +197,11 @@ export default function HRReports() {
     <div className="w-full space-y-8 pb-12 bg-slate-50/50 min-h-screen">
       
       {/* Header & Actions */}
-      <div className="relative overflow-hidden bg-white rounded-[24px] p-8 border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] mb-8">
+      <div className="relative overflow-hidden bg-white rounded-[24px] p-6 border border-slate-100 shadow-[0_4px_20px_rgb(0,0,0,0.04)] mb-6">
         <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-full blur-3xl opacity-70 transform translate-x-1/3 -translate-y-1/3 pointer-events-none"></div>
         <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-black text-slate-900 tracking-tight flex items-center gap-3">
+            <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
               HR Reports & Analytics
             </h1>
             <p className="text-[15px] text-slate-500 font-medium mt-2">Generate, view, and export beautiful insights across all HR modules</p>
