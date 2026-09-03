@@ -10,6 +10,7 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('Admin');
   const [subRole, setSubRole] = useState('Tele callers operator');
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   // Clear auth state when login page mounts (keep role-specific pics intact)
@@ -23,6 +24,8 @@ const LoginPage = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    if (isLoading) return;
+    setIsLoading(true);
     const API_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_BASE_URL}`;
 
     if (role === 'Super Admin' || role === 'Admin') {
@@ -74,6 +77,7 @@ const LoginPage = () => {
       } catch (error) {
         toast.error('Server error. Please check if backend is running.');
       }
+      setIsLoading(false);
       return;
     }
 
@@ -125,6 +129,7 @@ const LoginPage = () => {
     } catch (error) {
       toast.error('Server error. Please check if backend is running.');
     }
+    setIsLoading(false);
   };
 
   const roles = [
@@ -331,10 +336,13 @@ const LoginPage = () => {
               {/* Submit Button */}
               <button
                 type="submit"
-                className="w-full py-3 rounded-[10px] bg-[var(--color-brand-blue-primary)] hover:bg-[var(--color-brand-blue-dark)] text-white font-semibold text-[14px] flex items-center justify-center gap-2 transition-all shadow-sm mt-2"
+                disabled={isLoading}
+                className={`w-full py-3 rounded-[10px] bg-[var(--color-brand-blue-primary)] hover:bg-[var(--color-brand-blue-dark)] text-white font-semibold text-[14px] flex items-center justify-center gap-2 transition-all shadow-sm mt-2 ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
               >
-                Sign In
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                {isLoading ? 'Signing In...' : 'Sign In'}
+                {!isLoading && (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                )}
               </button>
 
             </form>
