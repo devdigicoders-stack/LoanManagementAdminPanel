@@ -639,8 +639,13 @@ export default function Recruitment() {
                         </a>
                       )}
                       {selectedApp.coverLetterUrl && (
-                        <a href={`http://localhost:5000/${selectedApp.coverLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-purple-50 text-purple-700 rounded text-xs font-bold hover:bg-purple-100">
+                        <a href={`http://localhost:5000/${selectedApp.coverLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-purple-50 text-purple-700 rounded text-xs font-bold mb-2 hover:bg-purple-100">
                           <FileText size={14} /> View Cover Letter
+                        </a>
+                      )}
+                      {selectedApp.salarySlipUrl && (
+                        <a href={`http://localhost:5000/${selectedApp.salarySlipUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded text-xs font-bold hover:bg-green-100">
+                          <FileText size={14} /> View Salary Slip
                         </a>
                       )}
                    </div>
