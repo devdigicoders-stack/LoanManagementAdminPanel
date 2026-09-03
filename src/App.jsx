@@ -188,9 +188,25 @@ import FinancialReports from './pages/accountant/FinancialReports';
 import AccountantNotifications from './pages/accountant/AccountantNotifications';
 import AccountantProfile from './pages/accountant/AccountantProfile';
 
+// Utility to check token expiration
+const isTokenExpired = (token) => {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && payload.exp * 1000 < Date.now()) {
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return true; // invalid token format
+  }
+};
+
 const ProtectedRoute = ({ children, allowedRole }) => {
   const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-  if (!isAuthenticated) {
+  const token = localStorage.getItem('token');
+
+  if (!isAuthenticated || !token || isTokenExpired(token)) {
+    localStorage.clear();
     return <Navigate to="/login" replace />;
   }
   return children;
