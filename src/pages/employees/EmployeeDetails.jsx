@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, User, Phone, Mail, MapPin, Briefcase, 
   FileText, Calendar, CheckCircle2, ShieldAlert,
-  Activity, Award, Clock, X
+  Activity, Award, Clock, X, Edit
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
@@ -241,7 +241,12 @@ export default function EmployeeDetails() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  {/* Edit button removed as requested */}
+                  <button
+                    onClick={() => navigate(`/employees/${id}/edit`)}
+                    className="flex items-center gap-2 px-4 py-2 bg-[#489b0d] hover:bg-[#3e850b] text-white rounded-lg text-[13px] font-bold transition-colors shadow-xs"
+                  >
+                    <Edit size={15} /> Edit Employee
+                  </button>
                 </div>
               </div>
             </div>

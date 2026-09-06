@@ -12,6 +12,18 @@ export default function PaymentDetails() {
   const { id } = useParams();
   const payment = mockPayments.find(p => p.id === id) || mockPayments[0];
 
+  if (!payment) {
+    return (
+      <div className="p-12 text-center bg-white rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto my-8">
+        <h2 className="text-lg font-bold text-slate-700">No Payment Details Found</h2>
+        <p className="text-sm text-slate-500 mt-2">There are currently no payments recorded matching this ID.</p>
+        <Link to="/accountant/payments" className="inline-block mt-5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
+          Go Back
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto w-full">
       <div className="flex items-center justify-between gap-4">

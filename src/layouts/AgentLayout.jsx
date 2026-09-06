@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Target, MapPin, CalendarCheck, FolderOpen,
   MessageSquare, Bell, BarChart3, User, Lock, LogOut,
   Menu, X, ChevronRight, FileText, PieChart
 } from "lucide-react";
+import { hasPermission, syncPermissionsWithServer, getPermissions } from "../utils/permissions";
 
 const navItems = [
   { name: "Dashboard",            icon: LayoutDashboard, path: "/agent" },
@@ -14,17 +15,66 @@ const navItems = [
   { name: "Customer Documents",   icon: FolderOpen,      path: "/agent/documents" },
   { name: "Application Tracking", icon: FileText,        path: "/agent/applications" },
   { name: "Remarks & Notes",      icon: MessageSquare,   path: "/agent/remarks" },
-  { name: "Reports",              icon: PieChart,        path: "/agent/reports" },
+  { name: "Agent Reports",        icon: PieChart,        path: "/agent/reports" },
   { name: "Notifications",        icon: Bell,            path: "/agent/notifications" },
   { name: "My Performance",       icon: BarChart3,       path: "/agent/performance" },
   { name: "My Profile",           icon: User,            path: "/agent/profile" },
   { name: "Change Password",      icon: Lock,            path: "/agent/change-password" },
 ];
 
+import DashboardLayout from "./DashboardLayout";
+
 export default function AgentLayout() {
+  const userRole = (localStorage.getItem('userRole') || '').toLowerCase();
+  const isMasterAdmin = ['super admin', 'superadmin', 'admin', 'administrator'].includes(userRole);
+
+  if (isMasterAdmin) {
+    return <DashboardLayout />;
+  }
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [permissions, setPermissions] = useState(() => getPermissions());
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const doSync = () => {
+      syncPermissionsWithServer().then((latest) => {
+        if (latest) setPermissions(latest);
+      });
+    };
+
+    // 1. Sync fresh permissions immediately on mount
+    doSync();
+
+    // 2. Listen for permission change events across the application
+    const onPermsUpdated = (e) => {
+      if (e?.detail) {
+        setPermissions(e.detail);
+      } else {
+        setPermissions(getPermissions());
+      }
+    };
+    window.addEventListener('permissionsUpdated', onPermsUpdated);
+    window.addEventListener('storage', onPermsUpdated);
+    window.addEventListener('focus', doSync);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') doSync();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // 3. Periodic sync every 10 seconds in case admin updated permissions in another tab
+    const interval = setInterval(doSync, 10000);
+
+    return () => {
+      window.removeEventListener('permissionsUpdated', onPermsUpdated);
+      window.removeEventListener('storage', onPermsUpdated);
+      window.removeEventListener('focus', doSync);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const role    = localStorage.getItem("userRole") || "Sales Admin";
   const picKey  = `adminPic_${role}`;
@@ -77,7 +127,12 @@ export default function AgentLayout() {
 
         {/* Nav Items */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => {
+              if (['Dashboard', 'My Profile', 'Change Password'].includes(item.name)) return true;
+              return hasPermission(item.name);
+            })
+            .map((item) => {
             const Icon = item.icon;
             const isActive = item.path === "/agent"
               ? location.pathname === "/agent"

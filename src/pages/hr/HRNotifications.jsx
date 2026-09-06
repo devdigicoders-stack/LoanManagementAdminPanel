@@ -6,68 +6,7 @@ import {
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
-const initialNotifications = [
-  {
-    id: 1,
-    title: "New Leave Request",
-    description: "Rohan Das has applied for 2 days of Sick Leave starting Aug 26.",
-    time: "15 mins ago",
-    type: "action",
-    icon: <Calendar size={18} className="text-blue-500" />,
-    bg: "bg-blue-50",
-    isRead: false,
-  },
-  {
-    id: 2,
-    title: "Pending Performance Review",
-    description: "Annual review for the Sales team is due in 3 days. Please complete assessments.",
-    time: "2 hours ago",
-    type: "alert",
-    icon: <AlertCircle size={18} className="text-red-500" />,
-    bg: "bg-red-50",
-    isRead: false,
-  },
-  {
-    id: 3,
-    title: "Document Verified",
-    description: "Background verification for new joiner Priya Sharma has been successfully completed.",
-    time: "5 hours ago",
-    type: "success",
-    icon: <CheckCircle2 size={18} className="text-[#489b0d]" />,
-    bg: "bg-[#489b0d]/10",
-    isRead: true,
-  },
-  {
-    id: 4,
-    title: "New Interview Scheduled",
-    description: "Interview with candidate Amit Kumar for Tele Caller role scheduled at 3:00 PM tomorrow.",
-    time: "1 day ago",
-    type: "info",
-    icon: <Users size={18} className="text-purple-500" />,
-    bg: "bg-purple-50",
-    isRead: true,
-  },
-  {
-    id: 5,
-    title: "Employee Milestone",
-    description: "Vikram Singh has completed 5 years with the company!",
-    time: "1 day ago",
-    type: "success",
-    icon: <Award size={18} className="text-[#489b0d]" />,
-    bg: "bg-[#489b0d]/10",
-    isRead: true,
-  },
-  {
-    id: 6,
-    title: "Updated HR Policy",
-    description: "The new work-from-home policy document has been published in the portal.",
-    time: "2 days ago",
-    type: "info",
-    icon: <FileText size={18} className="text-orange-500" />,
-    bg: "bg-orange-50",
-    isRead: true,
-  }
-];
+const initialNotifications = [];
 
 export default function HRNotifications() {
   const [activeTab, setActiveTab] = useState("inbox"); // 'inbox', 'send'

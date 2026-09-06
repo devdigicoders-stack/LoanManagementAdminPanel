@@ -13,8 +13,20 @@ const tc = {
 
 export default function LeadDetails() {
   const { id } = useParams();
-  const leadId = id || "LD-10245";
+  const leadId = id;
   const lead = mockAgentLeads.find(l => l.id === leadId) || mockAgentLeads[0];
+
+  if (!lead) {
+    return (
+      <div className="p-12 text-center bg-white rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto my-8">
+        <h2 className="text-lg font-bold text-slate-700">No Lead Details Found</h2>
+        <p className="text-sm text-slate-500 mt-2">There are currently no leads assigned.</p>
+        <button onClick={() => navigate(-1)} className="mt-5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
+          Go Back
+        </button>
+      </div>
+    );
+  }
   
   const sc = statusColors[lead.status] || { bg: "#F1F5F9", text: "#64748B" };
   const pc = priorityColors[lead.priority] || { bg: "#F1F5F9", text: "#64748B" };

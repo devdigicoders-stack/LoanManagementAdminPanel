@@ -1,16 +1,8 @@
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 
-const mockPerformance = [
-  { id: 1, name: 'Ravi Kumar', leads: 128, apps: 42, approved: 24, disbursed: '₹42,50,000', perf: 92, avatar: 'https://i.pravatar.cc/150?u=1' },
-  { id: 2, name: 'Priya Sharma', leads: 115, apps: 38, approved: 20, disbursed: '₹32,15,000', perf: 88, avatar: 'https://i.pravatar.cc/150?u=2' },
-  { id: 3, name: 'Amit Verma', leads: 100, apps: 34, approved: 18, disbursed: '₹28,40,000', perf: 82, avatar: 'https://i.pravatar.cc/150?u=3' },
-  { id: 4, name: 'Neha Singh', leads: 98, apps: 30, approved: 16, disbursed: '₹24,10,000', perf: 78, avatar: 'https://i.pravatar.cc/150?u=4' },
-  { id: 5, name: 'Suresh Patel', leads: 86, apps: 28, approved: 14, disbursed: '₹18,60,000', perf: 72, avatar: 'https://i.pravatar.cc/150?u=5' },
-  { id: 6, name: 'John Doe', leads: 75, apps: 24, approved: 12, disbursed: '₹15,20,000', perf: 65, avatar: 'https://i.pravatar.cc/150?u=6' },
-  { id: 7, name: 'Emily Davis', leads: 62, apps: 18, approved: 9, disbursed: '₹10,50,000', perf: 58, avatar: 'https://i.pravatar.cc/150?u=7' },
-  { id: 8, name: 'Michael Brown', leads: 58, apps: 14, approved: 6, disbursed: '₹7,80,000', perf: 45, avatar: 'https://i.pravatar.cc/150?u=8' },
-];
+const mockPerformance = [];
+
 
 export default function EmployeePerformance() {
   const getProgressColor = (perf) => {
@@ -53,7 +45,13 @@ export default function EmployeePerformance() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {mockPerformance.map((emp) => (
+              {mockPerformance.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-12 text-center text-slate-400 font-medium text-sm">
+                    No performance records found.
+                  </td>
+                </tr>
+              ) : mockPerformance.map((emp) => (
                 <tr key={emp.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="py-4 px-6 whitespace-nowrap">
                     <div className="flex items-center gap-3">

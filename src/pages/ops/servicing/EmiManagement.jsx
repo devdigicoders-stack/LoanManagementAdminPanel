@@ -2,11 +2,7 @@ import React from 'react';
 import { IndianRupee, Search, CheckCircle2, AlertCircle, Clock, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const mockEmis = [
-  { id: 'LN-1001', customer: 'Ramesh Patel', dueDate: '05 Sep 2026', amount: '₹20,516', method: 'NACH', status: 'Upcoming' },
-  { id: 'LN-1002', customer: 'Suresh Kumar', dueDate: '05 Sep 2026', amount: '₹12,450', method: 'UPI', status: 'Received' },
-  { id: 'LN-1003', customer: 'Meena Kumari', dueDate: '05 Aug 2026', amount: '₹35,200', method: 'NACH', status: 'Bounced' },
-];
+const mockEmis = [];
 
 export default function EmiManagement() {
   const navigate = useNavigate();
@@ -31,22 +27,22 @@ export default function EmiManagement() {
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-blue-50 text-blue-600 rounded-lg"><Clock size={24} /></div>
           <div>
-             <p className="text-xs font-bold text-gray-500 uppercase">Expected (Sep '26)</p>
-             <p className="text-xl font-black text-gray-900 mt-0.5">₹4.2 Cr</p>
+             <p className="text-xs font-bold text-gray-500 uppercase">Expected</p>
+             <p className="text-xl font-black text-gray-900 mt-0.5">₹0</p>
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-green-50 text-green-600 rounded-lg"><CheckCircle2 size={24} /></div>
           <div>
              <p className="text-xs font-bold text-gray-500 uppercase">Received</p>
-             <p className="text-xl font-black text-green-600 mt-0.5">₹1.8 Cr</p>
+             <p className="text-xl font-black text-green-600 mt-0.5">₹0</p>
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-red-50 text-red-600 rounded-lg"><AlertCircle size={24} /></div>
           <div>
              <p className="text-xs font-bold text-gray-500 uppercase">Bounced / Pending</p>
-             <p className="text-xl font-black text-red-600 mt-0.5">₹0.3 Cr</p>
+             <p className="text-xl font-black text-red-600 mt-0.5">₹0</p>
           </div>
         </div>
       </div>
@@ -86,29 +82,39 @@ export default function EmiManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {mockEmis.map((emi, i) => (
-                <tr key={i} className="hover:bg-blue-50/50 transition-colors">
-                  <td className="py-3 px-4 font-bold text-blue-600">{emi.id}</td>
-                  <td className="py-3 px-4 font-medium text-gray-900">{emi.customer}</td>
-                  <td className="py-3 px-4 text-gray-600">{emi.dueDate}</td>
-                  <td className="py-3 px-4 font-bold text-gray-900">{emi.amount}</td>
-                  <td className="py-3 px-4 text-gray-600">{emi.method}</td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
-                      emi.status === 'Received' ? 'bg-green-100 text-green-700' : 
-                      emi.status === 'Bounced' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                    }`}>
-                      {emi.status === 'Received' && <CheckCircle2 size={12} />}
-                      {emi.status === 'Bounced' && <AlertCircle size={12} />}
-                      {emi.status === 'Upcoming' && <Clock size={12} />}
-                      {emi.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button className="text-xs font-bold text-blue-600 hover:underline">View Ledger</button>
+              {mockEmis.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-gray-500">
+                    <Clock className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                    <p className="font-semibold text-gray-700">No EMI records found</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Scheduled EMIs will appear here once loans are disbursed.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                mockEmis.map((emi, i) => (
+                  <tr key={i} className="hover:bg-blue-50/50 transition-colors">
+                    <td className="py-3 px-4 font-bold text-blue-600">{emi.id}</td>
+                    <td className="py-3 px-4 font-medium text-gray-900">{emi.customer}</td>
+                    <td className="py-3 px-4 text-gray-600">{emi.dueDate}</td>
+                    <td className="py-3 px-4 font-bold text-gray-900">{emi.amount}</td>
+                    <td className="py-3 px-4 text-gray-600">{emi.method}</td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
+                        emi.status === 'Received' ? 'bg-green-100 text-green-700' : 
+                        emi.status === 'Bounced' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                      }`}>
+                        {emi.status === 'Received' && <CheckCircle2 size={12} />}
+                        {emi.status === 'Bounced' && <AlertCircle size={12} />}
+                        {emi.status === 'Upcoming' && <Clock size={12} />}
+                        {emi.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button className="text-xs font-bold text-blue-600 hover:underline">View Ledger</button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -22,9 +22,9 @@ export default function AgentReports() {
     series: [{
       name: 'Leads',
       data: [
-        { name: 'Converted', y: 15, color: '#15803D' },
-        { name: 'In Progress', y: 45, color: tc.primary },
-        { name: 'Lost', y: 10, color: '#DC2626' }
+        { name: 'Converted', y: 0, color: '#15803D' },
+        { name: 'In Progress', y: 0, color: tc.primary },
+        { name: 'Lost', y: 0, color: '#DC2626' }
       ]
     }],
     credits: { enabled: false },
@@ -37,8 +37,8 @@ export default function AgentReports() {
     xAxis: { categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], lineColor: tc.border },
     yAxis: { title: { text: '' }, gridLineColor: tc.border },
     series: [
-      { name: 'Visits', data: [5, 8, 12, 10], color: tc.primary, fillOpacity: 0.3 },
-      { name: 'Follow-ups', data: [12, 15, 20, 18], color: '#D97706', fillOpacity: 0.3 }
+      { name: 'Visits', data: [0, 0, 0, 0], color: tc.primary, fillOpacity: 0.3 },
+      { name: 'Follow-ups', data: [0, 0, 0, 0], color: '#D97706', fillOpacity: 0.3 }
     ],
     credits: { enabled: false },
     legend: { itemStyle: { color: tc.text } }
@@ -102,9 +102,9 @@ export default function AgentReports() {
             yAxis: { title: { text: '' }, gridLineColor: tc.border },
             plotOptions: { series: { stacking: 'normal' } },
             series: [
-              { name: 'Approved', data: [10, 5, 8, 4], color: '#15803D' },
-              { name: 'Rejected', data: [2, 1, 3, 1], color: '#DC2626' },
-              { name: 'Pending', data: [5, 4, 2, 3], color: '#D97706' }
+              { name: 'Approved', data: [0, 0, 0, 0], color: '#15803D' },
+              { name: 'Rejected', data: [0, 0, 0, 0], color: '#DC2626' },
+              { name: 'Pending', data: [0, 0, 0, 0], color: '#D97706' }
             ],
             credits: { enabled: false },
             legend: { itemStyle: { color: tc.text } }

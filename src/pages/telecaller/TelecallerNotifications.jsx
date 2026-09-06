@@ -8,13 +8,7 @@ const tc = {
 };
 
 export default function TelecallerNotifications() {
-  const [notifs, setNotifs] = useState([
-    { id: 1, type: "New Lead Assigned", message: "A new lead (LD-10255) has been assigned to you.", time: "10 mins ago", icon: UserPlus, color: "#1e7ba8", bg: tc.sky, read: false },
-    { id: 2, type: "Follow-up Reminder", message: "Your follow-up with Amit Kumar is scheduled for today at 10:00 AM.", time: "2 hours ago", icon: Calendar, color: "#D97706", bg: "#FEF3C7", read: false },
-    { id: 3, type: "Document Request", message: "Additional document (Salary Slip) is required for lead LD-10247.", time: "5 hours ago", icon: FileText, color: "#DC2626", bg: "#FEE2E2", read: false },
-    { id: 4, type: "Lead Status Updated", message: "Lead LD-10241 status has been updated to Documents Pending.", time: "1 day ago", icon: RefreshCw, color: "#15803D", bg: "#DCFCE7", read: true },
-    { id: 5, type: "Application Update", message: "Lead LD-10238 has moved to the application stage.", time: "2 days ago", icon: Activity, color: "#4338CA", bg: "#EEF2FF", read: true },
-  ]);
+  const [notifs, setNotifs] = useState([]);
 
   const markAllRead = () => {
     setNotifs(notifs.map(n => ({ ...n, read: true })));

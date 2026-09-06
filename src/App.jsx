@@ -92,9 +92,10 @@ import OperationReports from './pages/operations/OperationReports';
 
 // Telecaller Panel Imports
 import TelecallerLayout from './layouts/TelecallerLayout';
-import TelecallerDashboard from './pages/telecaller/TelecallerDashboard';
-import MyLeads from './pages/telecaller/MyLeads';
-import AddNewLead from './pages/telecaller/AddNewLead';
+import TelecallerDashboard from "./pages/telecaller/TelecallerDashboard";
+import MyLeads from "./pages/telecaller/MyLeads";
+import AssignedLeads from "./pages/telecaller/AssignedLeads";
+import AddNewLead from "./pages/telecaller/AddNewLead";
 import LeadDetails from './pages/telecaller/LeadDetails';
 import CustomerCall from './pages/telecaller/CustomerCall';
 import MyFollowups from './pages/telecaller/MyFollowups';
@@ -214,11 +215,20 @@ const ProtectedRoute = ({ children, allowedRole }) => {
 
 // Component to dynamically route dashboards based on role
 const RoleBasedDashboard = () => {
-  const role = localStorage.getItem('userRole');
-  if (role === 'HR Admin') {
+  const role = (localStorage.getItem('userRole') || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (role.includes('tele')) {
+    return <Navigate to="/telecaller" replace />;
+  }
+  if (role.includes('agent')) {
+    return <Navigate to="/agent" replace />;
+  }
+  if (role.includes('account')) {
+    return <Navigate to="/accountant" replace />;
+  }
+  if (role.includes('hr')) {
     return <HRDashboard />;
   }
-  if (role === 'Operation Admin') {
+  if (role.includes('operation') || role.includes('ops')) {
     return <OperationDashboard />;
   }
   return <Dashboard />;
@@ -236,6 +246,7 @@ function App() {
         <Route path="/telecaller" element={<ProtectedRoute><TelecallerLayout /></ProtectedRoute>}>
           <Route index element={<TelecallerDashboard />} />
           <Route path="leads" element={<MyLeads />} />
+          <Route path="assigned-leads" element={<AssignedLeads />} />
           <Route path="leads/add" element={<AddNewLead />} />
           <Route path="leads/:id" element={<LeadDetails />} />
           <Route path="call/:id" element={<CustomerCall />} />
@@ -342,6 +353,21 @@ function App() {
           <Route path="complaints" element={<ManageComplaints />} />
           <Route path="profile" element={<AdminProfile />} />
           <Route path="notifications" element={<Notifications />} />
+          
+          {/* Operations Admin Direct Routes */}
+          <Route path="operations/dashboard" element={<OperationDashboard />} />
+          <Route path="operations/applications" element={<ApplicationManagement />} />
+          <Route path="operations/applications/:id" element={<ApplicationDetails />} />
+          <Route path="operations/assigned" element={<AssignedApplications />} />
+          <Route path="operations/customers" element={<CustomerManagement />} />
+          <Route path="operations/customers/:id" element={<CustomerDetails />} />
+          <Route path="operations/documents" element={<DocumentManagement />} />
+          <Route path="operations/verification" element={<ApplicationVerification />} />
+          <Route path="operations/follow-ups" element={<FollowUpManagement />} />
+          <Route path="operations/remarks" element={<RemarksNotes />} />
+          <Route path="operations/history" element={<ApplicationHistory />} />
+          <Route path="operations/notifications" element={<OperationNotifications />} />
+          <Route path="operations/reports" element={<OperationReports />} />
           
           {/* OPS Management Routes */}
           {/* Dashboard */}

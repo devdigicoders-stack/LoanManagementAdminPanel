@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, FileMinus, Upload } from "lucide-react";
+import { ArrowLeft, Save, FileMinus, Upload, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 const tc = {
@@ -11,12 +11,51 @@ const tc = {
 
 export default function AddExpense() {
   const navigate = useNavigate();
-  const [file, setFile] = useState(null);
+  const [category, setCategory] = useState("Office Expense");
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("UPI");
+  const [remarks, setRemarks] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    toast.success("Expense recorded successfully.");
-    navigate("/accountant/expenses");
+    if (!amount || Number(amount) <= 0) return toast.error("Please enter a valid amount.");
+
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/transactions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          customerName: "Branch Office Operations",
+          customerId: "ORG-EXPENSE",
+          loanId: "",
+          type: "Expense",
+          amount: Number(amount),
+          method,
+          category,
+          status: "Approved",
+          action: "Matched",
+          remarks: remarks || `Expense for ${category}`
+        })
+      });
+
+      if (res.ok) {
+        toast.success("Operating expense recorded and saved to MongoDB!");
+        navigate("/accountant/expenses");
+      } else {
+        toast.error("Failed to record expense");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error recording expense");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -27,20 +66,26 @@ export default function AddExpense() {
         </Link>
         <div>
           <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Add Expense</h1>
-          <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>Record a new operational expense.</p>
+          <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>Record a new operational expense in MongoDB.</p>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="rounded-2xl p-6 space-y-6" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
-        <h2 className="text-[15px] font-extrabold flex items-center gap-2" style={{ color: tc.text }}><FileMinus size={16} /> Expense Details</h2>
+        <h2 className="text-[15px] font-extrabold flex items-center gap-2" style={{ color: tc.text }}>
+          <FileMinus size={16} /> Expense Details
+        </h2>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           <div className="space-y-1.5">
             <label className="text-[12px] font-bold" style={{ color: tc.text }}>Expense Category <span className="text-red-500">*</span></label>
-            <select required className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }}>
-              <option value="">Select Category</option>
+            <select 
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" 
+              style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }}
+            >
               <option>Office Expense</option>
-              <option>Travel</option>
+              <option>Travel & Field Fuel</option>
               <option>Marketing</option>
               <option>Utilities</option>
               <option>Software</option>
@@ -50,45 +95,66 @@ export default function AddExpense() {
             </select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Amount <span className="text-red-500">*</span></label>
-            <input type="number" required className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} placeholder="e.g. 1500" />
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Amount (₹) <span className="text-red-500">*</span></label>
+            <input 
+              type="number" 
+              required 
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" 
+              style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} 
+              placeholder="e.g. 1500" 
+            />
           </div>
           <div className="space-y-1.5">
-            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Expense Date <span className="text-red-500">*</span></label>
-            <input type="date" required defaultValue={new Date().toISOString().split('T')[0]} className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Payment Method <span className="text-red-500">*</span></label>
-            <select required className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }}>
-              <option value="">Select Method</option>
-              <option>Cash</option>
-              <option>Bank Transfer</option>
-              <option>UPI</option>
-              <option>Other</option>
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Payment Mode <span className="text-red-500">*</span></label>
+            <select 
+              value={method}
+              onChange={(e) => setMethod(e.target.value)}
+              className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" 
+              style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }}
+            >
+              <option value="UPI">UPI</option>
+              <option value="Cash">Cash</option>
+              <option value="Bank Transfer">Bank Transfer</option>
+              <option value="Cheque">Cheque</option>
             </select>
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Description <span className="text-red-500">*</span></label>
-            <input type="text" required className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} placeholder="Brief description of the expense..." />
-          </div>
           <div className="space-y-1.5">
-            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Reference Number</label>
-            <input type="text" className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} placeholder="Optional..." />
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Upload Proof <span className="text-[10px] text-gray-400">(Bill/Receipt)</span></label>
-            <div className="border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all hover:bg-[#FAFCFD]" style={{ borderColor: tc.border }} onClick={() => document.getElementById('expense-proof').click()}>
-              <input type="file" id="expense-proof" className="hidden" onChange={(e) => setFile(e.target.files[0])} accept="image/*,.pdf" />
-              <Upload size={24} className="mx-auto mb-2" style={{ color: tc.muted }} />
-              <p className="text-[13px] font-bold" style={{ color: tc.text }}>{file ? file.name : "Click to upload bill or receipt"}</p>
-              <p className="text-[11px] mt-1" style={{ color: tc.muted }}>JPG, PNG or PDF (Max. 5MB)</p>
-            </div>
+            <label className="text-[12px] font-bold" style={{ color: tc.text }}>Expense Date</label>
+            <input 
+              type="date" 
+              defaultValue={new Date().toISOString().split('T')[0]} 
+              className="w-full h-11 px-4 rounded-xl text-[13px] outline-none transition-all" 
+              style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} 
+            />
           </div>
         </div>
 
-        <div className="flex justify-end gap-3 pt-4" style={{ borderTop: `1px solid ${tc.border}` }}>
-          <button type="button" onClick={() => navigate(-1)} className="px-6 py-2.5 rounded-xl font-bold text-[13px] transition-all hover:bg-gray-100" style={{ color: tc.muted }}>Cancel</button>
-          <button type="submit" className="flex items-center gap-2 px-6 py-2.5 rounded-xl font-bold text-[13px] transition-all text-white hover:opacity-90 shadow-sm" style={{ background: tc.blue }}><Save size={16} /> Save Expense</button>
+        <div className="space-y-1.5">
+          <label className="text-[12px] font-bold" style={{ color: tc.text }}>Description / Remarks</label>
+          <textarea 
+            rows={3} 
+            value={remarks}
+            onChange={(e) => setRemarks(e.target.value)}
+            className="w-full p-4 rounded-xl text-[13px] outline-none transition-all" 
+            style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} 
+            placeholder="e.g. Printer cartridges and visiting cards for branch agents." 
+          />
+        </div>
+
+        <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: tc.border }}>
+          <Link to="/accountant/expenses" className="px-6 py-2.5 rounded-xl font-bold text-[13px] transition-all hover:opacity-80" style={{ background: tc.bg, border: `1px solid ${tc.border}`, color: tc.text }}>
+            Cancel
+          </Link>
+          <button 
+            type="submit" 
+            disabled={submitting}
+            className="px-6 py-2.5 rounded-xl font-bold text-[13px] text-white flex items-center gap-2 transition-all hover:opacity-90 shadow-sm disabled:opacity-50" 
+            style={{ background: tc.blue }}
+          >
+            {submitting ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} Save Expense Voucher
+          </button>
         </div>
       </form>
     </div>

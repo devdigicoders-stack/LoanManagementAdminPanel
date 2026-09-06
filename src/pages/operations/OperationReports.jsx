@@ -50,14 +50,14 @@ function ApplicationStatusDonut() {
     series: [{
       name: 'Applications',
       data: [
-        { name: 'New',                  y: 28,  color: COLORS.sky    },
-        { name: 'In Progress',          y: 45,  color: COLORS.blue   },
-        { name: 'Documents Pending',    y: 32,  color: COLORS.amber  },
-        { name: 'Verification Pending', y: 18,  color: COLORS.purple },
-        { name: 'On Hold',              y: 12,  color: COLORS.red    },
-        { name: 'Approved',             y: 56,  color: COLORS.green  },
-        { name: 'Rejected',             y: 22,  color: '#FB923C'     },
-        { name: 'Completed',            y: 35,  color: COLORS.teal   },
+        { name: 'New',                  y: 0,  color: COLORS.sky    },
+        { name: 'In Progress',          y: 0,  color: COLORS.blue   },
+        { name: 'Documents Pending',    y: 0,  color: COLORS.amber  },
+        { name: 'Verification Pending', y: 0,  color: COLORS.purple },
+        { name: 'On Hold',              y: 0,  color: COLORS.red    },
+        { name: 'Approved',             y: 0,  color: COLORS.green  },
+        { name: 'Rejected',             y: 0,  color: '#FB923C'     },
+        { name: 'Completed',            y: 0,  color: COLORS.teal   },
       ],
     }],
   });
@@ -83,9 +83,9 @@ function MonthlyTrendBar() {
     plotOptions: { column: { borderRadius: 6, groupPadding: 0.15 } },
     legend: { itemStyle: { fontWeight: '700', color: '#344054', fontSize: '12px' } },
     series: [
-      { name: 'Received',  data: [38, 42, 55, 48, 61, 72], color: COLORS.sky   },
-      { name: 'Completed', data: [30, 35, 44, 40, 50, 58], color: COLORS.green },
-      { name: 'Rejected',  data: [5,  4,  6,  5,  7,  9],  color: COLORS.red   },
+      { name: 'Received',  data: [0, 0, 0, 0, 0, 0], color: COLORS.sky   },
+      { name: 'Completed', data: [0, 0, 0, 0, 0, 0], color: COLORS.green },
+      { name: 'Rejected',  data: [0, 0, 0, 0, 0, 0], color: COLORS.red   },
     ],
   });
   return <div ref={ref} />;
@@ -109,8 +109,8 @@ function ProcessingTimeSpline() {
     plotOptions: { spline: { marker: { enabled: true, radius: 5 } } },
     legend: { itemStyle: { fontWeight: '700', color: '#344054', fontSize: '12px' } },
     series: [
-      { name: 'Avg Processing Time', data: [8.2, 7.5, 9.1, 6.8, 7.2, 5.9], color: COLORS.sky    },
-      { name: 'Target',              data: [7,   7,   7,   7,   7,   7  ], color: COLORS.amber, dashStyle: 'Dash' },
+      { name: 'Avg Processing Time', data: [0, 0, 0, 0, 0, 0], color: COLORS.sky    },
+      { name: 'Target',              data: [0, 0, 0, 0, 0, 0], color: COLORS.amber, dashStyle: 'Dash' },
     ],
   });
   return <div ref={ref} />;
@@ -134,10 +134,10 @@ function DocumentStatusBar() {
     plotOptions: { bar: { borderRadius: 5, dataLabels: { enabled: false } } },
     legend: { itemStyle: { fontWeight: '700', color: '#344054', fontSize: '12px' } },
     series: [
-      { name: 'Verified',         data: [145, 130, 98,  112, 45], color: COLORS.green },
-      { name: 'Pending',          data: [28,  22,  35,  18,  12], color: COLORS.amber },
-      { name: 'Rejected',         data: [8,   6,   12,  5,   3 ], color: COLORS.red   },
-      { name: 'Re-upload Needed', data: [12,  10,  18,  8,   5 ], color: COLORS.purple},
+      { name: 'Verified',         data: [0, 0, 0, 0, 0], color: COLORS.green },
+      { name: 'Pending',          data: [0, 0, 0, 0, 0], color: COLORS.amber },
+      { name: 'Rejected',         data: [0, 0, 0, 0, 0], color: COLORS.red   },
+      { name: 'Re-upload Needed', data: [0, 0, 0, 0, 0], color: COLORS.purple},
     ],
   });
   return <div ref={ref} />;
@@ -156,11 +156,11 @@ function EmployeePerformancePie() {
     series: [{
       name: 'Applications',
       data: [
-        { name: 'Suresh K.',  y: 48, color: COLORS.sky    },
-        { name: 'Meena R.',   y: 36, color: COLORS.green  },
-        { name: 'Vikram S.',  y: 29, color: COLORS.amber  },
-        { name: 'Neha T.',    y: 22, color: COLORS.purple },
-        { name: 'Ravi M.',    y: 18, color: COLORS.teal   },
+        { name: 'Suresh K.',  y: 0, color: COLORS.sky    },
+        { name: 'Meena R.',   y: 0, color: COLORS.green  },
+        { name: 'Vikram S.',  y: 0, color: COLORS.amber  },
+        { name: 'Neha T.',    y: 0, color: COLORS.purple },
+        { name: 'Ravi M.',    y: 0, color: COLORS.teal   },
       ],
     }],
   });
@@ -189,9 +189,9 @@ function FollowUpAreaChart() {
     },
     legend: { itemStyle: { fontWeight: '700', color: '#344054', fontSize: '12px' } },
     series: [
-      { name: 'Scheduled',  data: [12, 18, 14, 22, 16, 8, 6],  color: COLORS.sky   },
-      { name: 'Completed',  data: [10, 15, 12, 18, 14, 7, 5],  color: COLORS.green },
-      { name: 'Missed',     data: [2,  3,  2,  4,  2,  1, 1],  color: COLORS.red   },
+      { name: 'Scheduled',  data: [0, 0, 0, 0, 0, 0, 0],  color: COLORS.sky   },
+      { name: 'Completed',  data: [0, 0, 0, 0, 0, 0, 0],  color: COLORS.green },
+      { name: 'Missed',     data: [0, 0, 0, 0, 0, 0, 0],  color: COLORS.red   },
     ],
   });
   return <div ref={ref} />;
@@ -220,14 +220,8 @@ const ChartCard = ({ title, subtitle, children, className = '' }) => (
   </div>
 );
 
-/* ── application report table data ───────────────────── */
-const mockAppReport = [
-  { id: 'LN-10245', customer: 'Ramesh Patel',  type: 'Personal Loan',  amount: '₹5,00,000',  employee: 'Suresh K.', status: 'Under Review', appDate: '24 Aug 2026', complDate: '-'           },
-  { id: 'LN-10241', customer: 'Priya Sharma',  type: 'Home Loan',      amount: '₹25,00,000', employee: 'Meena R.', status: 'Completed',    appDate: '20 Aug 2026', complDate: '24 Aug 2026' },
-  { id: 'LN-10238', customer: 'Amit Kumar',    type: 'Business Loan',  amount: '₹8,00,000',  employee: 'Vikram S.',status: 'On Hold',      appDate: '18 Aug 2026', complDate: '-'           },
-  { id: 'LN-10235', customer: 'Neha Gupta',    type: 'Personal Loan',  amount: '₹3,50,000',  employee: 'Neha T.',  status: 'Approved',     appDate: '15 Aug 2026', complDate: '22 Aug 2026' },
-  { id: 'LN-10230', customer: 'Vijay Singh',   type: 'Vehicle Loan',   amount: '₹6,00,000',  employee: 'Ravi M.',  status: 'Rejected',     appDate: '12 Aug 2026', complDate: '18 Aug 2026' },
-];
+const mockAppReport = [];
+
 
 const STATUS_STYLE = {
   'Under Review': 'bg-[#F3E8FF] text-[#7E22CE] border-[#E9D5FF]',
@@ -299,12 +293,12 @@ export default function OperationReports() {
         <>
           {/* KPI Summary */}
           <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
-            <StatCard icon={FileText}     label="Total Applications" value="248"  sub="↑ 12% this month" color="text-[#0369A1]"  bg="bg-[#DFF3FF]"  />
-            <StatCard icon={CheckCircle2} label="Completed"          value="156"  sub="↑ 8% this month"  color="text-[#059669]"  bg="bg-[#ECFDF5]"  />
-            <StatCard icon={Clock}        label="In Progress"        value="45"   sub="Active now"        color="text-[#D97706]"  bg="bg-[#FFF8E7]"  />
-            <StatCard icon={AlertCircle}  label="On Hold"            value="18"   sub="Needs attention"   color="text-[#7E22CE]"  bg="bg-[#F3E8FF]"  />
-            <StatCard icon={XCircle}      label="Rejected"           value="22"   sub="Review required"   color="text-[#DC2626]"  bg="bg-[#FEF2F2]"  />
-            <StatCard icon={TrendingUp}   label="Avg. Processing"    value="6.9d" sub="Target: 7 days"    color="text-[#0284C7]"  bg="bg-[#BFE7F7]"  />
+            <StatCard icon={FileText}     label="Total Applications" value="0"  sub="No records" color="text-[#0369A1]"  bg="bg-[#DFF3FF]"  />
+            <StatCard icon={CheckCircle2} label="Completed"          value="0"  sub="No records" color="text-[#059669]"  bg="bg-[#ECFDF5]"  />
+            <StatCard icon={Clock}        label="In Progress"        value="0"  sub="Active now" color="text-[#D97706]"  bg="bg-[#FFF8E7]"  />
+            <StatCard icon={AlertCircle}  label="On Hold"            value="0"  sub="No records" color="text-[#7E22CE]"  bg="bg-[#F3E8FF]"  />
+            <StatCard icon={XCircle}      label="Rejected"           value="0"  sub="No records" color="text-[#DC2626]"  bg="bg-[#FEF2F2]"  />
+            <StatCard icon={TrendingUp}   label="Avg. Processing"    value="0d" sub="Target: 0d" color="text-[#0284C7]"  bg="bg-[#BFE7F7]"  />
           </div>
 
           {/* Row 1: Donut + Monthly Bar */}
@@ -364,11 +358,11 @@ export default function OperationReports() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
-              { label: 'Total Applications', value: '248', color: 'text-[#344054]' },
-              { label: 'Completed',          value: '156', color: 'text-[#059669]' },
-              { label: 'Pending',            value: '52',  color: 'text-[#D97706]' },
-              { label: 'On Hold',            value: '18',  color: 'text-[#7E22CE]' },
-              { label: 'Rejected',           value: '22',  color: 'text-[#DC2626]' },
+              { label: 'Total Applications', value: '0', color: 'text-[#344054]' },
+              { label: 'Completed',          value: '0', color: 'text-[#059669]' },
+              { label: 'Pending',            value: '0', color: 'text-[#D97706]' },
+              { label: 'On Hold',            value: '0', color: 'text-[#7E22CE]' },
+              { label: 'Rejected',           value: '0', color: 'text-[#DC2626]' },
             ].map((s, i) => (
               <div key={i} className="bg-white rounded-[20px] border border-[#D9EAF2] shadow-sm p-5">
                 <p className="text-[12px] font-bold text-[#667085]">{s.label}</p>
@@ -400,7 +394,13 @@ export default function OperationReports() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F0FAFF]">
-                  {mockAppReport.map((row, i) => (
+                  {mockAppReport.length === 0 ? (
+                    <tr>
+                      <td colSpan="8" className="py-12 text-center text-[#667085] font-medium text-[13px]">
+                        No report records found.
+                      </td>
+                    </tr>
+                  ) : mockAppReport.map((row, i) => (
                     <tr key={i} className="hover:bg-[#F7FCFF] transition-colors">
                       <td className="py-4 px-5 text-[13px] font-bold text-[#0284C7]">{row.id}</td>
                       <td className="py-4 px-5 text-[13px] font-medium text-[#344054]">{row.customer}</td>
@@ -426,11 +426,11 @@ export default function OperationReports() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
-              { label: 'Avg Processing Time', value: '6.9d', color: 'text-[#0284C7]' },
-              { label: 'Pending',             value: '52',   color: 'text-[#D97706]' },
-              { label: 'Completed',           value: '156',  color: 'text-[#059669]' },
-              { label: 'On Hold',             value: '18',   color: 'text-[#7E22CE]' },
-              { label: 'Verification Pending',value: '24',   color: 'text-[#D97706]' },
+              { label: 'Avg Processing Time', value: '0d', color: 'text-[#0284C7]' },
+              { label: 'Pending',             value: '0',  color: 'text-[#D97706]' },
+              { label: 'Completed',           value: '0',  color: 'text-[#059669]' },
+              { label: 'On Hold',             value: '0',  color: 'text-[#7E22CE]' },
+              { label: 'Verification Pending',value: '0',  color: 'text-[#D97706]' },
             ].map((s, i) => (
               <div key={i} className="bg-white rounded-[20px] border border-[#D9EAF2] shadow-sm p-5">
                 <p className="text-[12px] font-bold text-[#667085]">{s.label}</p>
@@ -449,11 +449,11 @@ export default function OperationReports() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
             {[
-              { label: 'Total Documents',   value: '1,245', color: 'text-[#344054]' },
-              { label: 'Verified',          value: '890',   color: 'text-[#059669]' },
-              { label: 'Pending',           value: '142',   color: 'text-[#D97706]' },
-              { label: 'Rejected',          value: '18',    color: 'text-[#DC2626]' },
-              { label: 'Re-upload Required',value: '45',    color: 'text-[#7E22CE]' },
+              { label: 'Total Documents',   value: '0', color: 'text-[#344054]' },
+              { label: 'Verified',          value: '0', color: 'text-[#059669]' },
+              { label: 'Pending',           value: '0', color: 'text-[#D97706]' },
+              { label: 'Rejected',          value: '0', color: 'text-[#DC2626]' },
+              { label: 'Re-upload Required',value: '0', color: 'text-[#7E22CE]' },
             ].map((s, i) => (
               <div key={i} className="bg-white rounded-[20px] border border-[#D9EAF2] shadow-sm p-5">
                 <p className="text-[12px] font-bold text-[#667085]">{s.label}</p>
@@ -472,10 +472,10 @@ export default function OperationReports() {
         <div className="space-y-6">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {[
-              { label: "Today's Follow-ups", value: '8',   color: 'text-[#0369A1]' },
-              { label: 'Scheduled This Week', value: '42',  color: 'text-[#344054]' },
-              { label: 'Completed',           value: '156', color: 'text-[#059669]' },
-              { label: 'Missed',              value: '5',   color: 'text-[#DC2626]' },
+              { label: "Today's Follow-ups", value: '0', color: 'text-[#0369A1]' },
+              { label: 'Scheduled This Week', value: '0', color: 'text-[#344054]' },
+              { label: 'Completed',           value: '0', color: 'text-[#059669]' },
+              { label: 'Missed',              value: '0', color: 'text-[#DC2626]' },
             ].map((s, i) => (
               <div key={i} className="bg-white rounded-[20px] border border-[#D9EAF2] shadow-sm p-5">
                 <p className="text-[12px] font-bold text-[#667085]">{s.label}</p>

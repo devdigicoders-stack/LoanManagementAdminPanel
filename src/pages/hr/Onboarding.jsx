@@ -1,8 +1,8 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ClipboardCheck, UserCheck, FileText, CheckCircle2, Clock, Search,
   Link2, RefreshCw, ChevronDown, ChevronUp, AlertCircle,
-  Users, Eye, Shield, CheckSquare
+  Users, Eye, Shield, CheckSquare, Phone, X, Check
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -86,7 +86,7 @@ function StepBar({ step }) {
   );
 }
 
-function EmployeeCard({ emp, token, onRefresh }) {
+function EmployeeTableRow({ emp, token, onRefresh, onOpenAssignChaser }) {
   const [expanded, setExpanded] = useState(false);
   const [updatingDoc, setUpdatingDoc] = useState(null);
   const [markingDone, setMarkingDone] = useState(false);
@@ -96,7 +96,6 @@ function EmployeeCard({ emp, token, onRefresh }) {
   const copyLink = () => {
     const link = `${window.location.origin.replace('5173', '5173')}/onboarding/${emp._id}`;
     navigator.clipboard.writeText(link).then(() => toast.success('Onboarding link copied!')).catch(() => {
-      // fallback
       const el = document.createElement('textarea');
       el.value = link;
       document.body.appendChild(el);
@@ -136,158 +135,173 @@ function EmployeeCard({ emp, token, onRefresh }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div className="p-5">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-start gap-3 flex-1 min-w-0">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-sm shrink-0">
+    <React.Fragment>
+      <tr className="hover:bg-blue-50/30 transition-colors border-b border-gray-100">
+        <td className="px-4 py-3">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center text-white font-bold text-xs shrink-0">
               {emp.name?.charAt(0).toUpperCase()}
             </div>
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-bold text-gray-900 text-sm">{emp.name}</h3>
-                <StatusBadge status={emp.onboardingStatus} />
-              </div>
-              <p className="text-xs text-gray-500 mt-0.5">{emp.designation} Ã‚Â· {emp.division}</p>
-              <p className="text-xs text-gray-400 mt-0.5 font-mono">{emp.empId}</p>
+            <div>
+              <p className="text-[13px] font-bold text-gray-900">{emp.name}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">{emp.designation} &middot; {emp.division || 'General'}</p>
+              <p className="text-[11px] text-gray-400 mt-0.5 font-mono">{emp.empId} {emp.mobile ? `| ${emp.mobile}` : ''}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {emp.onboardingStatus === 'Pending' && (
-              <button
-                onClick={async () => {
-                  toast.loading('Sending reminder...', { id: 'remind' });
-                  try {
-                    const res = await fetch(`${API}/api/employees/${emp._id}/remind-employee`, {
-                      method: 'POST',
-                      headers: { Authorization: `Bearer ${token}` }
-                    });
-                    if (res.ok) toast.success('Reminder email sent!', { id: 'remind' });
-                    else toast.error('Failed to send reminder', { id: 'remind' });
-                  } catch { toast.error('Server error', { id: 'remind' }); }
-                }}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-orange-600 border border-orange-200 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors"
-              >
-                <AlertCircle size={12} /> Send Reminder
+        </td>
+
+        <td className="px-4 py-3 align-top">
+          <div className="mb-2 mt-1"><StatusBadge status={emp.onboardingStatus} /></div>
+          <div className="flex items-center gap-2 mb-1 w-32">
+            <div className="flex-1 bg-gray-100 rounded-full h-1.5">
+              <div className={`h-1.5 rounded-full ${completion === 100 ? 'bg-green-500' : 'bg-blue-500'}`} style={{ width: `${completion}%` }} />
+            </div>
+            <span className="text-[10px] font-bold text-gray-500">{completion}%</span>
+          </div>
+          <p className="text-[10px] text-gray-400 font-semibold">{STEPS[step]?.label || 'Completed'}</p>
+        </td>
+
+        <td className="px-4 py-3 align-top space-y-2">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-gray-500 w-12">HR:</span>
+            {emp.assignedHRName ? (
+              <span className="text-[11px] font-semibold text-purple-700 bg-purple-50 px-2 py-0.5 rounded border border-purple-100">
+                {emp.assignedHRName.split(' ')[0]}
+              </span>
+            ) : (
+              <span className="text-[11px] text-gray-400 italic">Unassigned</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-semibold text-gray-500 w-12">Chaser:</span>
+            {emp.assignedTelecallerName ? (
+              <div className="flex items-center gap-1 text-[11px] font-semibold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100" title={emp.telecallerChaserNotes || ''}>
+                <Phone size={10} /> {emp.assignedTelecallerName.split(' ')[0]}
+              </div>
+            ) : (
+              <span className="text-[11px] text-gray-400 italic">Unassigned</span>
+            )}
+          </div>
+        </td>
+
+        <td className="px-4 py-3 align-top">
+          <div className="flex flex-wrap items-center gap-1.5 max-w-[220px]">
+            {emp.onboardingStatus !== 'Done' && (
+              <button onClick={() => onOpenAssignChaser(emp)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 bg-indigo-50 rounded hover:bg-indigo-100">
+                <Phone size={10} /> {emp.assignedTelecallerName ? 'Reassign' : 'Assign Chaser'}
               </button>
             )}
-            <button
-              onClick={copyLink}
-              title="Copy onboarding link"
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-blue-600 border border-blue-200 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors"
-            >
-              <Link2 size={12} /> Share Link
+            {emp.onboardingStatus === 'Pending' && (
+              <button onClick={async () => {
+                toast.loading('Sending reminder...', { id: 'remind' });
+                try {
+                  const res = await fetch(`${API}/api/employees/${emp._id}/remind-employee`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+                  if (res.ok) toast.success('Reminder email sent!', { id: 'remind' });
+                  else toast.error('Failed to send reminder', { id: 'remind' });
+                } catch { toast.error('Server error', { id: 'remind' }); }
+              }} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-orange-600 border border-orange-200 bg-orange-50 rounded hover:bg-orange-100">
+                <AlertCircle size={10} /> Reminder
+              </button>
+            )}
+            <button onClick={copyLink} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-blue-600 border border-blue-200 bg-blue-50 rounded hover:bg-blue-100">
+              <Link2 size={10} /> Link
             </button>
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-gray-600 border border-gray-200 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+            <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-gray-600 border border-gray-200 bg-gray-50 rounded hover:bg-gray-100">
+              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {expanded ? 'Hide Docs' : 'View Docs'}
             </button>
           </div>
-        </div>
+        </td>
+      </tr>
 
-        {/* Progress */}
-        <div className="mt-4">
-          <div className="flex justify-between text-xs font-semibold text-gray-500 mb-1.5">
-            <span>Onboarding Progress</span>
-            <span className={completion === 100 ? 'text-green-600' : 'text-blue-600'}>{completion}%</span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-1.5">
-            <div
-              className={`h-1.5 rounded-full transition-all duration-500 ${completion === 100 ? 'bg-green-500' : 'bg-blue-500'}`}
-              style={{ width: `${completion}%` }}
-            />
-          </div>
-          <StepBar step={step} />
-        </div>
-      </div>
-
-      {/* Expanded */}
+      {/* Expanded Row */}
       {expanded && (
-        <div className="border-t border-gray-100 bg-gray-50 p-5">
-          <h4 className="text-xs font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-            <FileText size={13} className="text-gray-400" /> Submitted Documents
-          </h4>
+        <tr className="bg-blue-50/20 border-b border-gray-100">
+          <td colSpan={4} className="p-0">
+            <div className="p-4 border-l-[3px] border-blue-400 pl-5 ml-4 my-2 mr-4 bg-white rounded-r-lg shadow-sm">
+              <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
+                <FileText size={12} className="text-gray-400" /> Submitted Documents
+              </h4>
 
-          {emp.documents && emp.documents.length > 0 ? (
-            <div className="space-y-2 mb-4">
-              {emp.documents.map(doc => (
-                <div key={doc._id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2 gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <FileText size={13} className="text-blue-400 shrink-0" />
-                    <span className="text-xs font-semibold text-gray-800 truncate">{DOC_LABEL[doc.key] || doc.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {doc.fileUrl && (
-                      <a href={`${API}/${doc.fileUrl}`} target="_blank" rel="noreferrer"
-                        className="text-blue-600 hover:text-blue-800 text-[11px] font-bold flex items-center gap-1">
-                        <Eye size={11} /> View
-                      </a>
-                    )}
-                    <DocStatusBadge status={doc.status} />
-                    {doc.status !== 'Verified' && (
-                      <button
-                        disabled={updatingDoc === doc._id}
-                        onClick={() => handleDocStatus(doc._id, 'Verified')}
-                        className="text-[11px] font-bold text-green-700 bg-green-100 hover:bg-green-200 px-2 py-0.5 rounded transition-colors disabled:opacity-50"
-                      >
-                        {updatingDoc === doc._id ? 'Ã¢â‚¬Â¦' : 'Verify'}
-                      </button>
-                    )}
-                    {doc.status !== 'Rejected' && doc.status !== 'Verified' && (
-                      <button
-                        disabled={updatingDoc === doc._id}
-                        onClick={() => handleDocStatus(doc._id, 'Rejected')}
-                        className="text-[11px] font-bold text-red-700 bg-red-100 hover:bg-red-200 px-2 py-0.5 rounded transition-colors disabled:opacity-50"
-                      >
-                        Reject
-                      </button>
-                    )}
-                    {doc.status === 'Verified' && <CheckCircle2 size={14} className="text-green-500" />}
-                  </div>
+              {emp.documents && emp.documents.length > 0 ? (
+                <div className="space-y-2 mb-3">
+                  {emp.documents.map(doc => (
+                    <div key={doc._id} className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-md px-3 py-2 gap-2 max-w-2xl">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <FileText size={12} className="text-blue-400 shrink-0" />
+                        <span className="text-[11px] font-semibold text-gray-800 truncate">{DOC_LABEL[doc.key] || doc.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        {doc.fileUrl && (
+                          <a href={`${API}/${doc.fileUrl}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-[10px] font-bold flex items-center gap-1">
+                            <Eye size={10} /> View
+                          </a>
+                        )}
+                        <DocStatusBadge status={doc.status} />
+                        {doc.status !== 'Verified' && (
+                          <button disabled={updatingDoc === doc._id} onClick={() => handleDocStatus(doc._id, 'Verified')} className="text-[10px] font-bold text-green-700 bg-green-100 hover:bg-green-200 px-2 py-0.5 rounded disabled:opacity-50">
+                            Verify
+                          </button>
+                        )}
+                        {doc.status !== 'Rejected' && doc.status !== 'Verified' && (
+                          <button disabled={updatingDoc === doc._id} onClick={() => handleDocStatus(doc._id, 'Rejected')} className="text-[10px] font-bold text-red-700 bg-red-100 hover:bg-red-200 px-2 py-0.5 rounded disabled:opacity-50">
+                            Reject
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-xs text-gray-400 italic mb-4">No documents uploaded yet. Share the link to notify the employee.</p>
-          )}
+              ) : (
+                <p className="text-[11px] text-gray-400 italic mb-3">No documents uploaded yet.</p>
+              )}
 
-          {emp.onboardingStatus !== 'Done' && (
-            <button
-              onClick={markComplete}
-              disabled={markingDone || step < 3}
-              title={step < 3 ? 'Verify all documents to complete onboarding' : 'Mark as complete'}
-              className="w-full flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <CheckSquare size={15} />
-              {markingDone ? 'Saving...' : 'Mark Onboarding as Complete'}
-            </button>
-          )}
-        </div>
+              {emp.onboardingStatus !== 'Done' && (
+                <button
+                  onClick={markComplete}
+                  disabled={markingDone || step < 3}
+                  className="w-full max-w-2xl flex items-center justify-center gap-2 py-2 bg-green-600 hover:bg-green-700 text-white text-[11px] font-bold rounded transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <CheckSquare size={13} />
+                  {markingDone ? 'Saving...' : 'Mark Onboarding as Complete'}
+                </button>
+              )}
+            </div>
+          </td>
+        </tr>
       )}
-    </div>
+    </React.Fragment>
   );
 }
+
 
 export default function Onboarding() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState('active');
   const [search, setSearch] = useState('');
+  const [telecallers, setTelecallers] = useState([]);
+  const [chaserModal, setChaserModal] = useState({ isOpen: false, employee: null, selectedTelecallerId: '', notes: '' });
+  const [isSubmittingChaser, setIsSubmittingChaser] = useState(false);
   const token = localStorage.getItem('token');
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API}/api/employees`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        const data = await res.json();
+      const [empRes, staffRes] = await Promise.all([
+        fetch(`${API}/api/employees`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API}/api/employees/assignable-staff`, { headers: { Authorization: `Bearer ${token}` } })
+      ]);
+
+      if (empRes.ok) {
+        const data = await empRes.json();
         if (Array.isArray(data)) setEmployees(data);
       } else {
         toast.error('Failed to fetch onboarding data');
+      }
+
+      if (staffRes.ok) {
+        const staff = await staffRes.json();
+        setTelecallers(staff.telecallers || []);
       }
     } catch {
       toast.error('Server error');
@@ -297,6 +311,35 @@ export default function Onboarding() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const handleSaveChaser = async () => {
+    if (!chaserModal.employee) return;
+    setIsSubmittingChaser(true);
+    try {
+      const selectedObj = telecallers.find(t => t._id === chaserModal.selectedTelecallerId);
+      const res = await fetch(`${API}/api/employees/${chaserModal.employee._id}/assign-onboarding-chaser`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          telecallerId: chaserModal.selectedTelecallerId || null,
+          telecallerName: selectedObj ? selectedObj.name : null,
+          notes: chaserModal.notes
+        })
+      });
+
+      if (res.ok) {
+        toast.success(selectedObj ? `Assigned to Telecaller ${selectedObj.name}` : 'Chaser unassigned');
+        fetchData();
+        setChaserModal({ isOpen: false, employee: null, selectedTelecallerId: '', notes: '' });
+      } else {
+        toast.error('Failed to assign telecaller');
+      }
+    } catch {
+      toast.error('Server error');
+    } finally {
+      setIsSubmittingChaser(false);
+    }
+  };
 
   const filtered = employees.filter(emp => {
     const matchTab = tab === 'active'
@@ -321,7 +364,7 @@ export default function Onboarding() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Employee Onboarding</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Manage document verification, share onboarding links, and track completion.
+            Manage document verification, delegate pending candidates to telecallers, and track completion.
           </p>
         </div>
         <button
@@ -369,7 +412,7 @@ export default function Onboarding() {
           <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by name, ID or roleÃ¢â‚¬Â¦"
+            placeholder="Search by name, ID or role..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full border border-gray-200 rounded-lg pl-8 pr-3 py-2 text-sm focus:ring-1 focus:ring-blue-400 focus:outline-none"
@@ -379,17 +422,127 @@ export default function Onboarding() {
 
       {/* List */}
       {loading ? (
-        <div className="text-center py-16 text-gray-500 font-semibold">Loading onboarding dataÃ¢â‚¬Â¦</div>
+        <div className="text-center py-16 text-gray-500 font-semibold">Loading onboarding data...</div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-gray-400">
           <Users size={40} className="mx-auto mb-3 opacity-30" />
           <p className="font-semibold">No {tab === 'active' ? 'active' : 'completed'} onboardings found.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {filtered.map(emp => (
-            <EmployeeCard key={emp._id} emp={emp} token={token} onRefresh={fetchData} />
-          ))}
+        <div className="bg-white border border-gray-200/80 rounded-xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left whitespace-nowrap">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/70">
+                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Employee</th>
+                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status & Progress</th>
+                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Assignments</th>
+                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map(emp => (
+                  <EmployeeTableRow 
+                    key={emp._id} 
+                    emp={emp} 
+                    token={token} 
+                    onRefresh={fetchData} 
+                    onOpenAssignChaser={(candidate) => setChaserModal({
+                      isOpen: true,
+                      employee: candidate,
+                      selectedTelecallerId: candidate.assignedTelecallerId || '',
+                      notes: candidate.telecallerChaserNotes || ''
+                    })}
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Assign Telecaller Chaser */}
+      {chaserModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center">
+                  <Phone size={16} />
+                </div>
+                <div>
+                  <h3 className="font-bold text-gray-900 text-sm">Assign Onboarding Chaser</h3>
+                  <p className="text-[11px] text-gray-500">Delegate document follow-up to a telecaller</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setChaserModal({ isOpen: false, employee: null, selectedTelecallerId: '', notes: '' })}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-white"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div className="p-3 bg-gray-50 rounded-xl border border-gray-200/70">
+                <div className="flex items-center justify-between">
+                  <p className="text-xs font-bold text-gray-900">{chaserModal.employee?.name}</p>
+                  <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
+                    {chaserModal.employee?.onboardingStatus}
+                  </span>
+                </div>
+                <p className="text-[11px] text-gray-600 font-mono mt-0.5">Mobile: {chaserModal.employee?.mobile || 'N/A'}</p>
+                <p className="text-[11px] text-gray-400">{chaserModal.employee?.email}</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
+                  Select Telecaller
+                </label>
+                <select
+                  value={chaserModal.selectedTelecallerId}
+                  onChange={(e) => setChaserModal(prev => ({ ...prev, selectedTelecallerId: e.target.value }))}
+                  className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-xs text-gray-800 focus:outline-none focus:border-indigo-400 font-medium"
+                >
+                  <option value="">-- Select Telecaller (Or Unassign) --</option>
+                  {telecallers.map(t => (
+                    <option key={t._id} value={t._id}>
+                      {t.name} ({t.role || 'Telecaller'}{t.mobile ? ` - ${t.mobile}` : ''})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5">
+                  Follow-up Instructions / Notes
+                </label>
+                <textarea
+                  rows={3}
+                  value={chaserModal.notes}
+                  onChange={(e) => setChaserModal(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="e.g. Call candidate to submit Aadhaar & cancelled cheque by 5 PM."
+                  className="w-full bg-white border border-gray-200 rounded-lg p-2.5 text-xs text-gray-800 focus:outline-none focus:border-indigo-400 placeholder:text-gray-400"
+                />
+              </div>
+            </div>
+
+            <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2">
+              <button
+                onClick={() => setChaserModal({ isOpen: false, employee: null, selectedTelecallerId: '', notes: '' })}
+                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={isSubmittingChaser}
+                onClick={handleSaveChaser}
+                className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-bold shadow transition-colors disabled:opacity-50"
+              >
+                {isSubmittingChaser ? 'Saving...' : 'Assign Telecaller'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

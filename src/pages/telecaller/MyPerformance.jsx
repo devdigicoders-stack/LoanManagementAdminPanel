@@ -10,23 +10,23 @@ export default function MyPerformance() {
   const [filter, setFilter] = useState("This Month");
 
   const stats = [
-    { label: "Total Leads", value: 45, icon: Target, bg: tc.sky, col: tc.blue },
-    { label: "Calls Made", value: 120, icon: Phone, bg: "#EEF2FF", col: "#4338CA" },
-    { label: "Customers Contacted", value: 38, icon: Users, bg: tc.cream, col: "#D97706" },
-    { label: "Interested Leads", value: 15, icon: Star, bg: "#FEF9C3", col: "#CA8A04" },
-    { label: "Follow-ups Completed", value: 40, icon: CalendarCheck, bg: "#F4F4F5", col: "#52525B" },
-    { label: "Converted Leads", value: 8, icon: CheckCircle2, bg: "#DCFCE7", col: "#15803D" },
-    { label: "Lost Leads", value: 5, icon: XCircle, bg: "#FEE2E2", col: "#DC2626" },
+    { label: "Total Leads", value: 0, icon: Target, bg: tc.sky, col: tc.blue },
+    { label: "Calls Made", value: 0, icon: Phone, bg: "#EEF2FF", col: "#4338CA" },
+    { label: "Customers Contacted", value: 0, icon: Users, bg: tc.cream, col: "#D97706" },
+    { label: "Interested Leads", value: 0, icon: Star, bg: "#FEF9C3", col: "#CA8A04" },
+    { label: "Follow-ups Completed", value: 0, icon: CalendarCheck, bg: "#F4F4F5", col: "#52525B" },
+    { label: "Converted Leads", value: 0, icon: CheckCircle2, bg: "#DCFCE7", col: "#15803D" },
+    { label: "Lost Leads", value: 0, icon: XCircle, bg: "#FEE2E2", col: "#DC2626" },
   ];
 
-  const conversionRate = Math.round((8 / 45) * 100);
+  const conversionRate = 0;
 
   const chartData = [
-    { label: "Leads Assigned", value: 45, max: 50 },
-    { label: "Calls Made", value: 120, max: 150 },
-    { label: "Contacted", value: 38, max: 50 },
-    { label: "Interested", value: 15, max: 50 },
-    { label: "Converted", value: 8, max: 50 },
+    { label: "Leads Assigned", value: 0, max: 50 },
+    { label: "Calls Made", value: 0, max: 150 },
+    { label: "Contacted", value: 0, max: 50 },
+    { label: "Interested", value: 0, max: 50 },
+    { label: "Converted", value: 0, max: 50 },
   ];
 
   return (
@@ -60,7 +60,7 @@ export default function MyPerformance() {
           <h3 className="text-[14px] font-bold mb-1" style={{ color: tc.muted }}>Conversion Rate</h3>
           <p className="text-[42px] font-extrabold leading-none" style={{ color: tc.blue }}>{conversionRate}%</p>
           <p className="text-[11px] font-semibold mt-3 px-3 py-1 bg-white rounded-full" style={{ color: tc.muted }}>
-            8 Converted / 45 Total Leads
+            0 Converted / 0 Total Leads
           </p>
         </div>
 

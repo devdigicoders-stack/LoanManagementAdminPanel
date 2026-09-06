@@ -3,13 +3,13 @@ import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const mockRoles = [
   { id: 1, name: 'Super Admin', desc: 'Full access to all modules', users: 2, status: 'Active' },
-  { id: 2, name: 'Admin', desc: 'Manage systems and settings', users: 5, status: 'Active' },
-  { id: 3, name: 'Branch Manager', desc: 'Manage branch operations', users: 8, status: 'Active' },
-  { id: 4, name: 'Loan Officer', desc: 'Manage loan applications', users: 32, status: 'Active' },
-  { id: 5, name: 'Sales Executive', desc: 'Generate leads and follow up', users: 26, status: 'Active' },
-  { id: 6, name: 'Verification Officer', desc: 'Verify documents and details', users: 16, status: 'Active' },
-  { id: 7, name: 'Collection Executive', desc: 'Handle collections and follow ups', users: 12, status: 'Active' },
-  { id: 8, name: 'Customer Support', desc: 'Customer support and queries', users: 8, status: 'Inactive' },
+  { id: 2, name: 'Admin', desc: 'Manage systems and settings', users: 0, status: 'Active' },
+  { id: 3, name: 'Branch Manager', desc: 'Manage branch operations', users: 0, status: 'Active' },
+  { id: 4, name: 'Loan Officer', desc: 'Manage loan applications', users: 0, status: 'Active' },
+  { id: 5, name: 'Sales Executive', desc: 'Generate leads and follow up', users: 0, status: 'Active' },
+  { id: 6, name: 'Verification Officer', desc: 'Verify documents and details', users: 0, status: 'Active' },
+  { id: 7, name: 'Collection Executive', desc: 'Handle collections and follow ups', users: 0, status: 'Active' },
+  { id: 8, name: 'Customer Support', desc: 'Customer support and queries', users: 0, status: 'Inactive' },
 ];
 
 export default function EmployeeRoles() {

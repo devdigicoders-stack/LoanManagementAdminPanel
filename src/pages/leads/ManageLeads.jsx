@@ -25,130 +25,6 @@ import {
   Users
 } from "lucide-react";
 
-// --- Mock Data ---
-const mockLeads = [
-  {
-    id: "LID-2025-1268",
-    name: "Rohit Kumar",
-    mobile: "+91 9876543210",
-    email: "rohit.kumar@gmail.com",
-    source: "Website",
-    assignedTo: "Ravi Kumar",
-    status: "New",
-    createdOn: "18 May 2025",
-    nextFollowUp: "20 May 2025",
-    expectedAmount: "₹5,00,000",
-    loanPurpose: "Home Loan",
-    address: "123, Green Park, Lucknow, Uttar Pradesh - 226001",
-    avatar: "https://i.pravatar.cc/150?u=rohit",
-  },
-  {
-    id: "LID-2025-1267",
-    name: "Priya Sharma",
-    mobile: "+91 9876543211",
-    email: "priya.sharma@gmail.com",
-    source: "Referral",
-    assignedTo: "Neha Singh",
-    status: "Contacted",
-    createdOn: "17 May 2025",
-    nextFollowUp: "19 May 2025",
-    expectedAmount: "₹7,50,000",
-    loanPurpose: "Personal Loan",
-    address: "45, Civil Lines, Kanpur, Uttar Pradesh - 208001",
-    avatar: "https://i.pravatar.cc/150?u=priya",
-  },
-  {
-    id: "LID-2025-1266",
-    name: "Amit Verma",
-    mobile: "+91 9876543212",
-    email: "amit.verma@gmail.com",
-    source: "Walk-in",
-    assignedTo: "Suresh Patel",
-    status: "Qualified",
-    createdOn: "17 May 2025",
-    nextFollowUp: "21 May 2025",
-    expectedAmount: "₹10,00,000",
-    loanPurpose: "Business Loan",
-    address: "89, Gomti Nagar, Lucknow, Uttar Pradesh - 226010",
-    avatar: "https://i.pravatar.cc/150?u=amit",
-  },
-  {
-    id: "LID-2025-1265",
-    name: "Neha Singh",
-    mobile: "+91 9876543213",
-    email: "neha.singh@gmail.com",
-    source: "Tele Calling",
-    assignedTo: "John Doe",
-    status: "Converted",
-    createdOn: "16 May 2025",
-    nextFollowUp: "19 May 2025",
-    expectedAmount: "₹2,00,000",
-    loanPurpose: "Education Loan",
-    address: "12, Indira Nagar, Lucknow, Uttar Pradesh - 226016",
-    avatar: "https://i.pravatar.cc/150?u=neha",
-  },
-  {
-    id: "LID-2025-1264",
-    name: "Suresh Patel",
-    mobile: "+91 9876543214",
-    email: "suresh.patel@gmail.com",
-    source: "Website",
-    assignedTo: "Emily Davis",
-    status: "New",
-    createdOn: "16 May 2025",
-    nextFollowUp: "20 May 2025",
-    expectedAmount: "₹15,00,000",
-    loanPurpose: "Home Loan",
-    address: "76, Aliganj, Lucknow, Uttar Pradesh - 226024",
-    avatar: "https://i.pravatar.cc/150?u=suresh",
-  },
-  {
-    id: "LID-2025-1263",
-    name: "Karan Gupta",
-    mobile: "+91 9876543215",
-    email: "karan.gupta@gmail.com",
-    source: "Website",
-    assignedTo: "Ravi Kumar",
-    status: "Contacted",
-    createdOn: "16 May 2025",
-    nextFollowUp: "18 May 2025",
-    expectedAmount: "₹3,50,000",
-    loanPurpose: "Personal Loan",
-    address: "34, Hazratganj, Lucknow, Uttar Pradesh - 226001",
-    avatar: "https://i.pravatar.cc/150?u=karan",
-  },
-  {
-    id: "LID-2025-1262",
-    name: "Pooja Mehta",
-    mobile: "+91 9876543216",
-    email: "pooja.mehta@gmail.com",
-    source: "Walk-in",
-    assignedTo: "Neha Singh",
-    status: "Lost",
-    createdOn: "15 May 2025",
-    nextFollowUp: "-",
-    expectedAmount: "₹5,00,000",
-    loanPurpose: "Home Loan",
-    address: "90, Mahanagar, Lucknow, Uttar Pradesh - 226006",
-    avatar: "https://i.pravatar.cc/150?u=pooja",
-  },
-  {
-    id: "LID-2025-1261",
-    name: "Deepak Yadav",
-    mobile: "+91 9876543217",
-    email: "deepak.yadav@gmail.com",
-    source: "Tele Calling",
-    assignedTo: "Suresh Patel",
-    status: "Converted",
-    createdOn: "15 May 2025",
-    nextFollowUp: "19 May 2025",
-    expectedAmount: "₹8,00,000",
-    loanPurpose: "Business Loan",
-    address: "21, Ashiyana, Lucknow, Uttar Pradesh - 226012",
-    avatar: "https://i.pravatar.cc/150?u=deepak",
-  },
-];
-
 export default function ManageLeads() {
   const [leadsList, setLeadsList] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -399,6 +275,7 @@ export default function ManageLeads() {
                 <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Customer</th>
                 <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Source</th>
                 <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Status</th>
+                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Added By</th>
                 <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Created</th>
                 <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Actions</th>
               </tr>
@@ -423,7 +300,11 @@ export default function ManageLeads() {
                     {getStatusBadge(lead.status)}
                   </td>
                   <td className="py-4 px-6">
-                    <p className="text-[12px] font-semibold text-slate-600">{lead.createdOn}</p>
+                    <div className="text-sm font-medium text-slate-800">{lead.createdByName || 'System'}</div>
+                    <div className="text-[12px] text-slate-500 capitalize">{lead.createdByRole || 'Admin'}</div>
+                  </td>
+                  <td className="py-4 px-6 text-sm text-slate-600">
+                    {lead.createdOn || lead.createdAt}
                   </td>
                   <td className="py-4 px-6 text-right">
                     <div className="flex items-center justify-end gap-2 transition-opacity">

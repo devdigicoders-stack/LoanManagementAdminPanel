@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Highcharts from "highcharts";
-import { HighchartsReact } from "highcharts-react-official";
+import HighchartsReactPkg from "highcharts-react-official";
+const HighchartsReact = HighchartsReactPkg.default || HighchartsReactPkg.HighchartsReact || HighchartsReactPkg;
 import { PieChart, TrendingUp, BarChart2, Activity, CalendarDays, Filter } from "lucide-react";
 
 const tc = {
@@ -30,11 +31,11 @@ export default function TelecallerReports() {
       name: "Leads",
       colorByPoint: true,
       data: [
-        { name: "New", y: 15, color: "#1e7ba8" },
-        { name: "Contacted", y: 20, color: "#8ED3F4" },
-        { name: "Interested", y: 10, color: "#15803D" },
-        { name: "Follow-up", y: 12, color: "#D97706" },
-        { name: "Lost", y: 5, color: "#DC2626" }
+        { name: "New", y: 0, color: "#1e7ba8" },
+        { name: "Contacted", y: 0, color: "#8ED3F4" },
+        { name: "Interested", y: 0, color: "#15803D" },
+        { name: "Follow-up", y: 0, color: "#D97706" },
+        { name: "Lost", y: 0, color: "#DC2626" }
       ]
     }],
     credits: { enabled: false }
@@ -49,8 +50,8 @@ export default function TelecallerReports() {
     tooltip: { shared: true },
     plotOptions: { column: { borderRadius: 4, pointPadding: 0.1 } },
     series: [
-      { name: "Scheduled", data: [15, 20, 18, 25, 22, 10, 5], color: tc.sky },
-      { name: "Completed", data: [12, 18, 15, 22, 20, 8, 3], color: tc.blue }
+      { name: "Scheduled", data: [0, 0, 0, 0, 0, 0, 0], color: tc.sky },
+      { name: "Completed", data: [0, 0, 0, 0, 0, 0, 0], color: tc.blue }
     ],
     credits: { enabled: false }
   };
@@ -69,7 +70,7 @@ export default function TelecallerReports() {
     },
     series: [{
       name: "Converted Leads",
-      data: [2, 5, 4, 8],
+      data: [0, 0, 0, 0],
       color: "#15803D",
       fillColor: {
         linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
@@ -87,7 +88,7 @@ export default function TelecallerReports() {
     yAxis: { title: { text: "Interest Volume" }, gridLineColor: tc.border },
     plotOptions: { bar: { borderRadius: 4, colorByPoint: true } },
     colors: ["#1e7ba8", "#D97706", "#15803D", "#4338CA", "#667085"],
-    series: [{ name: "Leads", data: [25, 18, 12, 8, 4], showInLegend: false }],
+    series: [{ name: "Leads", data: [0, 0, 0, 0, 0], showInLegend: false }],
     credits: { enabled: false }
   };
 
@@ -116,10 +117,10 @@ export default function TelecallerReports() {
       {/* Summary Stat Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: "Total Leads", value: 62, icon: PieChart, color: tc.blue, bg: tc.sky },
-          { label: "Calls Completed", value: 145, icon: Activity, color: "#4338CA", bg: "#EEF2FF" },
-          { label: "Conversion Rate", value: "14.5%", icon: TrendingUp, color: "#15803D", bg: "#DCFCE7" },
-          { label: "Follow-ups", value: 48, icon: CalendarDays, color: "#D97706", bg: "#FEF3C7" },
+          { label: "Total Leads", value: 0, icon: PieChart, color: tc.blue, bg: tc.sky },
+          { label: "Calls Completed", value: 0, icon: Activity, color: "#4338CA", bg: "#EEF2FF" },
+          { label: "Conversion Rate", value: "0%", icon: TrendingUp, color: "#15803D", bg: "#DCFCE7" },
+          { label: "Follow-ups", value: 0, icon: CalendarDays, color: "#D97706", bg: "#FEF3C7" },
         ].map((s, i) => {
           const Icon = s.icon;
           return (

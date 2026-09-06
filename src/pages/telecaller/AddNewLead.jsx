@@ -54,22 +54,98 @@ export default function AddNewLead() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
     fullName: "", mobile: "", altMobile: "", email: "", address: "",
-    city: "", state: "", pincode: "", occupation: "", company: "", income: "",
+    city: "", state: "", pincode: "", houseNo: "", streetAddress: "", landmark: "", area: "",
+    occupation: "", company: "", income: "",
     loanType: "", amount: "", purpose: "", tenure: "", existingLoan: "No",
     priority: "Normal", remarks: ""
   });
 
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }));
 
-  const handleSubmit = (e, scheduleFollowup = false) => {
+  const handlePincodeChange = async (e) => {
+    const val = e.target.value.replace(/\D/g, ''); // only allow digits
+    if (val.length <= 6) {
+      set("pincode", val);
+    }
+    
+    if (val.length === 6) {
+      try {
+        const res = await fetch(`https://api.postalpincode.in/pincode/${val}`);
+        const data = await res.json();
+        if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
+          const po = data[0].PostOffice[0];
+          setForm(f => ({
+            ...f,
+            city: po.District || po.Block || f.city,
+            state: po.State || f.state,
+            area: po.Name || f.area
+          }));
+          toast.success("Location fetched successfully");
+        } else {
+          toast.error("Invalid Pincode");
+        }
+      } catch (err) {
+        console.error("Error fetching pincode:", err);
+        toast.error("Failed to fetch location from pincode");
+      }
+    }
+  };
+
+  const handleSubmit = async (e, scheduleFollowup = false) => {
     e.preventDefault();
     if (!form.fullName || !form.mobile || !form.loanType || !form.amount) {
       toast.error("Please complete all required fields.");
       return;
     }
-    toast.success("Lead created successfully.");
-    if (scheduleFollowup) navigate("/telecaller/followups/add");
-    else navigate("/telecaller/leads");
+    try {
+      const token = localStorage.getItem("token");
+      const fullAddress = [
+        form.houseNo,
+        form.streetAddress,
+        form.landmark ? `Near ${form.landmark}` : '',
+        form.area,
+        form.city,
+        form.state,
+        form.pincode ? `- ${form.pincode}` : ''
+      ].filter(Boolean).join(', ') || form.address;
+
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          name: form.fullName,
+          mobile: form.mobile,
+          altMobile: form.altMobile,
+          email: form.email,
+          address: fullAddress,
+          houseNo: form.houseNo,
+          streetAddress: form.streetAddress,
+          landmark: form.landmark,
+          area: form.area,
+          city: form.city,
+          state: form.state,
+          pincode: form.pincode,
+          source: "Tele Calling",
+          expectedAmount: form.amount,
+          loanPurpose: form.loanType === "Other" ? form.purpose : form.loanType,
+          remarks: form.remarks,
+          priority: form.priority,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to create lead");
+      }
+
+      toast.success("Lead created successfully.");
+      if (scheduleFollowup) navigate("/telecaller/followups/add");
+      else navigate("/telecaller/leads");
+    } catch (error) {
+      toast.error(error.message);
+    }
   };
 
   return (
@@ -95,10 +171,15 @@ export default function AddNewLead() {
             <Field label="Mobile Number" required><Input placeholder="Enter mobile number" value={form.mobile} onChange={e => set("mobile", e.target.value)} /></Field>
             <Field label="Alternate Mobile"><Input placeholder="Enter alternate mobile number" value={form.altMobile} onChange={e => set("altMobile", e.target.value)} /></Field>
             <Field label="Email"><Input type="email" placeholder="Enter email address" value={form.email} onChange={e => set("email", e.target.value)} /></Field>
-            <Field label="Address" ><Input placeholder="Enter complete address" value={form.address} onChange={e => set("address", e.target.value)} /></Field>
-            <Field label="City"><Input placeholder="Enter city" value={form.city} onChange={e => set("city", e.target.value)} /></Field>
+            <Field label="Pincode (Auto-Fetch Location)">
+              <Input placeholder="Enter 6-digit pincode" value={form.pincode} onChange={handlePincodeChange} maxLength="6" />
+            </Field>
             <Field label="State"><Select options={states} value={form.state} onChange={e => set("state", e.target.value)} /></Field>
-            <Field label="Pincode"><Input placeholder="Enter pincode" value={form.pincode} onChange={e => set("pincode", e.target.value)} /></Field>
+            <Field label="City / District"><Input placeholder="Enter city/district" value={form.city} onChange={e => set("city", e.target.value)} /></Field>
+            <Field label="Area / Locality"><Input placeholder="Enter locality/area" value={form.area} onChange={e => set("area", e.target.value)} /></Field>
+            <Field label="House / Flat / Shop No."><Input placeholder="e.g. Flat 101, Galaxy Apts" value={form.houseNo} onChange={e => set("houseNo", e.target.value)} /></Field>
+            <Field label="Street / Road / Sector"><Input placeholder="e.g. MG Road, Sector 3" value={form.streetAddress} onChange={e => set("streetAddress", e.target.value)} /></Field>
+            <Field label="Landmark"><Input placeholder="e.g. Near Metro Station" value={form.landmark} onChange={e => set("landmark", e.target.value)} /></Field>
           </div>
         </div>
 

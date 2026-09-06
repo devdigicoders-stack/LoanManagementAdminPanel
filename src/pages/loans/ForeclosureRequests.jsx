@@ -2,44 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Search, Check, X, Eye } from "lucide-react";
 
-const mockRequests = [
-  {
-    id: "FR-2025-001",
-    customer: "Ravi Kumar",
-    loanId: "LN-2025-1050",
-    outstanding: "₹2,32,606",
-    foreclosureAmount: "₹2,45,000",
-    requestDate: "18 May 2025",
-    status: "Pending",
-  },
-  {
-    id: "FR-2025-002",
-    customer: "Priya Sharma",
-    loanId: "LN-2025-1022",
-    outstanding: "₹8,45,000",
-    foreclosureAmount: "₹8,70,000",
-    requestDate: "17 May 2025",
-    status: "Approved",
-  },
-  {
-    id: "FR-2025-003",
-    customer: "Amit Verma",
-    loanId: "LN-2025-1003",
-    outstanding: "₹12,80,000",
-    foreclosureAmount: "₹13,10,000",
-    requestDate: "16 May 2025",
-    status: "Under Review",
-  },
-  {
-    id: "FR-2025-004",
-    customer: "Neha Singh",
-    loanId: "LN-2025-0988",
-    outstanding: "₹4,10,000",
-    foreclosureAmount: "₹4,25,000",
-    requestDate: "15 May 2025",
-    status: "Rejected",
-  },
-];
+const mockRequests = [];
+
 
 export default function ForeclosureRequests() {
   const getStatusBadge = (status) => {
@@ -125,7 +89,13 @@ export default function ForeclosureRequests() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockRequests.map((req, idx) => (
+              {mockRequests.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400 font-medium text-sm">
+                    No foreclosure requests found.
+                  </td>
+                </tr>
+              ) : mockRequests.map((req, idx) => (
                 <tr
                   key={idx}
                   className="hover:bg-slate-50/80 transition-colors"

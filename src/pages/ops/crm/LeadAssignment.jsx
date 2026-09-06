@@ -1,13 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, UserPlus, Users, CheckSquare } from 'lucide-react';
 
-const mockLeads = [
-  { id: 'LD-10041', customer: 'Suresh Raina', mobile: '+91 9988776655', source: 'Facebook', date: '31 Aug 2026', location: 'Mumbai', product: 'Personal Loan' },
-  { id: 'LD-10042', customer: 'Pooja Hegde', mobile: '+91 8877665544', source: 'Website', date: '31 Aug 2026', location: 'Delhi', product: 'Home Loan' },
-  { id: 'LD-10043', customer: 'MS Dhoni', mobile: '+91 7766554433', source: 'Google', date: '30 Aug 2026', location: 'Ranchi', product: 'Business Loan' },
-  { id: 'LD-10044', customer: 'Virat Kohli', mobile: '+91 6655443322', source: 'Referral', date: '30 Aug 2026', location: 'Delhi', product: 'Auto Loan' },
-  { id: 'LD-10045', customer: 'Rohit Sharma', mobile: '+91 5544332211', source: 'Facebook', date: '29 Aug 2026', location: 'Mumbai', product: 'Personal Loan' },
-];
+const mockLeads = [];
 
 export default function LeadAssignment() {
   const [selectedLeads, setSelectedLeads] = useState([]);
@@ -116,49 +110,59 @@ export default function LeadAssignment() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {mockLeads.map((lead) => (
-                <tr 
-                  key={lead.id} 
-                  className={`transition-colors cursor-pointer ${selectedLeads.includes(lead.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
-                  onClick={() => toggleLead(lead.id)}
-                >
-                  <td className="py-3 px-4 text-center">
-                    <input 
-                      type="checkbox" 
-                      className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
-                      checked={selectedLeads.includes(lead.id)}
-                      onChange={() => {}} // handled by row click
-                    />
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200">
-                        {lead.customer.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold text-gray-900">{lead.customer}</div>
-                        <div className="text-xs font-medium text-gray-500">{lead.mobile}</div>
-                        <div className="text-[10px] font-bold text-gray-400 mt-0.5">{lead.id}</div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="text-sm font-bold text-gray-700">{lead.product}</div>
-                    <div className="text-xs text-gray-500">{lead.location}</div>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-600">
-                    <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md text-xs font-medium border border-gray-200">
-                      {lead.source}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-sm text-gray-500 font-medium">{lead.date}</td>
-                  <td className="py-3 px-4 text-right">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
-                      <Users size={12} /> Unassigned
-                    </span>
+              {mockLeads.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-12 text-center text-gray-500">
+                    <Users className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                    <p className="font-semibold text-gray-700">No unassigned leads found</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Incoming leads requiring assignment will appear here.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                mockLeads.map((lead) => (
+                  <tr 
+                    key={lead.id} 
+                    className={`transition-colors cursor-pointer ${selectedLeads.includes(lead.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}
+                    onClick={() => toggleLead(lead.id)}
+                  >
+                    <td className="py-3 px-4 text-center">
+                      <input 
+                        type="checkbox" 
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                        checked={selectedLeads.includes(lead.id)}
+                        onChange={() => {}} // handled by row click
+                      />
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-blue-200">
+                          {lead.customer.charAt(0)}
+                        </div>
+                        <div>
+                          <div className="text-sm font-bold text-gray-900">{lead.customer}</div>
+                          <div className="text-xs font-medium text-gray-500">{lead.mobile}</div>
+                          <div className="text-[10px] font-bold text-gray-400 mt-0.5">{lead.id}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      <div className="text-sm font-bold text-gray-700">{lead.product}</div>
+                      <div className="text-xs text-gray-500">{lead.location}</div>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-600">
+                      <span className="bg-gray-100 text-gray-600 px-2.5 py-1 rounded-md text-xs font-medium border border-gray-200">
+                        {lead.source}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-sm text-gray-500 font-medium">{lead.date}</td>
+                    <td className="py-3 px-4 text-right">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-orange-50 text-orange-700 border border-orange-200">
+                        <Users size={12} /> Unassigned
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

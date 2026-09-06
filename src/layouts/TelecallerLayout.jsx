@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Target, Plus, CalendarCheck, FolderOpen,
@@ -6,15 +6,73 @@ import {
   Menu, X, ChevronRight
 } from "lucide-react";
 
+import { hasPermission, syncPermissionsWithServer, getPermissions } from "../utils/permissions";
+
 const navItems = [
   { name: "Dashboard", icon: LayoutDashboard, path: "/telecaller" },
+  { name: "Assigned Leads", icon: FolderOpen, path: "/telecaller/assigned-leads" },
   { name: "My Leads", icon: Target, path: "/telecaller/leads" },
+  { name: "My Followups", icon: CalendarCheck, path: "/telecaller/followups" },
+  { name: "Customer Documents", icon: FolderOpen, path: "/telecaller/documents" },
+  { name: "Remarks & Notes", icon: MessageSquare, path: "/telecaller/remarks" },
+  { name: "Telecaller Reports", icon: BarChart3, path: "/telecaller/reports" },
+  { name: "My Performance", icon: Activity, path: "/telecaller/performance" },
+  { name: "Notifications", icon: Bell, path: "/telecaller/notifications" },
 ];
 
+import DashboardLayout from "./DashboardLayout";
+
 export default function TelecallerLayout() {
+  const userRole = (localStorage.getItem('userRole') || '').toLowerCase();
+  const isMasterAdmin = ['super admin', 'superadmin', 'admin', 'administrator'].includes(userRole);
+
+  if (isMasterAdmin) {
+    return <DashboardLayout />;
+  }
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [permissions, setPermissions] = useState(() => getPermissions());
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const doSync = () => {
+      syncPermissionsWithServer().then((latest) => {
+        if (latest) setPermissions(latest);
+      });
+    };
+
+    // 1. Sync fresh permissions immediately on mount
+    doSync();
+
+    // 2. Listen for permission change events across the application
+    const onPermsUpdated = (e) => {
+      if (e?.detail) {
+        setPermissions(e.detail);
+      } else {
+        setPermissions(getPermissions());
+      }
+    };
+    window.addEventListener('permissionsUpdated', onPermsUpdated);
+    window.addEventListener('storage', onPermsUpdated);
+    window.addEventListener('focus', doSync);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') doSync();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // 3. Periodic sync every 10 seconds in case admin updated permissions in another tab
+    const interval = setInterval(doSync, 10000);
+
+    return () => {
+      window.removeEventListener('permissionsUpdated', onPermsUpdated);
+      window.removeEventListener('storage', onPermsUpdated);
+      window.removeEventListener('focus', doSync);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const role    = localStorage.getItem("userRole") || "Sales Admin";
   const picKey  = `adminPic_${role}`;
@@ -67,7 +125,9 @@ export default function TelecallerLayout() {
 
         {/* Nav Items */}
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {navItems.map((item) => {
+          {navItems
+            .filter(item => item.name === 'Dashboard' || hasPermission(item.name))
+            .map((item) => {
             const Icon = item.icon;
             const isActive = item.path === "/telecaller"
               ? location.pathname === "/telecaller"

@@ -9,12 +9,8 @@ import {
   CheckCircle2
 } from "lucide-react";
 
-const mockRequests = [
-  { id: "TR-2025-081", customer: "Emily Davis", loanId: "LN-2024-0456", existingOut: "₹1,20,000", reqAmount: "₹50,000", total: "₹1,70,000", status: "Pending" },
-  { id: "TR-2025-082", customer: "Rajesh Kumar", loanId: "LN-2023-1120", existingOut: "₹4,50,000", reqAmount: "₹1,00,000", total: "₹5,50,000", status: "Approved" },
-  { id: "TR-2025-083", customer: "Anita Singh", loanId: "LN-2024-0015", existingOut: "₹80,000", reqAmount: "₹30,000", total: "₹1,10,000", status: "Pending" },
-  { id: "TR-2025-084", customer: "Mohd Ali", loanId: "LN-2022-0980", existingOut: "₹2,10,000", reqAmount: "₹1,50,000", total: "₹3,60,000", status: "Rejected" },
-];
+const mockRequests = [];
+
 
 export default function TopUpRequests() {
   const [selectedReq, setSelectedReq] = useState(null);
@@ -71,7 +67,13 @@ export default function TopUpRequests() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockRequests.map((req, idx) => (
+              {mockRequests.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400 font-medium text-sm">
+                    No top-up requests found.
+                  </td>
+                </tr>
+              ) : mockRequests.map((req, idx) => (
                 <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
                   <td className="py-3 px-6 text-[12px] font-bold text-slate-700">{req.id}</td>
                   <td className="py-3 px-4 text-[13px] font-bold text-slate-800">{req.customer}</td>

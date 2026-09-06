@@ -9,77 +9,11 @@ import {
   Clock,
 } from "lucide-react";
 
-// Mock Data for Kanban
+// Kanban Task Board
 const tasks = {
-  todo: [
-    {
-      id: 1,
-      title: "Call Rohit Kumar",
-      subtitle: "LID-2025-1268",
-      priority: "High",
-      due: "Today",
-    },
-    {
-      id: 2,
-      title: "Prepare quotation",
-      subtitle: "LID-2025-1265",
-      priority: "Medium",
-      due: "21 May 2025",
-    },
-    {
-      id: 3,
-      title: "Verify documents",
-      subtitle: "APP-2025-1249",
-      priority: "High",
-      due: "Today",
-    },
-  ],
-  inProgress: [
-    {
-      id: 4,
-      title: "Meeting with Priya Sharma",
-      subtitle: "LID-2025-1267",
-      priority: "High",
-      due: "Today",
-    },
-    {
-      id: 5,
-      title: "Follow up with Amit Verma",
-      subtitle: "LID-2025-1266",
-      priority: "Medium",
-      due: "Today",
-    },
-    {
-      id: 6,
-      title: "Check credit score",
-      subtitle: "APP-2025-1244",
-      priority: "Low",
-      due: "22 May 2025",
-    },
-  ],
-  completed: [
-    {
-      id: 7,
-      title: "Welcome call",
-      subtitle: "LID-2025-1264",
-      priority: "Low",
-      due: "16 May 2025",
-    },
-    {
-      id: 8,
-      title: "Send documents list",
-      subtitle: "LID-2025-1263",
-      priority: "Medium",
-      due: "17 May 2025",
-    },
-    {
-      id: 9,
-      title: "Application submitted",
-      subtitle: "APP-2025-1246",
-      priority: "Low",
-      due: "18 May 2025",
-    },
-  ],
+  todo: [],
+  inProgress: [],
+  completed: [],
 };
 
 const TaskCard = ({ task }) => {
@@ -167,16 +101,22 @@ export default function TaskManagement() {
         <div className="w-[320px] shrink-0 flex flex-col bg-slate-50/50 rounded-lg border border-slate-100 p-4 min-h-[500px]">
           <div className="flex items-center justify-between mb-4 px-1">
             <h3 className="text-[13px] font-extrabold text-slate-800 tracking-wide uppercase">
-              To-Do <span className="text-slate-400 ml-1">(3)</span>
+              To-Do <span className="text-slate-400 ml-1">({tasks.todo.length})</span>
             </h3>
             <button className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-500 transition-colors">
               <Plus size={14} />
             </button>
           </div>
           <div className="space-y-3 flex-1">
-            {tasks.todo.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
+            {tasks.todo.length === 0 ? (
+              <div className="h-32 flex flex-col items-center justify-center text-center p-4 border border-dashed border-slate-200 rounded-md text-slate-400">
+                <p className="text-[12px] font-semibold">No to-do tasks</p>
+              </div>
+            ) : (
+              tasks.todo.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))
+            )}
           </div>
         </div>
 
@@ -184,16 +124,22 @@ export default function TaskManagement() {
         <div className="w-[320px] shrink-0 flex flex-col bg-slate-50/50 rounded-lg border border-slate-100 p-4 min-h-[500px]">
           <div className="flex items-center justify-between mb-4 px-1">
             <h3 className="text-[13px] font-extrabold text-slate-800 tracking-wide uppercase">
-              In Progress <span className="text-slate-400 ml-1">(3)</span>
+              In Progress <span className="text-slate-400 ml-1">({tasks.inProgress.length})</span>
             </h3>
             <button className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-slate-200 text-slate-500 transition-colors">
               <Plus size={14} />
             </button>
           </div>
           <div className="space-y-3 flex-1">
-            {tasks.inProgress.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
+            {tasks.inProgress.length === 0 ? (
+              <div className="h-32 flex flex-col items-center justify-center text-center p-4 border border-dashed border-slate-200 rounded-md text-slate-400">
+                <p className="text-[12px] font-semibold">No active tasks</p>
+              </div>
+            ) : (
+              tasks.inProgress.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))
+            )}
           </div>
         </div>
 
@@ -201,16 +147,22 @@ export default function TaskManagement() {
         <div className="w-[320px] shrink-0 flex flex-col bg-slate-50/50 rounded-lg border border-slate-100 p-4 min-h-[500px]">
           <div className="flex items-center justify-between mb-4 px-1">
             <h3 className="text-[13px] font-extrabold text-[#489b0d] tracking-wide uppercase">
-              Completed <span className="text-[#489b0d]/60 ml-1">(3)</span>
+              Completed <span className="text-[#489b0d]/60 ml-1">({tasks.completed.length})</span>
             </h3>
             <button className="w-6 h-6 flex items-center justify-center rounded-md hover:bg-[#489b0d]/10 text-[#489b0d] transition-colors">
               <Plus size={14} />
             </button>
           </div>
           <div className="space-y-3 flex-1">
-            {tasks.completed.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
+            {tasks.completed.length === 0 ? (
+              <div className="h-32 flex flex-col items-center justify-center text-center p-4 border border-dashed border-slate-200 rounded-md text-slate-400">
+                <p className="text-[12px] font-semibold">No completed tasks</p>
+              </div>
+            ) : (
+              tasks.completed.map((task) => (
+                <TaskCard key={task.id} task={task} />
+              ))
+            )}
           </div>
         </div>
       </div>

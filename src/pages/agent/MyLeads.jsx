@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Eye, Search, Filter, Phone, MapPin, CalendarCheck, FileText } from "lucide-react";
 import { mockAgentLeads, statusColors, priorityColors } from "./agentData";
 
+import SupervisorStaffFilter from "../../components/SupervisorStaffFilter";
+
 const tc = {
   bg: "#FAFCFD", card: "#FFFFFF", sky: "#DFF3FF", skyMid: "#BFE7F7",
   primary: "#8ED3F4", cream: "#FFF8E7", text: "#344054", muted: "#667085",
@@ -12,6 +14,7 @@ const tc = {
 export default function MyLeads() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [selectedStaff, setSelectedStaff] = useState("all");
 
   const filteredLeads = mockAgentLeads.filter(lead => {
     const matchesSearch = lead.customerName.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -28,6 +31,7 @@ export default function MyLeads() {
           <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>My Leads</h1>
           <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>View and manage all leads assigned to you.</p>
         </div>
+        <SupervisorStaffFilter onSelectStaff={setSelectedStaff} role="agent" />
       </div>
 
       {/* Filters */}

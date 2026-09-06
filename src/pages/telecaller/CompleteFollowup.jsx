@@ -14,7 +14,19 @@ export default function CompleteFollowup() {
   const navigate = useNavigate();
   
   const fu = mockFollowups.find(f => f.id === id) || mockFollowups[0];
-  const lead = mockLeads.find(l => l.id === fu.leadId) || mockLeads[0];
+  const lead = fu ? (mockLeads.find(l => l.id === fu.leadId) || mockLeads[0]) : null;
+
+  if (!fu || !lead) {
+    return (
+      <div className="p-12 text-center bg-white rounded-2xl border border-slate-100 shadow-sm max-w-xl mx-auto my-8">
+        <h2 className="text-lg font-bold text-slate-700">No Follow-up Found</h2>
+        <p className="text-sm text-slate-500 mt-2">There are currently no pending follow-up records to complete.</p>
+        <button onClick={() => navigate(-1)} className="mt-5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold shadow-sm transition-all">
+          Go Back
+        </button>
+      </div>
+    );
+  }
 
   const [outcome, setOutcome] = useState("");
   const [response, setResponse] = useState("");

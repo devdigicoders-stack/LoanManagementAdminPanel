@@ -5,13 +5,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const mockDocs = [
-  { id: 'APP-8001', customer: 'Ramesh Patel', docName: 'PAN_Card.pdf', type: 'Identity Proof', by: 'Rahul K.', date: '24 Aug 2026', status: 'Pending Verification' },
-  { id: 'APP-8001', customer: 'Ramesh Patel', docName: 'Bank_Statement_3M.pdf', type: 'Income Proof', by: 'Rahul K.', date: '24 Aug 2026', status: 'Pending Verification' },
-  { id: 'APP-8002', customer: 'Priya Sharma', docName: 'Aadhar_Card.pdf', type: 'Address Proof', by: 'Meena R.', date: '24 Aug 2026', status: 'Verified' },
-  { id: 'APP-8003', customer: 'Amit Kumar', docName: 'Salary_Slip_July.pdf', type: 'Income Proof', by: 'Vikram S.', date: '23 Aug 2026', status: 'Rejected' },
-  { id: 'APP-8004', customer: 'Neha Gupta', docName: 'Electricity_Bill.pdf', type: 'Address Proof', by: 'Customer Portal', date: '22 Aug 2026', status: 'Re-upload Required' },
-];
+const mockDocs = [];
+
 
 export default function DocumentManagement() {
   const navigate = useNavigate();
@@ -123,7 +118,13 @@ export default function DocumentManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0FAFF]">
-              {mockDocs.map((doc, idx) => (
+              {mockDocs.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="py-12 text-center text-[#667085] font-medium text-[13px]">
+                    No documents found.
+                  </td>
+                </tr>
+              ) : mockDocs.map((doc, idx) => (
                 <tr key={idx} className="hover:bg-[#F7FCFF] transition-colors group">
                   <td className="py-4 px-5">
                     <p className="text-[13px] font-black text-[#344054] hover:text-[#0284C7] cursor-pointer" onClick={() => navigate(`/operations/applications/${doc.id}`)}>{doc.id}</p>

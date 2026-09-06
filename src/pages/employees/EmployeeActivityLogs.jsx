@@ -1,16 +1,8 @@
 import React from 'react';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const mockLogs = [
-  { id: 1, name: 'Ravi Kumar', activity: 'Login', ip: '192.168.1.10', time: '18 May 2025, 10:30 AM', avatar: 'https://i.pravatar.cc/150?u=1' },
-  { id: 2, name: 'Ravi Kumar', activity: 'Created Application', ip: '192.168.1.10', time: '18 May 2025, 10:45 AM', avatar: 'https://i.pravatar.cc/150?u=1' },
-  { id: 3, name: 'Priya Sharma', activity: 'Login', ip: '192.168.1.12', time: '18 May 2025, 09:45 AM', avatar: 'https://i.pravatar.cc/150?u=2' },
-  { id: 4, name: 'Amit Verma', activity: 'Updated Application', ip: '192.168.1.15', time: '18 May 2025, 09:15 AM', avatar: 'https://i.pravatar.cc/150?u=3' },
-  { id: 5, name: 'Neha Singh', activity: 'Uploaded Document', ip: '192.168.1.18', time: '18 May 2025, 08:30 AM', avatar: 'https://i.pravatar.cc/150?u=4' },
-  { id: 6, name: 'Suresh Patel', activity: 'Assigned Lead', ip: '192.168.1.22', time: '17 May 2025, 05:10 PM', avatar: 'https://i.pravatar.cc/150?u=5' },
-  { id: 7, name: 'John Doe', activity: 'Login', ip: '192.168.1.25', time: '17 May 2025, 08:45 PM', avatar: 'https://i.pravatar.cc/150?u=6' },
-  { id: 8, name: 'Emily Davis', activity: 'Created Lead', ip: '192.168.1.28', time: '17 May 2025, 04:30 PM', avatar: 'https://i.pravatar.cc/150?u=7' },
-];
+const mockLogs = [];
+
 
 export default function EmployeeActivityLogs() {
   return (
@@ -51,7 +43,13 @@ export default function EmployeeActivityLogs() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {mockLogs.map((log) => (
+              {mockLogs.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="py-12 text-center text-slate-400 font-medium text-sm">
+                    No activity logs found.
+                  </td>
+                </tr>
+              ) : mockLogs.map((log) => (
                 <tr key={log.id} className="hover:bg-slate-50/50 transition-colors">
                   <td className="py-4 px-6 whitespace-nowrap">
                     <div className="flex items-center gap-3">

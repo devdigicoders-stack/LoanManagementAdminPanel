@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import { Bell, CheckCircle2, Trash2, X, Check } from 'lucide-react';
 
-const mockNotifications = [
-  { id: 1, title: 'New Application Assigned', desc: 'Application LN-10245 has been assigned to you.', time: '10 min ago', icon: '📋', read: false },
-  { id: 2, title: 'Document Uploaded', desc: 'A new document has been uploaded for application LN-10241.', time: '1 hr ago', icon: '📄', read: false },
-  { id: 3, title: 'Document Rejected', desc: 'PAN Card has been rejected. Re-upload is required.', time: '2 hrs ago', icon: '❌', read: false },
-  { id: 4, title: 'Follow-up Reminder', desc: 'Follow-up with customer Rahul Kumar is scheduled for today.', time: '3 hrs ago', icon: '📅', read: true },
-  { id: 5, title: 'Application Status Updated', desc: 'Application LN-10238 has been moved to Under Review.', time: 'Yesterday', icon: '🔄', read: true },
-];
+const mockNotifications = [];
+
 
 export default function OperationNotifications() {
   const [notifications, setNotifications] = useState(mockNotifications);

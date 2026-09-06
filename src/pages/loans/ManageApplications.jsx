@@ -103,9 +103,13 @@ export default function ManageApplications() {
   const handleStatusChange = async (newStatus) => {
     if (!selectedApp) return;
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans/${selectedApp._id}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ status: newStatus })
       });
       if (res.ok) {
@@ -131,9 +135,13 @@ export default function ManageApplications() {
     const employee = employees.find(e => e._id === selectedEmp);
     if (!employee) return;
     try {
+      const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans/${appToAssign._id}/assign`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ assignedTo: employee.name, assignedToId: employee._id })
       });
       if (res.ok) {

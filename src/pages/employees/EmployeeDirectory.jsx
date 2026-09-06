@@ -1,11 +1,7 @@
 import React from 'react';
 import { Search, UserPlus, Filter, Mail, Phone, MapPin } from 'lucide-react';
 
-const mockEmployees = [
-  { id: 'EMP-001', name: 'Amit Desai', role: 'Operations Head', department: 'Operations', location: 'Mumbai HQ', email: 'amit@digilenders.com', phone: '9876543210', status: 'Active' },
-  { id: 'EMP-014', name: 'Sneha Rao', role: 'Credit Admin', department: 'Underwriting', location: 'Mumbai HQ', email: 'sneha@digilenders.com', phone: '9876543211', status: 'Active' },
-  { id: 'EMP-045', name: 'Rajesh Kumar', role: 'Field Executive', department: 'Collections', location: 'Delhi Branch', email: 'rajesh@digilenders.com', phone: '9876543212', status: 'On Leave' },
-];
+const mockEmployees = [];
 
 export default function EmployeeDirectory() {
   return (
@@ -43,7 +39,9 @@ export default function EmployeeDirectory() {
 
         {/* Grid View */}
         <div className="p-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-           {mockEmployees.map(emp => (
+           {mockEmployees.length === 0 ? (
+             <div className="col-span-full py-12 text-center text-gray-400 font-medium">No employees found.</div>
+           ) : mockEmployees.map(emp => (
              <div key={emp.id} className="border border-gray-200 rounded-xl p-5 hover:shadow-md transition-shadow bg-white">
                 <div className="flex justify-between items-start mb-4">
                    <div className="flex items-center gap-3">

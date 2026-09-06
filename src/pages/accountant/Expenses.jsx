@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, Filter, Eye } from "lucide-react";
-import { mockExpenses, statusColors } from "./accountantData";
+import { Search, Filter, Eye, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const tc = {
   bg: "#FAFCFD", card: "#FFFFFF", sky: "#DFF3FF", skyMid: "#BFE7F7",
@@ -10,19 +10,49 @@ const tc = {
 };
 
 export default function Expenses() {
+  const [expenses, setExpenses] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filtered = mockExpenses.filter(e => 
-    e.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    e.id.toLowerCase().includes(searchTerm.toLowerCase())
+  useEffect(() => {
+    fetchExpenses();
+  }, []);
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/transactions?type=Expense`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setExpenses(data);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load expenses");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalExp = expenses.reduce((acc, e) => acc + (e.amount || 0), 0);
+
+  const filtered = expenses.filter(e => 
+    (e.category && e.category.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (e.transactionId && e.transactionId.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (e.remarks && e.remarks.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
     <div className="space-y-6 w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Expenses</h1>
-          <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>Record and track company-related operational expenses.</p>
+          <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Operating Expenses</h1>
+          <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>
+            Live tracking of branch office, field fuel and operational expenses from MongoDB.
+          </p>
         </div>
         <Link to="/accountant/expenses/add" className="px-4 py-2 rounded-xl text-[13px] font-bold text-white transition-all hover:opacity-90 shadow-sm" style={{ background: tc.blue }}>
           + Add Expense
@@ -31,14 +61,14 @@ export default function Expenses() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
-          { label: "Total Expenses", val: "₹85.0K", col: tc.text },
-          { label: "Today's Expenses", val: "₹4.5K", col: tc.blue },
-          { label: "This Month", val: "₹45.0K", col: "#1e7ba8" },
-          { label: "Pending Approval", val: "3", col: "#D97706" }
+          { label: "Total Recorded", val: `₹${totalExp.toLocaleString('en-IN')}`, col: tc.text },
+          { label: "Expense Vouchers", val: expenses.length.toString(), col: tc.blue },
+          { label: "Approved Vouchers", val: expenses.filter(e => e.status === "Approved").length.toString(), col: "#15803D" },
+          { label: "Pending Vouchers", val: expenses.filter(e => e.status === "Pending").length.toString(), col: "#D97706" }
         ].map((s, i) => (
           <div key={i} className="p-4 rounded-2xl flex flex-col items-center justify-center text-center" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
             <p className="text-[12px] font-bold mb-1" style={{ color: tc.muted }}>{s.label}</p>
-            <p className="text-[20px] font-black" style={{ color: s.col }}>{s.val}</p>
+            <p className="text-[20px] font-black" style={{ color: s.col }}>{loading ? "..." : s.val}</p>
           </div>
         ))}
       </div>
@@ -47,15 +77,12 @@ export default function Expenses() {
         <div className="relative max-w-sm w-full">
           <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: tc.muted }} />
           <input 
-            type="text" placeholder="Search Expense ID or Category..." 
+            type="text" placeholder="Search Expense ID, Category or Remarks..." 
             value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full h-10 pl-9 pr-3 rounded-xl text-[13px] outline-none transition-all" 
             style={{ border: `1px solid ${tc.border}`, background: tc.bg, color: tc.text }} 
           />
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all hover:opacity-80" style={{ background: tc.sky, color: tc.blue }}>
-          <Filter size={14} /> Filters
-        </button>
       </div>
 
       <div className="rounded-2xl overflow-hidden w-full" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
@@ -63,34 +90,52 @@ export default function Expenses() {
           <table className="w-full text-[12px]">
             <thead>
               <tr style={{ background: tc.sky }}>
-                {["Expense ID", "Category", "Description", "Amount", "Method", "Date", "Added By", "Status", "Action"].map(h => (
+                {["Expense ID", "Category", "Description / Remarks", "Amount", "Method", "Date", "Added By", "Status", "Action"].map(h => (
                   <th key={h} className="text-left px-4 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((exp, i) => {
-                const sc = statusColors[exp.status] || { bg: "#F1F5F9", text: "#64748B" };
-                return (
-                  <tr key={i} style={{ borderBottom: `1px solid ${tc.border}` }} className="hover:bg-[#FAFCFD] transition-colors">
-                    <td className="px-4 py-3 font-bold" style={{ color: tc.blue }}>{exp.id}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: tc.text }}>{exp.category}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: tc.muted }}>{exp.desc}</td>
-                    <td className="px-4 py-3 font-extrabold" style={{ color: tc.text }}>₹{Number(exp.amount).toLocaleString("en-IN")}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: tc.muted }}>{exp.method}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: tc.muted }}>{exp.date}</td>
-                    <td className="px-4 py-3 font-bold" style={{ color: tc.text }}>{exp.addedBy}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: sc.bg, color: sc.text }}>{exp.status}</span>
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-slate-400">
+                    <Loader2 size={20} className="animate-spin mx-auto mb-2 text-[#1e7ba8]" />
+                    Loading expenses...
+                  </td>
+                </tr>
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-8 text-center text-slate-400">
+                    No operating expenses recorded yet.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map(e => (
+                  <tr key={e._id} className="hover:bg-slate-50/50 transition-colors" style={{ borderBottom: `1px solid ${tc.border}` }}>
+                    <td className="px-4 py-3 font-bold" style={{ color: tc.blue }}>{e.transactionId}</td>
+                    <td className="px-4 py-3 font-bold" style={{ color: tc.text }}>{e.category}</td>
+                    <td className="px-4 py-3" style={{ color: tc.muted }}>{e.remarks || 'Operational expense'}</td>
+                    <td className="px-4 py-3 font-extrabold text-slate-800">
+                      ₹{Number(e.amount || 0).toLocaleString('en-IN')}
                     </td>
-                    <td className="px-4 py-3 flex items-center gap-2">
-                      <button className="p-1.5 rounded-lg hover:bg-gray-100" style={{ color: tc.blue }} title="View">
-                        <Eye size={14} />
-                      </button>
+                    <td className="px-4 py-3" style={{ color: tc.muted }}>{e.method}</td>
+                    <td className="px-4 py-3" style={{ color: tc.muted }}>
+                      {e.date ? new Date(e.date).toLocaleDateString('en-IN') : 'Recent'}
+                    </td>
+                    <td className="px-4 py-3 font-semibold" style={{ color: tc.text }}>{e.addedBy || 'Staff'}</td>
+                    <td className="px-4 py-3">
+                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-green-100 text-green-700">
+                        {e.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Link to={`/accountant/transactions/${e._id}`} className="p-1 hover:text-[#1e7ba8] inline-block" style={{ color: tc.muted }}>
+                        <Eye size={16} />
+                      </Link>
                     </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
         </div>

@@ -5,10 +5,7 @@ import { useNavigate } from 'react-router-dom';
 export default function FieldRecovery() {
   const navigate = useNavigate();
 
-  const mockVisits = [
-    { id: 'FR-201', customer: 'Rajesh Sharma', dpd: '45 Days', amount: '₹42,500', address: 'Bandra West, Mumbai', status: 'Pending Visit' },
-    { id: 'FR-202', customer: 'Anil Gupta', dpd: '62 Days', amount: '₹1,15,000', address: 'Andheri East, Mumbai', status: 'Pending Visit' },
-  ];
+  const mockVisits = [];
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
@@ -32,36 +29,51 @@ export default function FieldRecovery() {
         <div className="lg:col-span-1 space-y-4">
           <h3 className="font-bold text-gray-900 mb-2">My Visit Queue</h3>
           
-          {mockVisits.map(visit => (
-            <div key={visit.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:border-blue-300 cursor-pointer transition-colors relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-2 h-full bg-orange-500"></div>
-              
-              <div className="flex items-start gap-3">
-                <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
-                  <AlertTriangle size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm">{visit.customer}</h4>
-                  <p className="text-xs font-bold text-red-600 mt-1">Due: {visit.amount} ({visit.dpd} DPD)</p>
-                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12}/> {visit.address}</p>
+          {mockVisits.length === 0 ? (
+            <div className="bg-white p-6 rounded-xl border border-gray-200 text-center text-gray-500">
+              <MapPin className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+              <p className="font-semibold text-gray-700 text-sm">No pending recovery visits</p>
+              <p className="text-xs text-gray-400 mt-1">Allocated addresses will appear in your queue.</p>
+            </div>
+          ) : (
+            mockVisits.map(visit => (
+              <div key={visit.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:border-blue-300 cursor-pointer transition-colors relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-2 h-full bg-orange-500"></div>
+                
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-orange-50 text-orange-600 rounded-lg">
+                    <AlertTriangle size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">{visit.customer}</h4>
+                    <p className="text-xs font-bold text-red-600 mt-1">Due: {visit.amount} ({visit.dpd} DPD)</p>
+                    <p className="text-xs text-gray-500 mt-1 flex items-center gap-1"><MapPin size={12}/> {visit.address}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
-        {/* Right Col: Visit Action (Mocking a visit) */}
+        {/* Right Col: Visit Action */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          
-          <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-            <div>
-              <h3 className="font-bold text-gray-900">Execute Field Visit</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Recording visit for Rajesh Sharma (FR-201)</p>
+          {mockVisits.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              <FileText className="mx-auto h-10 w-10 text-gray-300 mb-2" />
+              <p className="font-semibold text-gray-700">No Visit Selected</p>
+              <p className="text-xs text-gray-400 mt-1">Select a recovery account to execute field visit and submit report.</p>
             </div>
-            <button className="inline-flex items-center gap-1 text-sm font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded border border-blue-200 hover:bg-blue-100">
-              <Navigation size={14} /> Open in Maps
-            </button>
-          </div>
+          ) : (
+            <>
+              <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-gray-900">Execute Field Visit</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Recording visit for customer</p>
+                </div>
+                <button className="inline-flex items-center gap-1 text-sm font-bold text-blue-700 bg-blue-50 px-3 py-1.5 rounded border border-blue-200 hover:bg-blue-100">
+                  <Navigation size={14} /> Open in Maps
+                </button>
+              </div>
 
           <div className="p-6 space-y-8">
             
@@ -131,6 +143,8 @@ export default function FieldRecovery() {
             </button>
 
           </div>
+            </>
+          )}
         </div>
 
       </div>

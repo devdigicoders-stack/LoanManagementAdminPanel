@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Search, Edit2, Check, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export default function Payroll() {
+  const location = useLocation();
   const [employees, setEmployees] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(location.state?.initialSearch || '');
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({});
 

@@ -2,11 +2,8 @@ import React, { useState } from 'react';
 import { Eye, Filter, Search, ClipboardList, CheckCircle2, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const mockAssigned = [
-  { id: 'LN-10245', customer: 'Ramesh Patel', mobile: '+91 9876543210', type: 'Personal Loan', amount: '₹5,00,000', date: '24 Aug 2026', priority: 'High', status: 'Under Review' },
-  { id: 'LN-10241', customer: 'Priya Sharma', mobile: '+91 9876543211', type: 'Home Loan', amount: '₹25,00,000', date: '22 Aug 2026', priority: 'Normal', status: 'Documents Pending' },
-  { id: 'LN-10238', customer: 'Amit Kumar', mobile: '+91 9876543212', type: 'Business Loan', amount: '₹8,00,000', date: '20 Aug 2026', priority: 'Urgent', status: 'Verification Pending' },
-];
+const mockAssigned = [];
+
 
 const priorityStyle = {
   Normal: 'bg-[#ECFDF5] text-[#059669] border-[#A7F3D0]',
@@ -87,7 +84,13 @@ export default function AssignedApplications() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0FAFF]">
-              {mockAssigned.map((app) => (
+              {mockAssigned.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-[#667085] font-medium text-[13px]">
+                    No assigned applications found.
+                  </td>
+                </tr>
+              ) : mockAssigned.map((app) => (
                 <tr key={app.id} className="hover:bg-[#F7FCFF] transition-colors group">
                   <td className="py-4 px-5">
                     <p className="text-[13px] font-black text-[#0284C7] cursor-pointer hover:underline" onClick={() => navigate(`/operations/applications/${app.id}`)}>{app.id}</p>

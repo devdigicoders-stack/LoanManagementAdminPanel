@@ -15,19 +15,7 @@ export default function Targets() {
     period: 'May 2026'
   });
 
-  // Mock Performance Data specifically for screenshot matching
-  // Note: These names/IDs reflect what's in ManageEmployees.jsx by default or similar to screenshot
-  const mockPerformance = {
-    'NUOGM-UNSEC-001': { leads: 13, disbursed: 2 }, // Rose Pintoo / ramesh (if using default mock)
-    'NUOGM-SEC-001': { leads: 5, disbursed: 1 },    // Rajesh pawar
-    'NUOGM-SEC-002': { leads: 3, disbursed: 0 },    // praveen
-    'NUOGM-SLM-001': { leads: 1, disbursed: 0 },    // abishek
-    // Mapping default list IDs to screenshot values for a perfect match if the exact IDs differ:
-    'NUOGM-ULM-001': { leads: 13, disbursed: 2 },
-    'NUOGM-AGM-002': { leads: 5, disbursed: 1 },
-    'NUOGM-AGT-003': { leads: 3, disbursed: 0 },
-    'NUOGM-SLM-003': { leads: 1, disbursed: 0 }
-  };
+  const mockPerformance = {};
 
   useEffect(() => {
     const saved = localStorage.getItem('employees');

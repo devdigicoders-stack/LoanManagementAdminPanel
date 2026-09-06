@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { MessageSquare, PlusCircle, Search, AlertCircle, Star } from 'lucide-react';
 
-const mockRemarks = [
-  { remark: 'Customer confirmed document upload via WhatsApp. Awaiting final income proof.', by: 'Suresh K.', type: 'Document', priority: 'Important', date: '24 Aug 2026', time: '11:35 AM' },
-  { remark: 'Application is complete from our end. Pending management approval.', by: 'Meena R.', type: 'Operational', priority: 'Normal', date: '23 Aug 2026', time: '04:10 PM' },
-];
+const mockRemarks = [];
+
 
 const priorityStyle = {
   Normal: 'bg-[#FAFCFD] text-[#667085] border-[#D9EAF2]',

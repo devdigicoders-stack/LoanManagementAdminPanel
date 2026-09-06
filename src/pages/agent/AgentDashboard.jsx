@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
 import {
   Target, MapPin, CalendarCheck, Clock, Star, FolderOpen,
-  FileText, TrendingUp, Activity, ChevronRight, Eye, Plus
+  FileText, TrendingUp, Activity, ChevronRight, Eye, Plus, Loader2
 } from "lucide-react";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Highcharts from "highcharts";
 import HighchartsReactPkg from "highcharts-react-official";
 const HighchartsReact = HighchartsReactPkg.default || HighchartsReactPkg;
-import { mockAgentLeads, statusColors } from "./agentData";
+import { statusColors } from "./agentData";
+import toast from "react-hot-toast";
 
 const tc = {
   bg: "#FAFCFD",
@@ -22,36 +23,70 @@ const tc = {
   blue: "#1e7ba8",
 };
 
-const summaryCards = [
-  { label: "My Total Leads",          value: 5,  sub: "Total leads assigned to you",             icon: Target,       color: "#DFF3FF", iconColor: "#1e7ba8" },
-  { label: "New Leads",               value: 1,  sub: "Leads that need first contact",           icon: Plus,         color: "#FFF8E7", iconColor: "#D97706" },
-  { label: "Today's Visits",          value: 2,  sub: "Customer visits scheduled today",         icon: MapPin,       color: "#EEF2FF", iconColor: "#4338CA" },
-  { label: "Upcoming Visits",         value: 1,  sub: "Customer meetings scheduled later",       icon: Clock,        color: "#DCFCE7", iconColor: "#15803D" },
-  { label: "Pending Follow-ups",      value: 3,  sub: "Follow-ups requiring action",             icon: CalendarCheck,color: "#FEF3C7", iconColor: "#D97706" },
-  { label: "Documents Pending",       value: 1,  sub: "Customers whose documents are pending",   icon: FolderOpen,   color: "#FEF9C3", iconColor: "#CA8A04" },
-  { label: "Applications Generated",  value: 3,  sub: "Applications submitted for review",       icon: FileText,     color: "#F3E8FF", iconColor: "#7E22CE" },
-  { label: "Converted Leads",         value: 0,  sub: "Successfully converted leads",            icon: TrendingUp,   color: "#D1FAE5", iconColor: "#059669" },
-];
-
-const todayActivity = [
-  { label: "Visits Scheduled",       value: 2,  color: "#1e7ba8" },
-  { label: "Visits Completed",       value: 1,  color: "#15803D" },
-  { label: "Customer Meetings",      value: 1,  color: "#7E22CE" },
-  { label: "Follow-ups Pending",     value: 3,  color: "#D97706" },
-  { label: "Documents Collected",    value: 0,  color: "#CA8A04" },
-];
-
-const quickActions = [
-  { label: "My Leads",          path: "/agent/leads",       bg: "#DFF3FF",  col: "#1e7ba8" },
-  { label: "Schedule Visit",    path: "/agent/visits/add",  bg: "#FFF8E7",  col: "#D97706" },
-  { label: "Today's Visits",    path: "/agent/visits",      bg: "#EEF2FF",  col: "#4338CA" },
-  { label: "Add Follow-up",     path: "/agent/followups",   bg: "#DCFCE7",  col: "#15803D" },
-  { label: "Upload Document",   path: "/agent/documents",   bg: "#FEF9C3",  col: "#CA8A04" },
-  { label: "Add Remark",        path: "/agent/remarks",     bg: "#F3E8FF",  col: "#7E22CE" },
-];
-
 export default function AgentDashboard() {
-  const name = localStorage.getItem(`adminName_${localStorage.getItem("userRole")}`) || "Agent Operator";
+  const name = localStorage.getItem(`adminName_${localStorage.getItem("userRole")}`) || "Field Agent";
+  const [visitStats, setVisitStats] = useState({ total: 0, scheduled: 0, completed: 0 });
+  const [leadsCount, setLeadsCount] = useState(0);
+  const [recentVisits, setRecentVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchAgentData();
+  }, []);
+
+  const fetchAgentData = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const [vStatsRes, visitsRes, leadsRes] = await Promise.all([
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/visits/stats`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/visits`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/leads?unassigned=false`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+
+      if (vStatsRes.ok) {
+        const vs = await vStatsRes.json();
+        setVisitStats(vs);
+      }
+      if (visitsRes.ok) {
+        const vList = await visitsRes.json();
+        setRecentVisits(vList);
+      }
+      if (leadsRes.ok) {
+        const lList = await leadsRes.json();
+        setLeadsCount(lList.length);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to fetch agent statistics");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const summaryCards = [
+    { label: "My Total Leads",          value: leadsCount.toString(),  sub: "Active leads in pipeline",               icon: Target,       color: "#DFF3FF", iconColor: "#1e7ba8" },
+    { label: "Total Field Visits",      value: visitStats.total.toString(),  sub: "Total customer visits in system",    icon: MapPin,       color: "#EEF2FF", iconColor: "#4338CA" },
+    { label: "Scheduled Visits",        value: visitStats.scheduled.toString(),  sub: "Upcoming site verifications",   icon: Clock,        color: "#FFF8E7", iconColor: "#D97706" },
+    { label: "Completed Visits",        value: visitStats.completed.toString(),  sub: "Reports & docs collected",      icon: CalendarCheck,color: "#DCFCE7", iconColor: "#15803D" },
+    { label: "Verification Success",    value: visitStats.total ? `${Math.round((visitStats.completed / visitStats.total) * 100)}%` : "0%", sub: "Field verification completion", icon: TrendingUp, color: "#D1FAE5", iconColor: "#059669" },
+    { label: "Priority In-Progress",    value: visitStats.inProgress?.toString() || "0", sub: "Currently active on field", icon: Activity, color: "#FEF9C3", iconColor: "#CA8A04" },
+    { label: "Cancelled / Rescheduled", value: visitStats.cancelled?.toString() || "0", sub: "Customer unavailable",  icon: FolderOpen,   color: "#FEE2E2", iconColor: "#DC2626" },
+    { label: "Applications Tracked",    value: "0", sub: "Connected loan accounts",       icon: FileText,     color: "#F3E8FF", iconColor: "#7E22CE" },
+  ];
+
+  const quickActions = [
+    { label: "Customer Visits",   path: "/agent/visits",      bg: "#EEF2FF",  col: "#4338CA" },
+    { label: "Schedule New Visit",path: "/agent/visits/add",  bg: "#FFF8E7",  col: "#D97706" },
+    { label: "View Leads Pool",   path: "/agent/leads",       bg: "#DFF3FF",  col: "#1e7ba8" },
+    { label: "Follow-ups",        path: "/agent/followups",   bg: "#DCFCE7",  col: "#15803D" },
+  ];
 
   const chartOptions = {
     chart: { type: 'spline', backgroundColor: 'transparent', height: 280 },
@@ -59,8 +94,8 @@ export default function AgentDashboard() {
     xAxis: { categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], lineColor: tc.border },
     yAxis: { title: { text: '' }, gridLineColor: tc.border },
     series: [
-      { name: 'Visits', data: [1, 3, 2, 4, 1, 5, 2], color: tc.primary },
-      { name: 'Conversions', data: [0, 1, 0, 2, 0, 1, 1], color: '#15803D' }
+      { name: 'Visits Scheduled', data: [0, 0, 0, 0, 0, 0, 0], color: tc.blue },
+      { name: 'Completed & Verified', data: [0, 0, 0, 0, 0, 0, 0], color: '#15803D' }
     ],
     credits: { enabled: false },
     legend: { itemStyle: { color: tc.text } }
@@ -68,12 +103,12 @@ export default function AgentDashboard() {
 
   return (
     <div className="space-y-6 w-full" style={{ color: tc.text }}>
-
+      
       {/* Header */}
       <div>
-        <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Agent Dashboard</h1>
+        <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Field Agent Command Center</h1>
         <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>
-          Welcome back, <strong>{name}</strong> — Manage your assigned leads, customer visits, follow-ups and sales activities.
+          Welcome back, <strong>{name}</strong> — Live physical verification, address checks and document pickup from MongoDB.
         </p>
       </div>
 
@@ -88,7 +123,9 @@ export default function AgentDashboard() {
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: card.color }}>
                   <Icon size={17} style={{ color: card.iconColor }} />
                 </div>
-                <span className="text-[24px] font-extrabold" style={{ color: tc.text }}>{card.value}</span>
+                <span className="text-[20px] font-extrabold" style={{ color: tc.text }}>
+                  {loading ? "..." : card.value}
+                </span>
               </div>
               <div>
                 <p className="text-[13px] font-bold" style={{ color: tc.text }}>{card.label}</p>
@@ -99,90 +136,86 @@ export default function AgentDashboard() {
         })}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-
-        {/* Today's Activity */}
-        <div className="rounded-2xl p-5" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
-          <div className="flex items-center gap-2 mb-4">
-            <Activity size={17} style={{ color: tc.primary }} />
-            <h2 className="text-[15px] font-extrabold" style={{ color: tc.text }}>Today's Activity</h2>
-          </div>
-          <div className="space-y-3">
-            {todayActivity.map((a, i) => (
-              <div key={i} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ background: a.color }} />
-                  <span className="text-[13px] font-semibold" style={{ color: tc.text }}>{a.label}</span>
-                </div>
-                <span className="text-[13px] font-extrabold px-3 py-0.5 rounded-full" style={{ background: tc.sky, color: tc.blue }}>{a.value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="rounded-2xl p-5" style={{ background: tc.cream, border: `1px solid ${tc.border}` }}>
-          <h2 className="text-[15px] font-extrabold mb-4" style={{ color: tc.text }}>Quick Actions</h2>
-          <div className="grid grid-cols-2 gap-2">
-            {quickActions.map((a, i) => (
-              <Link key={i} to={a.path}
-                className="flex items-center justify-between px-4 py-2.5 rounded-xl transition-all hover:opacity-90"
-                style={{ background: a.bg, border: `1px solid ${tc.border}` }}>
-                <span className="text-[13px] font-bold" style={{ color: a.col }}>{a.label}</span>
-                <ChevronRight size={15} style={{ color: a.col }} />
-              </Link>
-            ))}
-          </div>
-        </div>
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-3">
+        {quickActions.map((qa, i) => (
+          <Link key={i} to={qa.path}
+            className="px-4 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity"
+            style={{ background: qa.bg, color: qa.col }}>
+            {qa.label} <ChevronRight size={14} />
+          </Link>
+        ))}
       </div>
 
-      {/* Chart Section */}
-      <div className="rounded-2xl p-5 w-full" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
-        <h2 className="text-[15px] font-extrabold mb-4" style={{ color: tc.text }}>Weekly Performance</h2>
+      {/* Chart */}
+      <div className="rounded-2xl p-5" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
+        <h2 className="text-[15px] font-extrabold mb-3" style={{ color: tc.text }}>Weekly Field Visits Performance</h2>
         <HighchartsReact highcharts={Highcharts} options={chartOptions} />
       </div>
 
-      {/* Recent Leads */}
-      <div className="rounded-2xl w-full" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
-        <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${tc.border}` }}>
-          <h2 className="text-[15px] font-extrabold" style={{ color: tc.text }}>Recent Assigned Leads</h2>
-          <Link to="/agent/leads" className="text-[12px] font-bold flex items-center gap-1" style={{ color: tc.blue }}>
-            View All <ChevronRight size={14} />
+      {/* Recent Visits Table */}
+      <div className="rounded-2xl p-5" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-[15px] font-extrabold" style={{ color: tc.text }}>Upcoming & Recent Field Visits</h2>
+          <Link to="/agent/visits" className="text-[12px] font-bold hover:underline" style={{ color: tc.blue }}>
+            View All ({visitStats.total})
           </Link>
         </div>
-        <div className="overflow-x-auto w-full">
-          <table className="w-full text-[12px]">
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px] border-collapse">
             <thead>
-              <tr style={{ background: tc.sky }}>
-                {["Lead ID", "Customer Name", "Mobile", "Loan Type", "Amount", "Status", "Next Activity", "Action"].map(h => (
-                  <th key={h} className="text-left px-4 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>{h}</th>
-                ))}
+              <tr style={{ borderBottom: `1px solid ${tc.border}`, color: tc.muted }} className="text-[11px] font-bold uppercase text-left">
+                <th className="pb-2.5">Visit ID</th>
+                <th className="pb-2.5">Customer Name</th>
+                <th className="pb-2.5">Mobile</th>
+                <th className="pb-2.5">Purpose</th>
+                <th className="pb-2.5">Scheduled Time</th>
+                <th className="pb-2.5">Agent</th>
+                <th className="pb-2.5">Status</th>
+                <th className="pb-2.5 text-right">Action</th>
               </tr>
             </thead>
             <tbody>
-              {mockAgentLeads.slice(0, 5).map((lead, i) => {
-                const sc = statusColors[lead.status] || { bg: "#F1F5F9", text: "#64748B" };
-                return (
-                  <tr key={i} style={{ borderBottom: `1px solid ${tc.border}` }} className="hover:bg-[#FAFCFD] transition-colors">
-                    <td className="px-4 py-3 font-bold" style={{ color: tc.blue }}>{lead.id}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: tc.text }}>{lead.customerName}</td>
-                    <td className="px-4 py-3" style={{ color: tc.muted }}>{lead.mobile}</td>
-                    <td className="px-4 py-3" style={{ color: tc.muted }}>{lead.loanType}</td>
-                    <td className="px-4 py-3 font-semibold" style={{ color: tc.text }}>₹{Number(lead.amount).toLocaleString("en-IN")}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: sc.bg, color: sc.text }}>{lead.status}</span>
+              {loading ? (
+                <tr>
+                  <td colSpan={8} className="py-8 text-center text-slate-400">
+                    <Loader2 size={20} className="animate-spin mx-auto mb-2 text-[#1e7ba8]" />
+                    Loading live visits...
+                  </td>
+                </tr>
+              ) : recentVisits.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-6 text-center text-slate-400 text-xs">
+                    No field visits scheduled yet.
+                  </td>
+                </tr>
+              ) : (
+                recentVisits.map((v, idx) => (
+                  <tr key={v._id || idx} style={{ borderBottom: `1px solid ${tc.border}` }} className="hover:bg-slate-50/50">
+                    <td className="py-3 font-bold" style={{ color: tc.blue }}>{v.visitId}</td>
+                    <td className="py-3 font-semibold">{v.customerName}</td>
+                    <td className="py-3 text-slate-500 font-mono text-xs">{v.mobile}</td>
+                    <td className="py-3 font-medium text-slate-700">{v.purpose}</td>
+                    <td className="py-3 text-slate-500">
+                      {new Date(v.scheduledDate).toLocaleDateString('en-IN')} {v.scheduledTime}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: tc.muted }}>{lead.nextFollowup}</td>
-                    <td className="px-4 py-3">
-                      <Link to={`/agent/leads/${lead.id}`}
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold transition-colors w-fit"
-                        style={{ background: tc.sky, color: tc.blue }}>
-                        <Eye size={12} /> View
+                    <td className="py-3 font-medium text-slate-600">{v.agentName}</td>
+                    <td className="py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                        v.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {v.status}
+                      </span>
+                    </td>
+                    <td className="py-3 text-right">
+                      <Link to="/agent/visits" className="p-1.5 inline-block text-slate-400 hover:text-[#1e7ba8]">
+                        <Eye size={15} />
                       </Link>
                     </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
         </div>

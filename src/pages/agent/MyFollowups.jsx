@@ -13,10 +13,10 @@ export default function MyFollowups() {
   const [filter, setFilter] = useState("All");
 
   const cards = [
-    { label: "Today's Follow-ups", value: 2, icon: CalendarCheck, color: "#EEF2FF", iconColor: "#4338CA" },
-    { label: "Upcoming", value: 1, icon: Clock, color: "#FEF3C7", iconColor: "#D97706" },
-    { label: "Completed", value: 1, icon: CheckCircle2, color: "#DCFCE7", iconColor: "#15803D" },
-    { label: "Missed / Overdue", value: 0, icon: CalendarX2, color: "#FEE2E2", iconColor: "#DC2626" },
+    { label: "Today's Follow-ups", value: mockFollowups.filter(f => f.status === 'Pending').length, icon: CalendarCheck, color: "#EEF2FF", iconColor: "#4338CA" },
+    { label: "Upcoming", value: mockFollowups.filter(f => f.status === 'Upcoming').length, icon: Clock, color: "#FEF3C7", iconColor: "#D97706" },
+    { label: "Completed", value: mockFollowups.filter(f => f.status === 'Completed').length, icon: CheckCircle2, color: "#DCFCE7", iconColor: "#15803D" },
+    { label: "Missed / Overdue", value: mockFollowups.filter(f => f.status === 'Overdue').length, icon: CalendarX2, color: "#FEE2E2", iconColor: "#DC2626" },
   ];
 
   return (

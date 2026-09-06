@@ -1,61 +1,66 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Filter, Download, Eye, Search } from "lucide-react";
-
-const mockActiveLoans = [
-  {
-    id: "LN-2025-1001",
-    customer: "Priya Sharma",
-    loanType: "Home Loan",
-    amount: "₹12,00,000",
-    outstanding: "₹11,50,000",
-    emi: "₹15,000",
-    nextEmiDate: "05 Jun 2025",
-    status: "Active",
-  },
-  {
-    id: "LN-2025-1002",
-    customer: "Ravi Kumar",
-    loanType: "Personal Loan",
-    amount: "₹5,00,000",
-    outstanding: "₹4,20,000",
-    emi: "₹12,500",
-    nextEmiDate: "10 Jun 2025",
-    status: "Active",
-  },
-  {
-    id: "LN-2025-1003",
-    customer: "Amit Verma",
-    loanType: "Business Loan",
-    amount: "₹15,00,000",
-    outstanding: "₹12,80,000",
-    emi: "₹35,000",
-    nextEmiDate: "15 Jun 2025",
-    status: "Active",
-  },
-  {
-    id: "LN-2025-1004",
-    customer: "Neha Singh",
-    loanType: "Education Loan",
-    amount: "₹8,00,000",
-    outstanding: "₹7,50,000",
-    emi: "₹10,200",
-    nextEmiDate: "01 Jun 2025",
-    status: "Active",
-  },
-  {
-    id: "LN-2025-1005",
-    customer: "Suresh Patel",
-    loanType: "Personal Loan",
-    amount: "₹3,00,000",
-    outstanding: "₹2,10,000",
-    emi: "₹8,500",
-    nextEmiDate: "20 Jun 2025",
-    status: "Active",
-  },
-];
+import { ChevronRight, Filter, Download, Eye, Search, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 export default function ActiveLoans() {
+  const [loans, setLoans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedType, setSelectedType] = useState("All");
+
+  useEffect(() => {
+    fetchActiveLoans();
+  }, []);
+
+  const fetchActiveLoans = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/loans`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Disbursed or Approved loans qualify as active
+        const active = data.filter(l => l.status === "Disbursed" || l.status === "Approved");
+        setLoans(active);
+      } else {
+        toast.error("Failed to load active loans");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error loading loans");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filtered = loans.filter(l => {
+    const q = search.toLowerCase();
+    const matchesSearch = 
+      (l.applicationId && l.applicationId.toLowerCase().includes(q)) ||
+      (l.customer && l.customer.toLowerCase().includes(q)) ||
+      (l.mobile && l.mobile.includes(q));
+    const matchesType = selectedType === "All" || l.loanType === selectedType;
+    return matchesSearch && matchesType;
+  });
+
+  const exportCSV = () => {
+    if (filtered.length === 0) return toast.error("No loans to export");
+    const headers = "Loan ID,Customer Name,Loan Type,Amount,Status,Mobile,Date\n";
+    const rows = filtered.map(l => 
+      `"${l.applicationId || l._id}","${l.customer}","${l.loanType}","${l.amount}","${l.status}","${l.mobile || ''}","${l.createdAt || ''}"`
+    ).join("\n");
+    const blob = new Blob([headers + rows], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `active-loans-${Date.now()}.csv`;
+    a.click();
+    toast.success("Active loans exported");
+  };
+
   return (
     <div className="w-full h-full flex flex-col space-y-6 pb-10">
       {/* Header */}
@@ -65,11 +70,11 @@ export default function ActiveLoans() {
             Active Loans
           </h1>
           <div className="flex items-center text-[12px] font-medium text-slate-500">
-            <span className="cursor-pointer hover:text-[#489b0d] transition-colors">
+            <Link to="/loans" className="hover:text-[#489b0d] transition-colors">
               Loan Management
-            </span>
+            </Link>
             <ChevronRight size={14} className="mx-1" />
-            <span className="text-[#489b0d] font-bold">Active Loans</span>
+            <span className="text-[#489b0d] font-bold">Active Loans ({loans.length})</span>
           </div>
         </div>
 
@@ -82,25 +87,30 @@ export default function ActiveLoans() {
             />
             <input
               type="text"
-              placeholder="Search loans..."
-              className="h-10 pl-9 pr-4 rounded-md border border-slate-200 text-[13px] text-slate-600 focus:outline-none focus:border-[#489b0d] focus:ring-1 focus:ring-[#489b0d] transition-all bg-white w-[200px]"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by ID, name, mobile..."
+              className="h-10 pl-9 pr-4 rounded-md border border-slate-200 text-[13px] text-slate-600 focus:outline-none focus:border-[#489b0d] focus:ring-1 focus:ring-[#489b0d] transition-all bg-white w-[230px]"
             />
           </div>
-          <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white min-w-[120px]">
-            <option>All Branches</option>
-            <option>Mumbai Branch</option>
-            <option>Delhi Branch</option>
-            <option>Bangalore Branch</option>
-            <option>Chennai Branch</option>
+
+          <select 
+            value={selectedType}
+            onChange={(e) => setSelectedType(e.target.value)}
+            className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white min-w-[140px]"
+          >
+            <option value="All">All Loan Types</option>
+            <option value="Home Loan">Home Loan</option>
+            <option value="Personal Loan">Personal Loan</option>
+            <option value="Business Loan">Business Loan</option>
+            <option value="Education Loan">Education Loan</option>
           </select>
-          <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white min-w-[120px]">
-            <option>All Loan Types</option>
-          </select>
-          <button className="h-10 px-4 flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-slate-600 font-bold text-[13px] hover:bg-slate-50 transition-colors shadow-sm">
-            <Filter size={14} /> Filter
-          </button>
-          <button className="h-10 px-4 flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-slate-600 font-bold text-[13px] hover:bg-slate-50 transition-colors shadow-sm">
-            <Download size={14} /> Export
+
+          <button 
+            onClick={exportCSV}
+            className="h-10 px-4 flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-slate-600 font-bold text-[13px] hover:bg-slate-50 transition-colors shadow-sm"
+          >
+            <Download size={14} /> Export CSV
           </button>
         </div>
       </div>
@@ -121,16 +131,16 @@ export default function ActiveLoans() {
                   Loan Type
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Loan Amount
+                  Disbursed Amount
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Outstanding
+                  Tenure / Rate
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  EMI
+                  Est. EMI
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-                  Next EMI Date
+                  Next Due Date
                 </th>
                 <th className="py-4 px-4 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
                   Status
@@ -141,74 +151,83 @@ export default function ActiveLoans() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockActiveLoans.map((loan, idx) => (
-                <tr
-                  key={idx}
-                  className="hover:bg-slate-50/80 transition-colors"
-                >
-                  <td className="py-3 px-6 text-[12px] font-bold text-slate-700">
-                    {loan.id}
-                  </td>
-                  <td className="py-3 px-4 text-[13px] font-bold text-slate-800">
-                    {loan.customer}
-                  </td>
-                  <td className="py-3 px-4 text-[12px] font-medium text-slate-600">
-                    {loan.loanType}
-                  </td>
-                  <td className="py-3 px-4 text-[13px] font-semibold text-slate-700">
-                    {loan.amount}
-                  </td>
-                  <td className="py-3 px-4 text-[13px] font-extrabold text-[#489b0d]">
-                    {loan.outstanding}
-                  </td>
-                  <td className="py-3 px-4 text-[12px] font-semibold text-slate-700">
-                    {loan.emi}
-                  </td>
-                  <td className="py-3 px-4 text-[12px] font-medium text-slate-500">
-                    {loan.nextEmiDate}
-                  </td>
-                  <td className="py-3 px-4">
-                    <span className="text-[#489b0d] bg-[#489b0d]/10 px-2.5 py-1 rounded-md text-[11px] font-bold">
-                      Active
-                    </span>
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <button className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded-md transition-colors">
-                      <Eye size={16} />
-                    </button>
+              {loading ? (
+                <tr>
+                  <td colSpan={9} className="py-12 text-center text-slate-400">
+                    <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#489b0d]" />
+                    Loading live active loans...
                   </td>
                 </tr>
-              ))}
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="py-10 text-center text-slate-400 text-[13px]">
+                    No active loans matching your search criteria.
+                  </td>
+                </tr>
+              ) : (
+                filtered.map((loan, idx) => {
+                  const numAmt = parseFloat((loan.amount || '0').toString().replace(/[^\d.-]/g, '')) || 0;
+                  const emiDisplay = loan.emiAmount 
+                    ? `₹${loan.emiAmount.toLocaleString('en-IN')}` 
+                    : `₹${Math.round(numAmt * 0.022).toLocaleString('en-IN')}`;
+                  
+                  return (
+                    <tr
+                      key={loan._id || idx}
+                      className="hover:bg-slate-50/80 transition-colors"
+                    >
+                      <td className="py-3 px-6 text-[12px] font-bold text-slate-700">
+                        {loan.applicationId || `APP-${loan._id.toString().slice(-4)}`}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-[13px] font-bold text-slate-800">{loan.customer}</div>
+                        <div className="text-[11px] text-slate-400">{loan.mobile}</div>
+                      </td>
+                      <td className="py-3 px-4 text-[12px] font-medium text-slate-600">
+                        {loan.loanType}
+                      </td>
+                      <td className="py-3 px-4 text-[13px] font-bold text-[#489b0d]">
+                        {loan.amount?.toString().startsWith('₹') ? loan.amount : `₹${Number(loan.amount).toLocaleString('en-IN')}`}
+                      </td>
+                      <td className="py-3 px-4 text-[12px] font-medium text-slate-600">
+                        {loan.tenure || '24 Months'} @ {loan.interestRate || '10.5%'}
+                      </td>
+                      <td className="py-3 px-4 text-[12px] font-semibold text-slate-700">
+                        {emiDisplay}
+                      </td>
+                      <td className="py-3 px-4 text-[12px] font-medium text-slate-500">
+                        {loan.nextEmiDate || '10th of Month'}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2.5 py-1 rounded-md text-[11px] font-bold ${
+                          loan.status === 'Disbursed' 
+                            ? 'text-[#489b0d] bg-[#489b0d]/10' 
+                            : 'text-blue-600 bg-blue-50'
+                        }`}>
+                          {loan.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-6 text-center">
+                        <Link 
+                          to={`/loans/manage?id=${loan._id}`}
+                          className="p-1.5 inline-block text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded-md transition-colors"
+                        >
+                          <Eye size={16} />
+                        </Link>
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
             </tbody>
           </table>
         </div>
 
-        {/* Pagination */}
+        {/* Footer info */}
         <div className="p-4 border-t border-slate-100 flex items-center justify-between mt-auto">
           <p className="text-[12px] font-medium text-slate-500">
-            Showing 1 to 5 of 256 entries
+            Showing {filtered.length} of {loans.length} live active accounts from Database
           </p>
-          <div className="flex items-center gap-1">
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
-              <ChevronRight size={14} className="rotate-180" />
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#489b0d] text-white font-bold text-[13px] shadow-sm">
-              1
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              2
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              3
-            </button>
-            <span className="px-1 text-slate-400 text-[13px]">...</span>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              52
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
-              <ChevronRight size={14} />
-            </button>
-          </div>
         </div>
       </div>
     </div>

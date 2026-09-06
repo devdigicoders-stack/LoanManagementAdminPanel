@@ -1,6 +1,7 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { MapPin, CalendarCheck, Clock, CheckCircle, XCircle, RefreshCw, Eye, Plus } from "lucide-react";
-import { mockCustomerVisits } from "./agentData";
+import { MapPin, CalendarCheck, Clock, CheckCircle, XCircle, RefreshCw, Eye, Plus, Loader2 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const tc = {
   bg: "#FAFCFD", card: "#FFFFFF", sky: "#DFF3FF", skyMid: "#BFE7F7",
@@ -9,27 +10,77 @@ const tc = {
 };
 
 export default function CustomerVisits() {
+  const [visits, setVisits] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchVisits();
+  }, []);
+
+  const fetchVisits = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/visits`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVisits(data);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to load visits");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMarkCompleted = async (id) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/visits/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: "Completed", outcome: "Verification passed and documents collected." })
+      });
+      if (res.ok) {
+        setVisits(prev => prev.map(v => v._id === id ? { ...v, status: "Completed" } : v));
+        toast.success("Visit marked as Completed!");
+      }
+    } catch (err) {
+      toast.error("Failed to update visit status");
+    }
+  };
+
+  const scheduledCount = visits.filter(v => v.status === "Scheduled").length;
+  const completedCount = visits.filter(v => v.status === "Completed").length;
+
   const cards = [
-    { label: "Today's Visits", value: 2, icon: MapPin, color: "#EEF2FF", iconColor: "#4338CA" },
-    { label: "Upcoming Visits", value: 1, icon: Clock, color: "#FEF3C7", iconColor: "#D97706" },
-    { label: "Completed Visits", value: 1, icon: CheckCircle, color: "#DCFCE7", iconColor: "#15803D" },
-    { label: "Missed Visits", value: 0, icon: XCircle, color: "#FEE2E2", iconColor: "#DC2626" },
-    { label: "Rescheduled", value: 0, icon: RefreshCw, color: "#F3E8FF", iconColor: "#7E22CE" },
+    { label: "Total Visits", value: visits.length, icon: MapPin, color: "#EEF2FF", iconColor: "#4338CA" },
+    { label: "Scheduled", value: scheduledCount, icon: Clock, color: "#FEF3C7", iconColor: "#D97706" },
+    { label: "Completed", value: completedCount, icon: CheckCircle, color: "#DCFCE7", iconColor: "#15803D" },
+    { label: "Pending Follow-up", value: visits.filter(v => v.purpose === "Follow-up").length, icon: RefreshCw, color: "#F3E8FF", iconColor: "#7E22CE" },
   ];
 
   return (
     <div className="space-y-6 w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Customer Visits</h1>
-          <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>Schedule and manage customer meetings and field visits.</p>
+          <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Customer Field Visits</h1>
+          <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>
+            Live customer verifications, physical meetings and document pickups from MongoDB.
+          </p>
         </div>
         <Link to="/agent/visits/add" className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-bold text-white transition-all hover:opacity-90" style={{ background: tc.blue }}>
           <Plus size={16} /> Schedule Visit
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {cards.map((card, i) => {
           const Icon = card.icon;
           return (
@@ -38,7 +89,9 @@ export default function CustomerVisits() {
                 <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: card.color }}>
                   <Icon size={17} style={{ color: card.iconColor }} />
                 </div>
-                <span className="text-[20px] font-extrabold" style={{ color: tc.text }}>{card.value}</span>
+                <span className="text-[20px] font-extrabold" style={{ color: tc.text }}>
+                  {loading ? "..." : card.value}
+                </span>
               </div>
               <div>
                 <p className="text-[12px] font-bold" style={{ color: tc.text }}>{card.label}</p>
@@ -53,49 +106,61 @@ export default function CustomerVisits() {
           <table className="w-full text-[12px]">
             <thead>
               <tr style={{ background: tc.sky }}>
-                {["Visit ID", "Lead ID", "Customer", "Mobile", "Visit Date", "Time", "Location", "Purpose", "Status", "Actions"].map(h => (
+                {["Visit ID", "Customer Name", "Mobile", "Scheduled Date", "Time", "Location Address", "Purpose", "Assigned Agent", "Status", "Actions"].map(h => (
                   <th key={h} className="text-left px-4 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {mockCustomerVisits.map((visit, i) => {
-                let statusStyle = { bg: "#F1F5F9", text: "#64748B" };
-                if (visit.status === "Scheduled") statusStyle = { bg: "#FEF3C7", text: "#D97706" };
-                if (visit.status === "Confirmed") statusStyle = { bg: "#DBEAFE", text: "#1D4ED8" };
-                if (visit.status === "Completed") statusStyle = { bg: "#DCFCE7", text: "#15803D" };
-                if (visit.status === "Rescheduled") statusStyle = { bg: "#F3E8FF", text: "#7E22CE" };
-                if (visit.status === "Missed" || visit.status === "Cancelled") statusStyle = { bg: "#FEE2E2", text: "#DC2626" };
-
-                return (
-                  <tr key={i} style={{ borderBottom: `1px solid ${tc.border}` }} className="hover:bg-[#FAFCFD] transition-colors">
-                    <td className="px-4 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>{visit.id}</td>
-                    <td className="px-4 py-3 font-bold whitespace-nowrap" style={{ color: tc.muted }}>{visit.leadId}</td>
-                    <td className="px-4 py-3 font-semibold whitespace-nowrap" style={{ color: tc.text }}>{visit.customerName}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: tc.muted }}>{visit.mobile}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: tc.text }}>{visit.date}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: tc.text }}>{visit.time}</td>
-                    <td className="px-4 py-3 min-w-[200px]" style={{ color: tc.muted }}>{visit.location}</td>
-                    <td className="px-4 py-3 whitespace-nowrap" style={{ color: tc.muted }}>{visit.purpose}</td>
-                    <td className="px-4 py-3">
-                      <span className="px-2 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap" style={{ background: statusStyle.bg, color: statusStyle.text }}>{visit.status}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Link to={`/agent/visits/${visit.id}`} title="View Visit" className="w-7 h-7 rounded-lg flex items-center justify-center transition-all hover:opacity-80" style={{ background: tc.sky, color: tc.blue }}>
-                        <Eye size={14} />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-              
-              {mockCustomerVisits.length === 0 && (
+              {loading ? (
                 <tr>
-                  <td colSpan="10" className="px-4 py-12 text-center">
-                    <p className="text-[14px] font-bold" style={{ color: tc.text }}>No visits scheduled</p>
-                    <p className="text-[12px] mt-1" style={{ color: tc.muted }}>You don't have any upcoming customer visits.</p>
+                  <td colSpan={10} className="py-8 text-center text-slate-400">
+                    <Loader2 size={20} className="animate-spin mx-auto mb-2 text-[#1e7ba8]" />
+                    Loading visits...
                   </td>
                 </tr>
+              ) : visits.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="py-8 text-center text-slate-400">
+                    No field visits scheduled.
+                  </td>
+                </tr>
+              ) : (
+                visits.map(v => (
+                  <tr key={v._id} className="hover:bg-slate-50/50 transition-colors" style={{ borderBottom: `1px solid ${tc.border}` }}>
+                    <td className="px-4 py-3 font-bold" style={{ color: tc.blue }}>{v.visitId}</td>
+                    <td className="px-4 py-3 font-semibold" style={{ color: tc.text }}>{v.customerName}</td>
+                    <td className="px-4 py-3 font-mono text-[11px]" style={{ color: tc.muted }}>{v.mobile}</td>
+                    <td className="px-4 py-3" style={{ color: tc.muted }}>
+                      {new Date(v.scheduledDate).toLocaleDateString('en-IN')}
+                    </td>
+                    <td className="px-4 py-3" style={{ color: tc.muted }}>{v.scheduledTime}</td>
+                    <td className="px-4 py-3 max-w-[200px] truncate" style={{ color: tc.text }} title={v.address}>
+                      {v.address}
+                    </td>
+                    <td className="px-4 py-3 font-medium" style={{ color: tc.text }}>{v.purpose}</td>
+                    <td className="px-4 py-3" style={{ color: tc.muted }}>{v.agentName}</td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                        v.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {v.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      {v.status !== 'Completed' ? (
+                        <button 
+                          onClick={() => handleMarkCompleted(v._id)}
+                          className="px-2.5 py-1 bg-green-50 hover:bg-green-100 text-green-700 font-bold rounded-lg text-[11px] transition-all"
+                        >
+                          Complete
+                        </button>
+                      ) : (
+                        <span className="text-green-600 font-bold text-xs">✓ Done</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

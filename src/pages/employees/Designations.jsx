@@ -2,14 +2,14 @@ import React from 'react';
 import { Plus, Edit2, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
 
 const mockDesignations = [
-  { id: 1, name: 'Loan Officer', dept: 'Loan Department', employees: 15, status: 'Active' },
-  { id: 2, name: 'Sales Executive', dept: 'Sales Department', employees: 20, status: 'Active' },
-  { id: 3, name: 'Verification Officer', dept: 'Operations', employees: 12, status: 'Active' },
-  { id: 4, name: 'Collection Executive', dept: 'Collections', employees: 10, status: 'Active' },
-  { id: 5, name: 'Relationship Manager', dept: 'Loan Department', employees: 8, status: 'Active' },
-  { id: 6, name: 'Customer Support', dept: 'Support Department', employees: 10, status: 'Inactive' },
-  { id: 7, name: 'Accountant', dept: 'Finance Department', employees: 4, status: 'Active' },
-  { id: 8, name: 'System Administrator', dept: 'Admin Department', employees: 2, status: 'Active' },
+  { id: 1, name: 'Loan Officer', dept: 'Loan Department', employees: 0, status: 'Active' },
+  { id: 2, name: 'Sales Executive', dept: 'Sales Department', employees: 0, status: 'Active' },
+  { id: 3, name: 'Verification Officer', dept: 'Operations', employees: 0, status: 'Active' },
+  { id: 4, name: 'Collection Executive', dept: 'Collections', employees: 0, status: 'Active' },
+  { id: 5, name: 'Relationship Manager', dept: 'Loan Department', employees: 0, status: 'Active' },
+  { id: 6, name: 'Customer Support', dept: 'Support Department', employees: 0, status: 'Inactive' },
+  { id: 7, name: 'Accountant', dept: 'Finance Department', employees: 0, status: 'Active' },
+  { id: 8, name: 'System Administrator', dept: 'Admin Department', employees: 0, status: 'Active' },
 ];
 
 export default function Designations() {

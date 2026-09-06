@@ -1,8 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { Phone, PhoneCall, PhoneOff, ChevronDown, Save } from "lucide-react";
+import { Phone, PhoneCall, PhoneOff, ChevronDown, Save, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
-import { mockLeads } from "./telecallerData";
 
 const tc = {
   card: "#FFFFFF", sky: "#DFF3FF", skyMid: "#BFE7F7",
@@ -32,99 +31,163 @@ function SelectField({ label, options, value, onChange }) {
 export default function CustomerCall() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const lead = mockLeads.find(l => l.id === id) || mockLeads[0];
+  const [lead, setLead] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [calling, setCalling] = useState(false);
   const [callDone, setCallDone] = useState(false);
-  const [outcome, setOutcome] = useState("");
-  const [response, setResponse] = useState("");
+  const [outcome, setOutcome] = useState("Connected");
+  const [response, setResponse] = useState("Interested");
   const [remarks, setRemarks] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    fetchLead();
+  }, [id]);
+
+  const fetchLead = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setLead(data);
+      } else {
+        // Fallback fetch first available lead
+        const allRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (allRes.ok) {
+          const allData = await allRes.json();
+          if (allData.length > 0) setLead(allData[0]);
+        }
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleCall = () => {
     setCalling(true);
-    setTimeout(() => { setCalling(false); setCallDone(true); }, 1500);
+    setTimeout(() => { setCalling(false); setCallDone(true); }, 1200);
   };
 
-  const handleSave = () => {
-    if (!outcome || !response) { toast.error("Please select call outcome and customer response."); return; }
-    toast.success("Call details saved successfully.");
-    navigate(`/telecaller/leads/${lead.id}`);
+  const handleSave = async () => {
+    if (!outcome || !response) { 
+      return toast.error("Please select call outcome and customer response."); 
+    }
+
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem("token");
+      const leadId = lead?._id || id;
+      
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${leadId}/followup`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          type: "Call",
+          scheduledAt: new Date().toISOString().split('T')[0],
+          status: "Completed",
+          notes: `Call Outcome: ${outcome} | Response: ${response}. ${remarks}`,
+          addedBy: "Telecaller"
+        })
+      });
+
+      if (res.ok) {
+        toast.success("Call log & followup saved to MongoDB!");
+        navigate("/telecaller/followups");
+      } else {
+        toast.error("Failed to save call log");
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error("Network error");
+    } finally {
+      setSubmitting(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="py-20 text-center text-slate-400">
+        <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#1e7ba8]" />
+        Loading lead details...
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-2xl mx-auto space-y-5">
       <div>
         <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Customer Call</h1>
-        <p className="text-[13px]" style={{ color: tc.muted }}>Record call details and customer response.</p>
+        <p className="text-[13px]" style={{ color: tc.muted }}>Record live call outcome and customer response to MongoDB.</p>
       </div>
 
-      {/* Customer Card */}
-      <div className="rounded-2xl p-5" style={{ background: tc.sky, border: `1px solid ${tc.skyMid}` }}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-extrabold text-[20px]"
-              style={{ background: "#BFE7F7", color: tc.blue }}>
-              {lead.customerName.charAt(0)}
-            </div>
-            <div>
-              <p className="text-[17px] font-extrabold" style={{ color: tc.text }}>{lead.customerName}</p>
-              <p className="text-[13px] font-semibold" style={{ color: tc.muted }}>{lead.mobile}</p>
-              <p className="text-[12px] mt-0.5" style={{ color: tc.blue }}>{lead.id} · {lead.loanType}</p>
-              <p className="text-[12px] font-bold" style={{ color: "#15803D" }}>
-                ₹{Number(lead.amount).toLocaleString("en-IN")}
-              </p>
-            </div>
+      {lead && (
+        <div className="rounded-2xl p-5 flex items-center justify-between"
+          style={{ background: tc.card, border: `1px solid ${tc.border}`, boxShadow: "0 1px 6px rgba(142,211,244,0.08)" }}>
+          <div>
+            <p className="text-[11px] font-mono font-bold" style={{ color: tc.blue }}>{lead.leadId || 'LEAD'}</p>
+            <p className="text-[17px] font-extrabold mt-0.5" style={{ color: tc.text }}>{lead.name}</p>
+            <p className="text-[13px] font-bold mt-0.5" style={{ color: tc.muted }}>
+              {lead.loanPurpose} • {lead.expectedAmount || '₹10L'}
+            </p>
           </div>
-
-          {/* Call Buttons */}
-          <div className="flex flex-col gap-2">
-            <button onClick={handleCall} disabled={calling}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-[13px] font-bold transition-all"
-              style={{ background: callDone ? "#DCFCE7" : "#15803D", color: callDone ? "#15803D" : "#fff", border: callDone ? "1px solid #86EFAC" : "none" }}>
-              {calling ? (
-                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Calling...</>
-              ) : callDone ? (
-                <><PhoneCall size={15} /> Call Again</>
-              ) : (
-                <><Phone size={15} /> Call Customer</>
-              )}
-            </button>
-            {callDone && (
-              <span className="text-center text-[11px] font-bold px-2 py-1 rounded-lg" style={{ background: "#DCFCE7", color: "#15803D" }}>
-                ✓ Call Initiated
-              </span>
-            )}
+          <div className="text-right">
+            <p className="text-[15px] font-mono font-extrabold" style={{ color: tc.text }}>{lead.mobile}</p>
+            <a
+              href={`tel:${lead.mobile}`}
+              onClick={handleCall}
+              className={`mt-2 flex items-center gap-2 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition-all shadow-sm ${
+                callDone ? "bg-slate-600" : "bg-[#15803D] hover:opacity-90"
+              }`}
+            >
+              {calling ? <PhoneOff size={14} className="animate-pulse" /> : <PhoneCall size={14} />}
+              {calling ? "Calling..." : callDone ? "Call Again" : "Dial Customer"}
+            </a>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Call Result */}
-      <div className="rounded-2xl p-5 space-y-4" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
-        <h3 className="text-[15px] font-extrabold pb-3" style={{ color: tc.blue, borderBottom: `1px solid ${tc.border}` }}>
-          Call Outcome
-        </h3>
-
-        <SelectField label="Call Outcome" options={callOutcomes} value={outcome} onChange={e => setOutcome(e.target.value)} />
-        <SelectField label="Customer Response" options={customerResponses} value={response} onChange={e => setResponse(e.target.value)} />
+      <div className="rounded-2xl p-6 space-y-4"
+        style={{ background: tc.card, border: `1px solid ${tc.border}`, boxShadow: "0 1px 6px rgba(142,211,244,0.08)" }}>
+        <h2 className="text-[14px] font-extrabold" style={{ color: tc.text }}>Call Outcome & Notes</h2>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <SelectField label="Call Outcome *" options={callOutcomes} value={outcome} onChange={e => setOutcome(e.target.value)} />
+          <SelectField label="Customer Response *" options={customerResponses} value={response} onChange={e => setResponse(e.target.value)} />
+        </div>
 
         <div>
-          <label className="block text-[12px] font-bold mb-1.5" style={{ color: tc.text }}>Remarks</label>
-          <textarea rows={4} value={remarks} onChange={e => setRemarks(e.target.value)}
-            placeholder="Enter details discussed with the customer..."
-            className="w-full px-4 py-3 rounded-xl border text-[13px] font-medium outline-none resize-none"
+          <label className="block text-[12px] font-bold mb-1.5" style={{ color: tc.text }}>Discussion Notes / Remarks</label>
+          <textarea rows={3} value={remarks} onChange={e => setRemarks(e.target.value)}
+            placeholder="e.g. Customer requested call back on Saturday morning after 11am to confirm document collection."
+            className="w-full p-3 rounded-xl border text-[13px] font-medium outline-none"
             style={{ borderColor: tc.border, background: tc.sky, color: tc.text }} />
         </div>
 
         <div className="flex justify-end gap-3 pt-2">
           <button onClick={() => navigate(-1)}
-            className="px-5 py-2.5 rounded-xl text-[13px] font-bold border"
-            style={{ borderColor: tc.border, color: tc.muted }}>
+            className="px-4 py-2 rounded-xl text-[13px] font-bold transition-all hover:opacity-80"
+            style={{ background: tc.sky, color: tc.muted }}>
             Cancel
           </button>
-          <button onClick={handleSave}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-bold text-white"
-            style={{ background: tc.blue }}>
-            <Save size={15} /> Save Call Details
+          <button 
+            onClick={handleSave} 
+            disabled={submitting}
+            className="flex items-center gap-2 px-5 py-2 rounded-xl text-[13px] font-bold text-white transition-all hover:opacity-90 shadow-sm disabled:opacity-50"
+            style={{ background: tc.blue }}
+          >
+            {submitting ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />} Save Call Follow-up
           </button>
         </div>
       </div>

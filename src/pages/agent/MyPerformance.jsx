@@ -12,13 +12,13 @@ const tc = {
 
 export default function MyPerformance() {
   const stats = [
-    { label: "Assigned Leads", value: 45, icon: Target, color: "#DFF3FF", iconColor: "#1e7ba8" },
-    { label: "Customer Visits", value: 38, icon: MapPin, color: "#EEF2FF", iconColor: "#4338CA" },
-    { label: "Visits Completed", value: 30, icon: MapPin, color: "#DCFCE7", iconColor: "#15803D" },
-    { label: "Follow-ups", value: 56, icon: CalendarCheck, color: "#FEF3C7", iconColor: "#D97706" },
-    { label: "Docs Collected", value: 25, icon: FolderOpen, color: "#FEF9C3", iconColor: "#CA8A04" },
-    { label: "Applications", value: 12, icon: FileText, color: "#F3E8FF", iconColor: "#7E22CE" },
-    { label: "Converted Leads", value: 8, icon: TrendingUp, color: "#D1FAE5", iconColor: "#059669" },
+    { label: "Assigned Leads", value: 0, icon: Target, color: "#DFF3FF", iconColor: "#1e7ba8" },
+    { label: "Customer Visits", value: 0, icon: MapPin, color: "#EEF2FF", iconColor: "#4338CA" },
+    { label: "Visits Completed", value: 0, icon: MapPin, color: "#DCFCE7", iconColor: "#15803D" },
+    { label: "Follow-ups", value: 0, icon: CalendarCheck, color: "#FEF3C7", iconColor: "#D97706" },
+    { label: "Docs Collected", value: 0, icon: FolderOpen, color: "#FEF9C3", iconColor: "#CA8A04" },
+    { label: "Applications", value: 0, icon: FileText, color: "#F3E8FF", iconColor: "#7E22CE" },
+    { label: "Converted Leads", value: 0, icon: TrendingUp, color: "#D1FAE5", iconColor: "#059669" },
   ];
 
   return (
@@ -26,7 +26,7 @@ export default function MyPerformance() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-[22px] font-extrabold flex items-center gap-2" style={{ color: tc.text }}>
-            My Performance <span className="px-3 py-1 rounded-full text-[12px] bg-green-100 text-green-700 ml-2">Conversion Rate: 18%</span>
+            My Performance <span className="px-3 py-1 rounded-full text-[12px] bg-slate-100 text-slate-600 ml-2">Conversion Rate: 0%</span>
           </h1>
           <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>Track your sales activities and conversions.</p>
         </div>
@@ -66,9 +66,9 @@ export default function MyPerformance() {
             xAxis: { categories: ['Week 1', 'Week 2', 'Week 3', 'Week 4'], lineColor: tc.border },
             yAxis: { title: { text: '' }, gridLineColor: tc.border },
             series: [
-              { name: 'Leads Assigned', data: [12, 15, 8, 10], color: tc.skyMid },
-              { name: 'Visits', data: [8, 10, 6, 6], color: tc.primary },
-              { name: 'Conversions', data: [2, 3, 1, 2], color: '#15803D' }
+              { name: 'Leads Assigned', data: [0, 0, 0, 0], color: tc.skyMid },
+              { name: 'Visits', data: [0, 0, 0, 0], color: tc.primary },
+              { name: 'Conversions', data: [0, 0, 0, 0], color: '#15803D' }
             ],
             credits: { enabled: false },
             legend: { itemStyle: { color: tc.text } }

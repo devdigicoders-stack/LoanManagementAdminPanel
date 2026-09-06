@@ -1,15 +1,8 @@
 import React, { useState } from 'react';
 import { Search, History, FilePlus, User, ShieldCheck, RefreshCw, ArrowUp } from 'lucide-react';
 
-const mockHistory = [
-  { title: 'Application Created', desc: 'Application LN-10245 was created.', time: '24 Aug 2026, 10:30 AM', color: 'bg-[#BFE7F7]', icon: FilePlus, iconColor: 'text-[#0284C7]' },
-  { title: 'Application Assigned', desc: 'Application assigned to Rahul Kumar.', time: '24 Aug 2026, 11:15 AM', color: 'bg-[#DFF3FF]', icon: User, iconColor: 'text-[#0369A1]' },
-  { title: 'Customer Information Updated', desc: 'Customer contact information was updated.', time: '24 Aug 2026, 01:45 PM', color: 'bg-[#FEF08A]', icon: User, iconColor: 'text-[#D97706]' },
-  { title: 'Document Uploaded', desc: 'Income proof was uploaded.', time: '24 Aug 2026, 02:30 PM', color: 'bg-[#ECFDF5]', icon: FilePlus, iconColor: 'text-[#059669]' },
-  { title: 'Document Verified', desc: 'Income proof was verified.', time: '25 Aug 2026, 09:00 AM', color: 'bg-[#A7F3D0]', icon: ShieldCheck, iconColor: 'text-[#059669]' },
-  { title: 'Follow-up Added', desc: 'Follow-up scheduled for 26 Aug 2026.', time: '25 Aug 2026, 10:30 AM', color: 'bg-[#E9D5FF]', icon: RefreshCw, iconColor: 'text-[#7E22CE]' },
-  { title: 'Status Changed', desc: 'Application status changed from Documents Pending to Under Review.', time: '25 Aug 2026, 11:00 AM', color: 'bg-[#FFF8E7]', icon: ArrowUp, iconColor: 'text-[#D97706]' },
-];
+const mockHistory = [];
+
 
 export default function ApplicationHistory() {
   const [searchTerm, setSearchTerm] = useState('');

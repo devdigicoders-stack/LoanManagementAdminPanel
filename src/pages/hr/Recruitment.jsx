@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Users, Briefcase, Plus, CheckCircle2, ChevronRight, Search, FileText, X, Eye, MapPin, Building, Calendar, Edit2, Trash2, ChevronDown } from 'lucide-react';
+import { Users, Briefcase, Plus, CheckCircle2, ChevronRight, Search, FileText, X, Eye, MapPin, Building, Calendar, Edit2, Trash2, ChevronDown, UserCheck, Copy, ExternalLink, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 
@@ -167,7 +167,15 @@ export default function Recruitment() {
   // Data states
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
+  const [employees, setEmployees] = useState([]);
   
+  // Assignment & Filter states
+  const [appFilterTab, setAppFilterTab] = useState('all'); // 'all', 'unassigned', 'assigned'
+  const [selectedAppIds, setSelectedAppIds] = useState([]);
+  const [showAssignModal, setShowAssignModal] = useState(false);
+  const [targetEmployeeId, setTargetEmployeeId] = useState('');
+  const [assigningApp, setAssigningApp] = useState(null); // single assign or null for bulk
+
   // Modals
   const [showJobModal, setShowJobModal] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
@@ -181,17 +189,36 @@ export default function Recruitment() {
   
   // Job Form
   const [jobForm, setJobForm] = useState({
-    title: '', type: 'Full Time', department: 'OPERATIONAL', location: 'Bengaluru, Karnataka', description: DEFAULT_JOB_DESC, status: 'Open', openings: 1, skills: ''
+    title: '', type: 'Full Time', department: 'OPERATIONAL', location: 'Bengaluru, Karnataka', description: DEFAULT_JOB_DESC, status: 'Open', openings: 1, skills: '', publishStatus: 'Published'
   });
 
   useEffect(() => {
     fetchJobs();
     fetchApplications();
+    fetchEmployees();
   }, []);
+
+  const fetchEmployees = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEmployees(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchJobs = async () => {
     try {
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/jobs`);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/jobs`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       setJobs(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -209,6 +236,64 @@ export default function Recruitment() {
       setApplications(Array.isArray(data) ? data : []);
     } catch (err) {
       toast.error('Failed to load applications');
+    }
+  };
+
+  const handleSingleAssign = async () => {
+    if (!targetEmployeeId) {
+      toast.error('Please select an employee');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/applications/${assigningApp._id}/assign`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ assignedToId: targetEmployeeId })
+      });
+      if (res.ok) {
+        toast.success('Application assigned successfully');
+        setShowAssignModal(false);
+        setAssigningApp(null);
+        setTargetEmployeeId('');
+        fetchApplications();
+      } else {
+        toast.error('Failed to assign application');
+      }
+    } catch (err) {
+      toast.error('Server error');
+    }
+  };
+
+  const handleBulkAssign = async () => {
+    if (!targetEmployeeId) {
+      toast.error('Please select an employee');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/applications/bulk-assign`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ applicationIds: selectedAppIds, assignedToId: targetEmployeeId })
+      });
+      if (res.ok) {
+        toast.success(`${selectedAppIds.length} applications assigned successfully`);
+        setShowAssignModal(false);
+        setSelectedAppIds([]);
+        setTargetEmployeeId('');
+        fetchApplications();
+      } else {
+        toast.error('Failed to bulk assign');
+      }
+    } catch (err) {
+      toast.error('Server error');
     }
   };
 
@@ -326,8 +411,25 @@ export default function Recruitment() {
       location: 'Bengaluru, Karnataka', 
       description: DEFAULT_JOB_DESC, 
       status: 'Open',
+      publishStatus: 'Published',
       openings: 1,
       skills: ''
+    });
+    setShowJobModal(true);
+  };
+
+  const handleEditJob = (job) => {
+    setEditingJob(job);
+    setJobForm({
+      title: job.title || '',
+      type: job.type || 'Full Time',
+      department: job.department || 'OPERATIONAL',
+      location: job.location || '',
+      description: job.description || '',
+      status: job.status || 'Open',
+      publishStatus: job.publishStatus || 'Published',
+      openings: job.openings || 1,
+      skills: job.skills || ''
     });
     setShowJobModal(true);
   };
@@ -402,50 +504,158 @@ export default function Recruitment() {
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden min-h-[400px]">
         
         {activeTab === 'applications' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Candidate</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Applied For</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Contact</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Date</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Status</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
-                {applications.map(app => (
-                  <tr key={app._id} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="py-3 px-4">
-                       <span className="font-bold text-gray-900 block">{app.name}</span>
-                       <span className="text-xs text-gray-500">Exp: {app.expectedSalary || 'N/A'}</span>
-                    </td>
-                    <td className="py-3 px-4 font-bold text-blue-600">{app.jobId?.title || 'Unknown Job'}</td>
-                    <td className="py-3 px-4">
-                      <div className="text-xs text-gray-700">{app.email}</div>
-                      <div className="text-xs text-gray-500">{app.phone}</div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-500">{new Date(app.createdAt).toLocaleDateString()}</td>
-                    <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
-                        app.status === 'Hired' ? 'bg-green-100 text-green-700' :
-                        app.status === 'Shortlisted' ? 'bg-blue-100 text-blue-700' :
-                        app.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                      }`}>
-                        {app.status}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-right flex justify-end gap-2">
-                       <button onClick={() => { setSelectedApp(app); setShowAppModal(true); }} className="flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded text-xs font-bold hover:bg-gray-50">
-                         <Eye size={14} /> View
-                       </button>
-                    </td>
+          <div>
+            {/* Sub Filter & Bulk Action Bar */}
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-3">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setAppFilterTab('all')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    appFilterTab === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  All Applications ({applications.length})
+                </button>
+                <button
+                  onClick={() => setAppFilterTab('unassigned')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    appFilterTab === 'unassigned' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  Unassigned ({applications.filter(a => !a.assignedToId).length})
+                </button>
+                <button
+                  onClick={() => setAppFilterTab('assigned')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    appFilterTab === 'assigned' ? 'bg-green-600 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
+                  }`}
+                >
+                  Assigned ({applications.filter(a => a.assignedToId).length})
+                </button>
+              </div>
+
+              {selectedAppIds.length > 0 && (
+                <button
+                  onClick={() => { setAssigningApp(null); setTargetEmployeeId(''); setShowAssignModal(true); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm"
+                >
+                  <UserCheck size={14} /> Bulk Assign ({selectedAppIds.length})
+                </button>
+              )}
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase">
+                    <th className="py-3 px-4 w-10">
+                      <input
+                        type="checkbox"
+                        checked={
+                          applications.length > 0 &&
+                          applications.filter(a => {
+                            if (appFilterTab === 'unassigned') return !a.assignedToId;
+                            if (appFilterTab === 'assigned') return !!a.assignedToId;
+                            return true;
+                          }).every(a => selectedAppIds.includes(a._id))
+                        }
+                        onChange={(e) => {
+                          const visibleApps = applications.filter(a => {
+                            if (appFilterTab === 'unassigned') return !a.assignedToId;
+                            if (appFilterTab === 'assigned') return !!a.assignedToId;
+                            return true;
+                          });
+                          if (e.target.checked) {
+                            setSelectedAppIds(visibleApps.map(a => a._id));
+                          } else {
+                            setSelectedAppIds([]);
+                          }
+                        }}
+                        className="rounded text-blue-600"
+                      />
+                    </th>
+                    <th className="py-3 px-4">Candidate</th>
+                    <th className="py-3 px-4">Applied For</th>
+                    <th className="py-3 px-4">Contact</th>
+                    <th className="py-3 px-4">Assigned To</th>
+                    <th className="py-3 px-4">Date</th>
+                    <th className="py-3 px-4">Status</th>
+                    <th className="py-3 px-4 text-right">Actions</th>
                   </tr>
-                ))}
-                {applications.length === 0 && <tr><td colSpan="6" className="text-center py-10 text-gray-500">No applications found.</td></tr>}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {applications
+                    .filter(app => {
+                      if (appFilterTab === 'unassigned') return !app.assignedToId;
+                      if (appFilterTab === 'assigned') return !!app.assignedToId;
+                      return true;
+                    })
+                    .map(app => (
+                      <tr key={app._id} className="hover:bg-blue-50/50 transition-colors">
+                        <td className="py-3 px-4">
+                          <input
+                            type="checkbox"
+                            checked={selectedAppIds.includes(app._id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedAppIds([...selectedAppIds, app._id]);
+                              } else {
+                                setSelectedAppIds(selectedAppIds.filter(id => id !== app._id));
+                              }
+                            }}
+                            className="rounded text-blue-600"
+                          />
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className="font-bold text-gray-900 block">{app.name}</span>
+                          <span className="text-xs text-gray-500">Exp: {app.expectedSalary || 'N/A'}</span>
+                        </td>
+                        <td className="py-3 px-4 font-bold text-blue-600">{app.jobId?.title || 'Unknown Job'}</td>
+                        <td className="py-3 px-4">
+                          <div className="text-xs text-gray-700">{app.email}</div>
+                          <div className="text-xs text-gray-500">{app.phone}</div>
+                        </td>
+                        <td className="py-3 px-4">
+                          {app.assignedTo ? (
+                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded w-max border border-emerald-200">
+                              <UserCheck size={12} /> {app.assignedTo}
+                            </div>
+                          ) : (
+                            <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
+                              Unassigned
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-gray-500 text-xs">{new Date(app.createdAt).toLocaleDateString()}</td>
+                        <td className="py-3 px-4">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
+                            app.status === 'Hired' ? 'bg-green-100 text-green-700' :
+                            app.status === 'Shortlisted' ? 'bg-blue-100 text-blue-700' :
+                            app.status === 'Interview' ? 'bg-purple-100 text-purple-700' :
+                            app.status === 'Reviewed' ? 'bg-sky-100 text-sky-700' :
+                            app.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                          }`}>
+                            {app.status}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right flex justify-end gap-2">
+                          <button
+                            onClick={() => { setAssigningApp(app); setTargetEmployeeId(app.assignedToId?._id || app.assignedToId || ''); setShowAssignModal(true); }}
+                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-300 text-gray-700 rounded text-xs font-bold hover:bg-gray-50"
+                            title="Assign to Employee"
+                          >
+                            <UserCheck size={13} /> Assign
+                          </button>
+                          <button onClick={() => { setSelectedApp(app); setShowAppModal(true); }} className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded text-xs font-bold hover:bg-blue-100">
+                            <Eye size={13} /> View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  {applications.length === 0 && <tr><td colSpan="8" className="text-center py-10 text-gray-500">No applications found.</td></tr>}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
@@ -475,17 +685,24 @@ export default function Recruitment() {
                       {job.hiredCount !== undefined ? job.hiredCount : 0} / {job.openings || 1}
                     </td>
                     <td className="py-3 px-4">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
-                        job.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                      }`}>
-                        {job.status}
-                      </span>
+                      <div className="flex flex-col gap-1 items-start">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
+                          job.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        }`}>
+                          {job.status === 'Open' ? 'Active' : job.status}
+                        </span>
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                          job.publishStatus === 'Draft' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                        }`}>
+                          {job.publishStatus || 'Published'}
+                        </span>
+                      </div>
                     </td>
                     <td className="py-3 px-4 text-right flex justify-end gap-2">
-                       <button onClick={() => { setEditingJob(job); setJobForm(job); setShowJobModal(true); }} className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                       <button onClick={() => handleEditJob(job)} title="Edit Job" className="p-2 text-blue-600 hover:bg-blue-50 rounded">
                          <Edit2 size={16} />
                        </button>
-                       <button onClick={() => handleDeleteJob(job._id)} className="p-2 text-red-600 hover:bg-red-50 rounded">
+                       <button onClick={() => handleDeleteJob(job._id)} title="Delete Job" className="p-2 text-red-600 hover:bg-red-50 rounded">
                          <Trash2 size={16} />
                        </button>
                     </td>
@@ -508,16 +725,24 @@ export default function Recruitment() {
             </div>
             <div className="p-4 overflow-y-auto flex-1">
               <form id="jobForm" onSubmit={handleSaveJob} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Job Title *</label>
                     <input required type="text" value={jobForm.title} onChange={e=>setJobForm({...jobForm, title: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500" />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-gray-700 mb-1">Status</label>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Status (Active/Inactive)</label>
                     <select value={jobForm.status} onChange={e=>setJobForm({...jobForm, status: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500">
-                      <option>Open</option>
-                      <option>Closed</option>
+                      <option value="Open">Active (Open)</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">Publish Status</label>
+                    <select value={jobForm.publishStatus || 'Published'} onChange={e=>setJobForm({...jobForm, publishStatus: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500">
+                      <option value="Draft">Draft (Hidden from Website)</option>
+                      <option value="Published">Published (Live on Website)</option>
                     </select>
                   </div>
                 </div>
@@ -659,10 +884,39 @@ export default function Recruitment() {
                       >
                         <option value="Applied">Applied</option>
                         <option value="Reviewed">Reviewed</option>
+                        <option value="Interview">Interview</option>
                         <option value="Shortlisted">Shortlisted</option>
-                        <option value="Hired">Hired</option>
+                        <option value="Hired">Hired (Generates Onboarding)</option>
                         <option value="Rejected">Rejected</option>
                       </select>
+
+                      {/* Onboarding Link Display if Hired */}
+                      {selectedApp.status === 'Hired' && (selectedApp.employeeId || selectedApp.onboardingStatus) && (
+                        <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+                          <p className="text-xs font-bold text-emerald-800 flex items-center gap-1 mb-1">
+                            <CheckCircle2 size={13} /> Onboarding Link Generated
+                          </p>
+                          <div className="flex gap-2 items-center mt-2">
+                            <input
+                              type="text"
+                              readOnly
+                              value={`${window.location.origin}/onboarding/${selectedApp.employeeId?._id || selectedApp.employeeId || ''}`}
+                              className="w-full bg-white border border-emerald-300 px-2 py-1 rounded text-xs text-gray-700"
+                            />
+                            <button
+                              onClick={() => {
+                                const link = `${window.location.origin}/onboarding/${selectedApp.employeeId?._id || selectedApp.employeeId || ''}`;
+                                navigator.clipboard.writeText(link);
+                                toast.success('Onboarding link copied!');
+                              }}
+                              title="Copy Link"
+                              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-xs font-bold flex items-center gap-1 shrink-0"
+                            >
+                              <Copy size={12} /> Copy
+                            </button>
+                          </div>
+                        </div>
+                      )}
                    </div>
                 </div>
 
@@ -737,6 +991,57 @@ export default function Recruitment() {
 
                 </div>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Assignment Modal (Single or Bulk) */}
+      {showAssignModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-base font-bold text-gray-900">
+                {assigningApp ? `Assign ${assigningApp.name}` : `Bulk Assign (${selectedAppIds.length})`}
+              </h3>
+              <button onClick={() => { setShowAssignModal(false); setAssigningApp(null); }} className="text-gray-400 hover:text-gray-600">
+                <X size={18} />
+              </button>
+            </div>
+
+            <p className="text-xs text-gray-500 mb-4">
+              Select the employee/HR responsible for processing {assigningApp ? 'this candidate' : 'these selected candidates'}.
+            </p>
+
+            <div className="mb-5">
+              <label className="block text-xs font-bold text-gray-700 mb-1.5">Assign To Employee / HR *</label>
+              <select
+                value={targetEmployeeId}
+                onChange={(e) => setTargetEmployeeId(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+              >
+                <option value="">Select Employee...</option>
+                {employees.map(emp => (
+                  <option key={emp._id} value={emp._id}>
+                    {emp.name} ({emp.designation || emp.role || 'Employee'})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => { setShowAssignModal(false); setAssigningApp(null); }}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-100"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={assigningApp ? handleSingleAssign : handleBulkAssign}
+                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold"
+              >
+                Confirm Assignment
+              </button>
             </div>
           </div>
         </div>

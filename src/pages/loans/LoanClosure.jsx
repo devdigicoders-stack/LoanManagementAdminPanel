@@ -2,40 +2,8 @@ import React from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Search, Download, Eye, Filter } from "lucide-react";
 
-const mockClosures = [
-  {
-    id: "LN-2023-0180",
-    customer: "Sarah Patel",
-    loanType: "Personal Loan",
-    closedOn: "18 May 2025",
-    closedAmount: "₹2,50,000",
-    status: "Closed",
-  },
-  {
-    id: "LN-2021-0890",
-    customer: "Emily Davis",
-    loanType: "Home Loan",
-    closedOn: "10 May 2025",
-    closedAmount: "₹12,00,000",
-    status: "Closed",
-  },
-  {
-    id: "LN-2024-0012",
-    customer: "Karan Singh",
-    loanType: "Business Loan",
-    closedOn: "01 May 2025",
-    closedAmount: "₹5,00,000",
-    status: "Closed",
-  },
-  {
-    id: "LN-2022-0450",
-    customer: "Neha Singh",
-    loanType: "Education Loan",
-    closedOn: "25 Apr 2025",
-    closedAmount: "₹8,00,000",
-    status: "Closed",
-  },
-];
+const mockClosures = [];
+
 
 export default function LoanClosure() {
   return (
@@ -104,7 +72,13 @@ export default function LoanClosure() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockClosures.map((loan, idx) => (
+              {mockClosures.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400 font-medium text-sm">
+                    No closed loans found.
+                  </td>
+                </tr>
+              ) : mockClosures.map((loan, idx) => (
                 <tr
                   key={idx}
                   className="hover:bg-slate-50/80 transition-colors"

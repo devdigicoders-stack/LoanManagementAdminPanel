@@ -10,53 +10,8 @@ import {
   Calendar,
 } from "lucide-react";
 
-const mockFollowUps = [
-  {
-    id: 1,
-    leadName: "Rohit Kumar",
-    leadId: "LID-2025-1268",
-    avatar: "https://i.pravatar.cc/150?u=rohit",
-    type: "Call",
-    datetime: "20 May 2025, 11:00 AM",
-    status: "Upcoming",
-  },
-  {
-    id: 2,
-    leadName: "Priya Sharma",
-    leadId: "LID-2025-1267",
-    avatar: "https://i.pravatar.cc/150?u=priya",
-    type: "Meeting",
-    datetime: "19 May 2025, 02:00 PM",
-    status: "Due Today",
-  },
-  {
-    id: 3,
-    leadName: "Amit Verma",
-    leadId: "LID-2025-1266",
-    avatar: "https://i.pravatar.cc/150?u=amit",
-    type: "Call",
-    datetime: "18 May 2025, 10:30 AM",
-    status: "Completed",
-  },
-  {
-    id: 4,
-    leadName: "Neha Singh",
-    leadId: "LID-2025-1265",
-    avatar: "https://i.pravatar.cc/150?u=neha",
-    type: "WhatsApp",
-    datetime: "17 May 2025, 11:30 AM",
-    status: "Completed",
-  },
-  {
-    id: 5,
-    leadName: "Suresh Patel",
-    leadId: "LID-2025-1264",
-    avatar: "https://i.pravatar.cc/150?u=suresh",
-    type: "Call",
-    datetime: "17 May 2025, 10:00 AM",
-    status: "Completed",
-  },
-];
+const mockFollowUps = [];
+
 
 export default function FollowUps() {
   const getStatusStyle = (status) => {
@@ -121,7 +76,11 @@ export default function FollowUps() {
       {/* Follow Ups List */}
       <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden p-2">
         <div className="flex flex-col divide-y divide-slate-100">
-          {mockFollowUps.map((item) => (
+          {mockFollowUps.length === 0 ? (
+            <div className="p-12 text-center text-slate-400 font-medium text-sm">
+              No follow-ups found.
+            </div>
+          ) : mockFollowUps.map((item) => (
             <div
               key={item.id}
               className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-md transition-colors cursor-pointer group"

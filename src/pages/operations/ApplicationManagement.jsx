@@ -2,15 +2,8 @@ import React, { useState } from 'react';
 import { Search, Filter, RefreshCw, Eye, Edit, ClipboardList, Settings2, Download, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const mockApps = [
-  { id: 'APP-8001', name: 'Ramesh Patel', mobile: '+91 9876543210', type: 'Personal Loan', amount: '₹2,50,000', date: '2023-10-25', officer: 'Suresh K.', status: 'Documents Pending', priority: 'High', updated: 'Today, 10:30 AM' },
-  { id: 'APP-8002', name: 'Priya Sharma', mobile: '+91 9876543211', type: 'Home Loan', amount: '₹45,00,000', date: '2023-10-25', officer: 'Meena R.', status: 'Verification Pending', priority: 'Normal', updated: 'Today, 09:15 AM' },
-  { id: 'APP-8003', name: 'Amit Kumar', mobile: '+91 9876543212', type: 'Business Loan', amount: '₹15,00,000', date: '2023-10-24', officer: 'Vikram S.', status: 'In Progress', priority: 'Medium', updated: 'Yesterday, 04:30 PM' },
-  { id: 'APP-8004', name: 'Neha Gupta', mobile: '+91 9876543213', type: 'Personal Loan', amount: '₹1,00,000', date: '2023-10-24', officer: 'Unassigned', status: 'New', priority: 'Urgent', updated: 'Yesterday, 11:00 AM' },
-  { id: 'APP-8005', name: 'Rajesh Singh', mobile: '+91 9876543214', type: 'Auto Loan', amount: '₹8,50,000', date: '2023-10-23', officer: 'Suresh K.', status: 'On Hold', priority: 'High', updated: '23 Oct, 02:20 PM' },
-  { id: 'APP-8006', name: 'Anjali Verma', mobile: '+91 9876543215', type: 'Education Loan', amount: '₹5,00,000', date: '2023-10-22', officer: 'Meena R.', status: 'Under Review', priority: 'Normal', updated: '22 Oct, 05:45 PM' },
-  { id: 'APP-8007', name: 'Kunal Joshi', mobile: '+91 9876543216', type: 'Personal Loan', amount: '₹3,00,000', date: '2023-10-21', officer: 'Vikram S.', status: 'Approved', priority: 'Normal', updated: '21 Oct, 11:15 AM' },
-];
+const mockApps = [];
+
 
 export default function ApplicationManagement() {
   const navigate = useNavigate();
@@ -108,7 +101,13 @@ export default function ApplicationManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0FAFF]">
-              {mockApps.map((app) => (
+              {mockApps.length === 0 ? (
+                <tr>
+                  <td colSpan="6" className="py-12 text-center text-[#667085] font-medium text-[13px]">
+                    No applications found.
+                  </td>
+                </tr>
+              ) : mockApps.map((app) => (
                 <tr key={app.id} className="hover:bg-[#F7FCFF] transition-colors group">
                   
                   {/* ID & Date */}

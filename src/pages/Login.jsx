@@ -70,7 +70,16 @@ const LoginPage = () => {
           const roleKey = actualRole.toLowerCase().replace(/ /g, '_');
           storePermissions(data.permissions || ROLE_PERMISSIONS[roleKey] || []);
           toast.success(`Login Successful! Welcome, ${actualRole}.`);
-          navigate('/');
+          const cleanActual = actualRole.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (cleanActual.includes('tele')) {
+            navigate('/telecaller');
+          } else if (cleanActual.includes('agent')) {
+            navigate('/agent');
+          } else if (cleanActual.includes('account')) {
+            navigate('/accountant');
+          } else {
+            navigate('/');
+          }
         } else {
           toast.error(data.message || 'Invalid email or password.');
         }

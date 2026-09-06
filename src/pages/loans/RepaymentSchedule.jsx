@@ -8,53 +8,8 @@ import {
   Clock,
 } from "lucide-react";
 
-const mockSchedule = [
-  {
-    inst: 1,
-    date: "20 Apr 2025",
-    emi: "₹11,154",
-    principal: "₹8,654",
-    interest: "₹2,500",
-    balance: "₹2,41,346",
-    status: "Paid",
-  },
-  {
-    inst: 2,
-    date: "20 May 2025",
-    emi: "₹11,154",
-    principal: "₹8,740",
-    interest: "₹2,414",
-    balance: "₹2,32,606",
-    status: "Paid",
-  },
-  {
-    inst: 3,
-    date: "20 Jun 2025",
-    emi: "₹11,154",
-    principal: "₹8,827",
-    interest: "₹2,327",
-    balance: "₹2,23,779",
-    status: "Upcoming",
-  },
-  {
-    inst: 4,
-    date: "20 Jul 2025",
-    emi: "₹11,154",
-    principal: "₹8,915",
-    interest: "₹2,239",
-    balance: "₹2,14,864",
-    status: "Upcoming",
-  },
-  {
-    inst: 5,
-    date: "20 Aug 2025",
-    emi: "₹11,154",
-    principal: "₹9,004",
-    interest: "₹2,150",
-    balance: "₹2,05,860",
-    status: "Upcoming",
-  },
-];
+const mockSchedule = [];
+
 
 export default function RepaymentSchedule() {
   return (
@@ -83,9 +38,8 @@ export default function RepaymentSchedule() {
             />
             <input
               type="text"
-              placeholder="Enter Loan ID..."
-              defaultValue="LN-2025-1050"
-              className="h-10 pl-9 pr-4 rounded-md border border-[#489b0d] ring-1 ring-[#489b0d]/20 text-[13px] font-bold text-slate-800 focus:outline-none bg-white w-[200px]"
+              placeholder="Enter Loan ID (e.g. LN-1001)..."
+              className="h-10 pl-9 pr-4 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-[#489b0d] bg-white w-[240px]"
             />
           </div>
           <button className="h-10 px-4 flex items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-slate-600 font-bold text-[13px] hover:bg-slate-50 transition-colors shadow-sm">
@@ -100,39 +54,39 @@ export default function RepaymentSchedule() {
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             Loan ID
           </span>
-          <span className="text-[14px] font-bold text-slate-800">
-            LN-2025-1050
+          <span className="text-[14px] font-bold text-slate-400">
+            No Loan Selected
           </span>
-          <span className="text-[12px] font-medium text-slate-500">
-            Ravi Kumar
+          <span className="text-[12px] font-medium text-slate-400">
+            -
           </span>
         </div>
         <div className="flex flex-col gap-1 border-r border-slate-100 pr-4 md:pl-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             Loan Amount
           </span>
-          <span className="text-[16px] font-extrabold text-[#489b0d]">
-            ₹2,50,000
+          <span className="text-[16px] font-extrabold text-slate-400">
+            ₹0
           </span>
         </div>
         <div className="flex flex-col gap-1 border-r border-slate-100 pr-4 md:pl-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             EMI Amount
           </span>
-          <span className="text-[14px] font-bold text-slate-800">₹11,154</span>
+          <span className="text-[14px] font-bold text-slate-400">₹0</span>
         </div>
         <div className="flex flex-col gap-1 border-r border-slate-100 pr-4 md:pl-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             Interest Rate
           </span>
-          <span className="text-[14px] font-bold text-slate-800">12.50%</span>
+          <span className="text-[14px] font-bold text-slate-400">0%</span>
         </div>
         <div className="flex flex-col gap-1 md:pl-2">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
             Tenure
           </span>
-          <span className="text-[14px] font-bold text-slate-800">
-            24 Months
+          <span className="text-[14px] font-bold text-slate-400">
+            -
           </span>
         </div>
       </div>
@@ -167,7 +121,13 @@ export default function RepaymentSchedule() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockSchedule.map((item, idx) => (
+              {mockSchedule.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400 font-medium text-sm">
+                    No repayment schedule records found.
+                  </td>
+                </tr>
+              ) : mockSchedule.map((item, idx) => (
                 <tr
                   key={idx}
                   className="hover:bg-slate-50/80 transition-colors"

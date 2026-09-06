@@ -1,13 +1,8 @@
 import React, { useState } from 'react';
 import { Search, Filter, FileText, CheckCircle, Clock, AlertCircle, FileSignature, Wallet } from 'lucide-react';
 
-const mockLoans = [
-  { id: 'LN-2024-001', customer: 'Rajesh Kumar', amount: '25,00,000', type: 'Home Loan', stage: 'Data Collection', priority: 'High', date: 'Oct 12' },
-  { id: 'LN-2024-002', customer: 'Priya Sharma', amount: '10,00,000', type: 'Personal', stage: 'Document Verification', priority: 'Medium', date: 'Oct 10' },
-  { id: 'LN-2024-003', customer: 'Amit Singh', amount: '50,00,000', type: 'Business', stage: 'Underwriting & Scoring', priority: 'High', date: 'Oct 08' },
-  { id: 'LN-2024-004', customer: 'Neha Gupta', amount: '5,00,000', type: 'Vehicle', stage: 'Approval & Legal Docs', priority: 'Normal', date: 'Oct 05' },
-  { id: 'LN-2024-005', customer: 'Vikram Patel', amount: '15,00,000', type: 'Loan Against Property', stage: 'Disbursements', priority: 'Urgent', date: 'Oct 01' },
-];
+const mockLoans = [];
+
 
 const stages = [
   { name: 'Data Collection', icon: FileText, color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -62,8 +57,10 @@ export default function LOSDashboard() {
                 </span>
               </div>
               
-              <div className="bg-gray-100/50 border border-gray-200 rounded-b-xl p-3 min-h-[500px] flex flex-col gap-3">
-                {stageLoans.map((loan) => (
+              <div className="bg-gray-100/50 border border-gray-200 rounded-b-xl p-3 min-h-[350px] flex flex-col gap-3">
+                {stageLoans.length === 0 ? (
+                  <div className="py-12 text-center text-xs text-gray-400 font-medium">No applications</div>
+                ) : stageLoans.map((loan) => (
                   <div key={loan.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
                     <div className="flex justify-between items-start mb-2">
                       <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-1 rounded">{loan.id}</span>

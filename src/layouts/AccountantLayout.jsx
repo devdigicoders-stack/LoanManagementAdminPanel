@@ -4,8 +4,9 @@ import {
   Receipt, RefreshCcw, FileMinus, CheckSquare, BarChart3,
   Bell, User, Lock, LogOut, Menu, X, ChevronRight, Calculator
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
+import { hasPermission, syncPermissionsWithServer, getPermissions } from "../utils/permissions";
 
 const navItems = [
   { name: "Dashboard",            icon: LayoutDashboard, path: "/accountant" },
@@ -37,10 +38,59 @@ const tc = {
   blue: "#1e7ba8",
 };
 
+import DashboardLayout from "./DashboardLayout";
+
 export default function AccountantLayout() {
+  const userRole = (localStorage.getItem('userRole') || '').toLowerCase();
+  const isMasterAdmin = ['super admin', 'superadmin', 'admin', 'administrator'].includes(userRole);
+
+  if (isMasterAdmin) {
+    return <DashboardLayout />;
+  }
+
   const [isSidebarOpen, setSidebarOpen] = useState(false);
+  const [permissions, setPermissions] = useState(() => getPermissions());
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const doSync = () => {
+      syncPermissionsWithServer().then((latest) => {
+        if (latest) setPermissions(latest);
+      });
+    };
+
+    // 1. Sync fresh permissions immediately on mount
+    doSync();
+
+    // 2. Listen for permission change events across the application
+    const onPermsUpdated = (e) => {
+      if (e?.detail) {
+        setPermissions(e.detail);
+      } else {
+        setPermissions(getPermissions());
+      }
+    };
+    window.addEventListener('permissionsUpdated', onPermsUpdated);
+    window.addEventListener('storage', onPermsUpdated);
+    window.addEventListener('focus', doSync);
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') doSync();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+
+    // 3. Periodic sync every 10 seconds
+    const interval = setInterval(doSync, 10000);
+
+    return () => {
+      window.removeEventListener('permissionsUpdated', onPermsUpdated);
+      window.removeEventListener('storage', onPermsUpdated);
+      window.removeEventListener('focus', doSync);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleLogout = () => {
     localStorage.removeItem("isAuthenticated");
@@ -82,7 +132,13 @@ export default function AccountantLayout() {
         </div>
 
         <div className="flex-1 overflow-y-auto px-4 py-2 space-y-1 custom-scrollbar">
-          {navItems.map((item) => {
+          {navItems
+            .filter((item) => {
+              if (['Dashboard', 'My Profile', 'Change Password'].includes(item.name)) return true;
+              if (item.name === 'Payments & Coll.') return hasPermission('Payments & Collections') || hasPermission('Payments & Coll.');
+              return hasPermission(item.name);
+            })
+            .map((item) => {
             const isActive = location.pathname === item.path || (item.path !== '/accountant' && location.pathname.startsWith(item.path));
             const Icon = item.icon;
             return (

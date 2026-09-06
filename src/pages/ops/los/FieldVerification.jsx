@@ -2,10 +2,7 @@ import React from 'react';
 import { MapPin, Home, Building2, CheckCircle2, XCircle, Clock, Camera, FileText, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const mockVisits = [
-  { id: 'FV-901', type: 'Home Visit', executive: 'Rahul S.', status: 'Completed', date: '31 Aug 2026', time: '10:30 AM', coords: '19.0760, 72.8777' },
-  { id: 'FV-902', type: 'Business Visit', executive: 'Meena K.', status: 'Pending', date: '01 Sep 2026', time: '02:00 PM', coords: null },
-];
+const mockVisits = [];
 
 export default function FieldVerification() {
   const navigate = useNavigate();
@@ -17,7 +14,7 @@ export default function FieldVerification() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <div className="flex items-center gap-2 text-sm text-gray-500 mb-1">
-            <span className="font-medium text-blue-600 cursor-pointer" onClick={() => navigate('/ops/los/applications')}>APP-8001</span>
+            <span className="font-medium text-blue-600 cursor-pointer" onClick={() => navigate('/ops/los/applications')}>Applications</span>
             <ChevronRight size={14} />
             <span>Field Verification (FI)</span>
           </div>
@@ -35,37 +32,52 @@ export default function FieldVerification() {
         <div className="lg:col-span-1 space-y-4">
           <h3 className="font-bold text-gray-900 mb-2">Verification Visits</h3>
           
-          {mockVisits.map(visit => (
-            <div key={visit.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:border-blue-300 cursor-pointer transition-colors relative overflow-hidden">
-              {visit.status === 'Completed' && <div className="absolute top-0 right-0 w-2 h-full bg-green-500"></div>}
-              {visit.status === 'Pending' && <div className="absolute top-0 right-0 w-2 h-full bg-yellow-500"></div>}
-              
-              <div className="flex items-start gap-3">
-                <div className={`p-2 rounded-lg ${visit.type === 'Home Visit' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
-                  {visit.type === 'Home Visit' ? <Home size={20} /> : <Building2 size={20} />}
-                </div>
-                <div>
-                  <h4 className="font-bold text-gray-900 text-sm">{visit.type}</h4>
-                  <p className="text-xs text-gray-500 mt-1">{visit.date} at {visit.time}</p>
-                  <p className="text-xs font-medium text-gray-700 mt-1">Exec: {visit.executive}</p>
+          {mockVisits.length === 0 ? (
+            <div className="bg-white p-6 rounded-xl border border-gray-200 text-center text-gray-500">
+              <MapPin className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+              <p className="font-semibold text-gray-700 text-sm">No scheduled visits</p>
+              <p className="text-xs text-gray-400 mt-1">Click above to schedule a field visit.</p>
+            </div>
+          ) : (
+            mockVisits.map(visit => (
+              <div key={visit.id} className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm hover:border-blue-300 cursor-pointer transition-colors relative overflow-hidden">
+                {visit.status === 'Completed' && <div className="absolute top-0 right-0 w-2 h-full bg-green-500"></div>}
+                {visit.status === 'Pending' && <div className="absolute top-0 right-0 w-2 h-full bg-yellow-500"></div>}
+                
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${visit.type === 'Home Visit' ? 'bg-blue-50 text-blue-600' : 'bg-purple-50 text-purple-600'}`}>
+                    {visit.type === 'Home Visit' ? <Home size={20} /> : <Building2 size={20} />}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 text-sm">{visit.type}</h4>
+                    <p className="text-xs text-gray-500 mt-1">{visit.date} at {visit.time}</p>
+                    <p className="text-xs font-medium text-gray-700 mt-1">Exec: {visit.executive}</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
 
-        {/* Right Col: Visit Details (Mocking the completed Home Visit) */}
+        {/* Right Col: Visit Details */}
         <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-          
-          <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-            <div>
-              <h3 className="font-bold text-gray-900">Home Visit Report</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Completed by Rahul S. on 31 Aug 2026, 10:30 AM</p>
+          {mockVisits.length === 0 ? (
+            <div className="p-12 text-center text-gray-500">
+              <FileText className="mx-auto h-10 w-10 text-gray-300 mb-2" />
+              <p className="font-semibold text-gray-700">No Visit Selected</p>
+              <p className="text-xs text-gray-400 mt-1">Schedule and select a verification visit to view details.</p>
             </div>
-            <span className="inline-flex items-center gap-1 text-sm font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">
-              <CheckCircle2 size={16} /> Positive Report
-            </span>
-          </div>
+          ) : (
+            <>
+              <div className="p-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-gray-900">Home Visit Report</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">Completed by Executive</p>
+                </div>
+                <span className="inline-flex items-center gap-1 text-sm font-bold text-green-700 bg-green-50 px-3 py-1 rounded-full border border-green-200">
+                  <CheckCircle2 size={16} /> Positive Report
+                </span>
+              </div>
 
           <div className="p-6 space-y-8">
             
@@ -140,6 +152,8 @@ export default function FieldVerification() {
             </div>
 
           </div>
+            </>
+          )}
         </div>
 
       </div>

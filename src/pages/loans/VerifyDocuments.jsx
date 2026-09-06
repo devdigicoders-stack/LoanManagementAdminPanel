@@ -6,14 +6,8 @@ import {
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
-const mockDocsToVerify = [
-  { id: "DOC-001", customer: "Rohit Kumar", type: "Aadhar Card", status: "Pending", date: "19 May 2025", fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-  { id: "DOC-002", customer: "Priya Sharma", type: "PAN Card", status: "Pending", date: "19 May 2025", fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-  { id: "DOC-003", customer: "Amit Verma", type: "Bank Statement", status: "Pending", date: "18 May 2025", fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-  { id: "DOC-004", customer: "Neha Singh", type: "Salary Slip", status: "Pending", date: "18 May 2025", fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-  { id: "DOC-005", customer: "Suresh Patel", type: "Voter ID", status: "Approved", date: "17 May 2025", fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-  { id: "DOC-006", customer: "Anita Roy", type: "Driving License", status: "Rejected", date: "16 May 2025", fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf" },
-];
+const mockDocsToVerify = [];
+
 
 export default function VerifyDocuments() {
   const [documents, setDocuments] = useState(mockDocsToVerify);

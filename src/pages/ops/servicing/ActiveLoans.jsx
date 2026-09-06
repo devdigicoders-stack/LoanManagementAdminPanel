@@ -2,12 +2,7 @@ import React, { useState } from 'react';
 import { Search, Filter, MoreVertical, CheckCircle2, AlertCircle, FileText, Download } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const mockLoans = [
-  { id: 'LN-1001', customer: 'Ramesh Patel', product: 'Home Loan', amount: '₹10,00,000', emi: '₹20,516', tenure: '60 Months', paid: '12', status: 'Standard' },
-  { id: 'LN-1002', customer: 'Suresh Kumar', product: 'Personal Loan', amount: '₹5,00,000', emi: '₹12,450', tenure: '48 Months', paid: '4', status: 'Standard' },
-  { id: 'LN-1003', customer: 'Meena Kumari', product: 'Business Loan', amount: '₹15,00,000', emi: '₹35,200', tenure: '60 Months', paid: '24', status: 'SMA-1 (1-30 DPD)' },
-  { id: 'LN-1004', customer: 'Vikram Singh', product: 'Auto Loan', amount: '₹8,00,000', emi: '₹18,100', tenure: '60 Months', paid: '1', status: 'Standard' },
-];
+const mockLoans = [];
 
 export default function ActiveLoans() {
   const navigate = useNavigate();
@@ -32,19 +27,19 @@ export default function ActiveLoans() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <p className="text-xs font-bold text-gray-500 uppercase">Total Active Loans</p>
-          <p className="text-2xl font-black text-blue-600 mt-1">4,285</p>
+          <p className="text-2xl font-black text-blue-600 mt-1">{mockLoans.length}</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <p className="text-xs font-bold text-gray-500 uppercase">Total AUM</p>
-          <p className="text-2xl font-black text-gray-900 mt-1">₹142.5 Cr</p>
+          <p className="text-2xl font-black text-gray-900 mt-1">₹0</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <p className="text-xs font-bold text-gray-500 uppercase">Standard Assets</p>
-          <p className="text-2xl font-black text-green-600 mt-1">94%</p>
+          <p className="text-2xl font-black text-green-600 mt-1">0%</p>
         </div>
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
           <p className="text-xs font-bold text-gray-500 uppercase">Stressed (SMA)</p>
-          <p className="text-2xl font-black text-orange-600 mt-1">6%</p>
+          <p className="text-2xl font-black text-orange-600 mt-1">0%</p>
         </div>
       </div>
 
@@ -82,41 +77,50 @@ export default function ActiveLoans() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-sm">
-              {mockLoans.map(loan => (
-                <tr key={loan.id} className="hover:bg-blue-50/50 transition-colors">
-                  <td className="py-3 px-4 font-bold text-blue-600">{loan.id}</td>
-                  <td className="py-3 px-4 font-medium text-gray-900">{loan.customer}</td>
-                  <td className="py-3 px-4 text-gray-600">{loan.product}</td>
-                  <td className="py-3 px-4 font-bold text-gray-900">{loan.amount}</td>
-                  <td className="py-3 px-4 font-medium text-gray-700">{loan.emi}</td>
-                  <td className="py-3 px-4 text-gray-600">{loan.paid} / {loan.tenure}</td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
-                      loan.status.includes('Standard') ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {loan.status.includes('Standard') ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
-                      {loan.status}
-                    </span>
-                  </td>
-                  <td className="py-3 px-4 text-right">
-                    <button className="text-gray-400 hover:text-blue-600 p-1">
-                      <MoreVertical size={18} />
-                    </button>
+              {mockLoans.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="py-12 text-center text-gray-500">
+                    <FileText className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                    <p className="font-semibold text-gray-700">No active loans found</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Active loans will appear here once disbursed.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                mockLoans.map(loan => (
+                  <tr key={loan.id} className="hover:bg-blue-50/50 transition-colors">
+                    <td className="py-3 px-4 font-bold text-blue-600">{loan.id}</td>
+                    <td className="py-3 px-4 font-medium text-gray-900">{loan.customer}</td>
+                    <td className="py-3 px-4 text-gray-600">{loan.product}</td>
+                    <td className="py-3 px-4 font-bold text-gray-900">{loan.amount}</td>
+                    <td className="py-3 px-4 font-medium text-gray-700">{loan.emi}</td>
+                    <td className="py-3 px-4 text-gray-600">{loan.paid} / {loan.tenure}</td>
+                    <td className="py-3 px-4">
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
+                        loan.status.includes('Standard') ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
+                      }`}>
+                        {loan.status.includes('Standard') ? <CheckCircle2 size={12} /> : <AlertCircle size={12} />}
+                        {loan.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-4 text-right">
+                      <button className="text-gray-400 hover:text-blue-600 p-1">
+                        <MoreVertical size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
         
         {/* Pagination */}
         <div className="p-4 border-t border-gray-200 flex justify-between items-center text-sm text-gray-600 bg-gray-50">
-          <span>Showing 1 to 10 of 4,285 entries</span>
+          <span>Showing {mockLoans.length} entries</span>
           <div className="flex gap-1">
-            <button className="px-3 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100">Prev</button>
+            <button className="px-3 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100" disabled>Prev</button>
             <button className="px-3 py-1 border border-blue-600 rounded bg-blue-600 text-white">1</button>
-            <button className="px-3 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100">2</button>
-            <button className="px-3 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100">Next</button>
+            <button className="px-3 py-1 border border-gray-300 rounded bg-white hover:bg-gray-100" disabled>Next</button>
           </div>
         </div>
 

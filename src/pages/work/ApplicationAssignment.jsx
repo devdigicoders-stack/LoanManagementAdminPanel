@@ -1,49 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight, Filter, Eye, Calendar } from "lucide-react";
+import { ChevronRight, Filter, Eye, Calendar, FileText } from "lucide-react";
 
-const mockApplications = [
-  {
-    id: "APP-2025-1250",
-    customer: "Rohit Kumar",
-    loanType: "Home Loan",
-    assignedTo: "Ravi Kumar",
-    status: "In Progress",
-    assignedOn: "18 May 2025",
-  },
-  {
-    id: "APP-2025-1249",
-    customer: "Priya Sharma",
-    loanType: "Personal Loan",
-    assignedTo: "Neha Singh",
-    status: "In Progress",
-    assignedOn: "17 May 2025",
-  },
-  {
-    id: "APP-2025-1248",
-    customer: "Amit Verma",
-    loanType: "Business Loan",
-    assignedTo: "Suresh Patel",
-    status: "Pending",
-    assignedOn: "17 May 2025",
-  },
-  {
-    id: "APP-2025-1247",
-    customer: "Neha Singh",
-    loanType: "Education Loan",
-    assignedTo: "John Doe",
-    status: "Pending",
-    assignedOn: "17 May 2025",
-  },
-  {
-    id: "APP-2025-1246",
-    customer: "Suresh Patel",
-    loanType: "Home Loan",
-    assignedTo: "Emily Davis",
-    status: "Completed",
-    assignedOn: "16 May 2025",
-  },
-];
+const mockApplications = [];
 
 export default function ApplicationAssignment() {
   const getStatusBadge = (status) => {
@@ -91,7 +50,7 @@ export default function ApplicationAssignment() {
             <option>All Status</option>
           </select>
           <div className="h-10 px-3 flex items-center justify-between rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 bg-white min-w-[200px]">
-            <span>01 May 2025 - 18 May 2025</span>
+            <span>Last 30 Days</span>
             <Calendar size={14} className="text-slate-400" />
           </div>
           <button className="h-10 px-4 flex items-center gap-2 rounded-md border border-slate-200 bg-white text-slate-600 font-bold text-[13px] hover:bg-slate-50 transition-colors shadow-sm">
@@ -130,36 +89,46 @@ export default function ApplicationAssignment() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {mockApplications.map((app, idx) => (
-                <tr
-                  key={idx}
-                  className="hover:bg-slate-50/80 transition-colors"
-                >
-                  <td className="py-3 px-6 text-[12px] font-bold text-slate-700">
-                    {app.id}
-                  </td>
-                  <td className="py-3 px-4 text-[13px] font-bold text-slate-800">
-                    {app.customer}
-                  </td>
-                  <td className="py-3 px-4 text-[12px] font-medium text-slate-600">
-                    {app.loanType}
-                  </td>
-                  <td className="py-3 px-4 text-[12px] font-semibold text-slate-700">
-                    {app.assignedTo}
-                  </td>
-                  <td className="py-3 px-4 text-[12px]">
-                    {getStatusBadge(app.status)}
-                  </td>
-                  <td className="py-3 px-4 text-[12px] font-medium text-slate-500">
-                    {app.assignedOn}
-                  </td>
-                  <td className="py-3 px-6 text-center">
-                    <button className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded-md transition-colors">
-                      <Eye size={16} />
-                    </button>
+              {mockApplications.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400">
+                    <FileText className="mx-auto h-8 w-8 text-slate-300 mb-2" />
+                    <p className="font-semibold text-slate-600 text-sm">No assigned applications found</p>
+                    <p className="text-xs text-slate-400 mt-0.5">Assigned loan applications will appear in this list.</p>
                   </td>
                 </tr>
-              ))}
+              ) : (
+                mockApplications.map((app, idx) => (
+                  <tr
+                    key={idx}
+                    className="hover:bg-slate-50/80 transition-colors"
+                  >
+                    <td className="py-3 px-6 text-[12px] font-bold text-slate-700">
+                      {app.id}
+                    </td>
+                    <td className="py-3 px-4 text-[13px] font-bold text-slate-800">
+                      {app.customer}
+                    </td>
+                    <td className="py-3 px-4 text-[12px] font-medium text-slate-600">
+                      {app.loanType}
+                    </td>
+                    <td className="py-3 px-4 text-[12px] font-semibold text-slate-700">
+                      {app.assignedTo}
+                    </td>
+                    <td className="py-3 px-4 text-[12px]">
+                      {getStatusBadge(app.status)}
+                    </td>
+                    <td className="py-3 px-4 text-[12px] font-medium text-slate-500">
+                      {app.assignedOn}
+                    </td>
+                    <td className="py-3 px-6 text-center">
+                      <button className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded-md transition-colors">
+                        <Eye size={16} />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -167,26 +136,16 @@ export default function ApplicationAssignment() {
         {/* Pagination */}
         <div className="p-4 border-t border-slate-100 flex items-center justify-between mt-auto">
           <p className="text-[12px] font-medium text-slate-500">
-            Showing 1 to 5 of 125 entries
+            Showing {mockApplications.length} entries
           </p>
           <div className="flex items-center gap-1">
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50">
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50" disabled>
               <ChevronRight size={14} className="rotate-180" />
             </button>
             <button className="w-8 h-8 flex items-center justify-center rounded-lg bg-[#489b0d] text-white font-bold text-[13px] shadow-sm">
               1
             </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              2
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              3
-            </button>
-            <span className="px-1 text-slate-400 text-[13px]">...</span>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors font-medium text-[13px]">
-              25
-            </button>
-            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors">
+            <button className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors" disabled>
               <ChevronRight size={14} />
             </button>
           </div>

@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import TopLoader from '../components/TopLoader';
+import PortalSubNav from '../components/PortalSubNav';
 
 export default function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -20,6 +21,7 @@ export default function DashboardLayout() {
         {/* Scrollable Page Content */}
         <div className="flex-1 overflow-y-auto p-6 md:p-8 pt-6">
           <div className="w-full max-w-[1600px] mx-auto">
+            <PortalSubNav />
             <Outlet />
           </div>
         </div>

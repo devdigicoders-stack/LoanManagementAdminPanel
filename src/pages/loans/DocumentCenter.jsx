@@ -16,33 +16,19 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
 const categories = [
-  { id: 1, name: "Customer KYC Documents", count: "1,248 Files", icon: <FolderOpen size={20} className="text-blue-500" />, bg: "bg-blue-50" },
-  { id: 2, name: "Loan Agreements", count: "1,024 Files", icon: <FileText size={20} className="text-[#489b0d]" />, bg: "bg-[#489b0d]/10" },
-  { id: 3, name: "Sanction Letters", count: "684 Files", icon: <FileText size={20} className="text-purple-500" />, bg: "bg-purple-50" },
-  { id: 4, name: "Disbursement Proofs", count: "1,102 Files", icon: <FileText size={20} className="text-orange-500" />, bg: "bg-orange-50" },
-  { id: 5, name: "EMI Receipts", count: "2,048 Files", icon: <FileText size={20} className="text-teal-500" />, bg: "bg-teal-50" },
+  { id: 1, name: "Customer KYC Documents", count: "0 Files", icon: <FolderOpen size={20} className="text-blue-500" />, bg: "bg-blue-50" },
+  { id: 2, name: "Loan Agreements", count: "0 Files", icon: <FileText size={20} className="text-[#489b0d]" />, bg: "bg-[#489b0d]/10" },
+  { id: 3, name: "Sanction Letters", count: "0 Files", icon: <FileText size={20} className="text-purple-500" />, bg: "bg-purple-50" },
+  { id: 4, name: "Disbursement Proofs", count: "0 Files", icon: <FileText size={20} className="text-orange-500" />, bg: "bg-orange-50" },
+  { id: 5, name: "EMI Receipts", count: "0 Files", icon: <FileText size={20} className="text-teal-500" />, bg: "bg-teal-50" },
 ];
 
 const mockDocuments = {
-  1: [
-    { id: 1, name: "Aadhar_Card_Ravi.pdf", size: "2.4 MB", date: "18 May 2025", type: "pdf", color: "text-red-500", bg: "bg-red-50" },
-    { id: 2, name: "PAN_Card_Ravi.pdf", size: "1.1 MB", date: "18 May 2025", type: "pdf", color: "text-red-500", bg: "bg-red-50" },
-    { id: 3, name: "Photo_Ravi.jpg", size: "3.5 MB", date: "18 May 2025", type: "img", color: "text-blue-500", bg: "bg-blue-50" },
-  ],
-  2: [
-    { id: 4, name: "Loan_Agreement_LN2501.pdf", size: "4.8 MB", date: "15 May 2025", type: "pdf", color: "text-red-500", bg: "bg-red-50" },
-    { id: 5, name: "Terms_Conditions.pdf", size: "1.2 MB", date: "15 May 2025", type: "pdf", color: "text-red-500", bg: "bg-red-50" },
-  ],
-  3: [
-    { id: 6, name: "Sanction_Letter_LN2501.pdf", size: "1.5 MB", date: "14 May 2025", type: "pdf", color: "text-red-500", bg: "bg-red-50" },
-  ],
-  4: [
-    { id: 7, name: "Bank_Transfer_Receipt.pdf", size: "0.8 MB", date: "16 May 2025", type: "pdf", color: "text-red-500", bg: "bg-red-50" },
-  ],
-  5: [
-    { id: 8, name: "EMI_Receipt_April.pdf", size: "0.5 MB", date: "05 May 2025", type: "pdf", color: "text-red-500", bg: "bg-red-50" },
-    { id: 9, name: "EMI_Receipt_March.pdf", size: "0.5 MB", date: "05 Apr 2025", type: "pdf", color: "text-red-500", bg: "bg-red-50" },
-  ],
+  1: [],
+  2: [],
+  3: [],
+  4: [],
+  5: [],
 };
 
 export default function DocumentCenter() {

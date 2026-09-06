@@ -2,11 +2,8 @@ import React, { useState } from 'react';
 import { Search, Filter, RefreshCw, Eye, Download, Users, FileText, History, FileSearch } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const mockCustomers = [
-  { id: 'CUST-1001', name: 'Ramesh Patel', mobile: '+91 9876543210', city: 'Mumbai', occupation: 'Salaried', income: '₹85,000', activeApp: 'LN-10245', status: 'Under Review' },
-  { id: 'CUST-1002', name: 'Priya Sharma', mobile: '+91 9876543211', city: 'Delhi', occupation: 'Self-Employed', income: '₹1,20,000', activeApp: 'LN-10246', status: 'Verification Pending' },
-  { id: 'CUST-1003', name: 'Amit Kumar', mobile: '+91 9876543212', city: 'Bangalore', occupation: 'Salaried', income: '₹65,000', activeApp: 'LN-10247', status: 'Approved' },
-];
+const mockCustomers = [];
+
 
 export default function CustomerManagement() {
   const navigate = useNavigate();
@@ -83,7 +80,13 @@ export default function CustomerManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0FAFF]">
-              {mockCustomers.map((cust) => (
+              {mockCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="py-12 text-center text-[#667085] font-medium text-[13px]">
+                    No customers found.
+                  </td>
+                </tr>
+              ) : mockCustomers.map((cust) => (
                 <tr key={cust.id} className="hover:bg-[#F7FCFF] transition-colors group">
                   
                   {/* Customer Info */}

@@ -4,11 +4,8 @@ import {
   Phone, Users, FileText, X, Calendar, AlarmClock 
 } from 'lucide-react';
 
-const mockFollowUps = [
-  { appId: 'LN-10245', customer: 'Ramesh Patel', employee: 'Suresh K.', date: '25 Aug 2026', time: '10:00 AM', type: 'Call', status: 'Upcoming', outcome: '-' },
-  { appId: 'LN-10241', customer: 'Priya Sharma', employee: 'Meena R.', date: '24 Aug 2026', time: '02:30 PM', type: 'Meeting', status: 'Completed', outcome: 'Positive' },
-  { appId: 'LN-10238', customer: 'Amit Kumar', employee: 'Vikram S.', date: '22 Aug 2026', time: '11:00 AM', type: 'Call', status: 'Missed', outcome: '-' },
-];
+const mockFollowUps = [];
+
 
 const StatCard = ({ icon: Icon, title, value, color, bg }) => (
   <div className={`bg-white rounded-[20px] border border-[#D9EAF2] shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.08)] transition-all p-6`}>
@@ -60,11 +57,11 @@ export default function FollowUpManagement() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-4">
-        <StatCard icon={CalendarRange} title="Today's Follow-ups" value="8" color="text-[#0369A1]" bg="bg-[#DFF3FF]" />
-        <StatCard icon={Clock} title="Upcoming" value="24" color="text-[#059669]" bg="bg-[#ECFDF5]" />
-        <StatCard icon={CheckCircle2} title="Completed" value="156" color="text-[#0284C7]" bg="bg-[#BFE7F7]" />
-        <StatCard icon={X} title="Missed" value="5" color="text-[#DC2626]" bg="bg-[#FEF2F2]" />
-        <StatCard icon={AlertCircle} title="Overdue" value="3" color="text-[#D97706]" bg="bg-[#FFF8E7]" />
+        <StatCard icon={CalendarRange} title="Today's Follow-ups" value="0" color="text-[#0369A1]" bg="bg-[#DFF3FF]" />
+        <StatCard icon={Clock} title="Upcoming" value="0" color="text-[#059669]" bg="bg-[#ECFDF5]" />
+        <StatCard icon={CheckCircle2} title="Completed" value="0" color="text-[#0284C7]" bg="bg-[#BFE7F7]" />
+        <StatCard icon={X} title="Missed" value="0" color="text-[#DC2626]" bg="bg-[#FEF2F2]" />
+        <StatCard icon={AlertCircle} title="Overdue" value="0" color="text-[#D97706]" bg="bg-[#FFF8E7]" />
       </div>
 
       {/* Table */}
@@ -83,7 +80,13 @@ export default function FollowUpManagement() {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#F0FAFF]">
-              {mockFollowUps.map((fu, i) => (
+              {mockFollowUps.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-[#667085] font-medium text-[13px]">
+                    No follow-ups found.
+                  </td>
+                </tr>
+              ) : mockFollowUps.map((fu, i) => (
                 <tr key={i} className="hover:bg-[#F7FCFF] transition-colors">
                   <td className="py-4 px-5 text-[13px] font-bold text-[#0284C7]">{fu.appId}</td>
                   <td className="py-4 px-5 text-[13px] font-bold text-[#344054]">{fu.customer}</td>

@@ -2,11 +2,7 @@ import React from 'react';
 import { PhoneCall, Phone, Search, Clock, CheckCircle2, User, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const mockCalls = [
-  { id: 'LN-1003', customer: 'Meena Kumari', dpd: '15 Days', amount: '₹35,200', lastCalled: 'Yesterday', status: 'PTP (Promise to Pay)' },
-  { id: 'LN-1045', customer: 'Rahul Verma', dpd: '5 Days', amount: '₹12,450', lastCalled: 'Not Called', status: 'New Allocation' },
-  { id: 'LN-1088', customer: 'Kiran Desai', dpd: '28 Days', amount: '₹18,100', lastCalled: '2 Days Ago', status: 'RTP (Refused to Pay)' },
-];
+const mockCalls = [];
 
 export default function TeleCalling() {
   const navigate = useNavigate();
@@ -40,7 +36,7 @@ export default function TeleCalling() {
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <span className="text-sm font-bold text-gray-500">My Allocations: 45</span>
+            <span className="text-sm font-bold text-gray-500">My Allocations: {mockCalls.length}</span>
           </div>
           
           <div className="overflow-x-auto">
@@ -55,29 +51,39 @@ export default function TeleCalling() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 text-sm">
-                {mockCalls.map((item, i) => (
-                  <tr key={i} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="py-3 px-4">
-                       <div className="font-bold text-blue-600">{item.id}</div>
-                       <div className="font-medium text-gray-900">{item.customer}</div>
-                    </td>
-                    <td className="py-3 px-4 font-bold text-orange-600">{item.dpd}</td>
-                    <td className="py-3 px-4 font-bold text-gray-900">{item.amount}</td>
-                    <td className="py-3 px-4 text-gray-600">
-                       <span className={`px-2 py-1 rounded text-xs font-bold ${
-                         item.status.includes('PTP') ? 'bg-green-100 text-green-700' :
-                         item.status.includes('RTP') ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                       }`}>
-                         {item.status}
-                       </span>
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <button className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors">
-                        <Phone size={16} />
-                      </button>
+                {mockCalls.length === 0 ? (
+                  <tr>
+                    <td colSpan="5" className="py-12 text-center text-gray-500">
+                      <PhoneCall className="mx-auto h-8 w-8 text-gray-300 mb-2" />
+                      <p className="font-semibold text-gray-700">No overdue accounts in queue</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Accounts due for calling will be allocated here.</p>
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  mockCalls.map((item, i) => (
+                    <tr key={i} className="hover:bg-blue-50/50 transition-colors">
+                      <td className="py-3 px-4">
+                         <div className="font-bold text-blue-600">{item.id}</div>
+                         <div className="font-medium text-gray-900">{item.customer}</div>
+                      </td>
+                      <td className="py-3 px-4 font-bold text-orange-600">{item.dpd}</td>
+                      <td className="py-3 px-4 font-bold text-gray-900">{item.amount}</td>
+                      <td className="py-3 px-4 text-gray-600">
+                         <span className={`px-2 py-1 rounded text-xs font-bold ${
+                           item.status.includes('PTP') ? 'bg-green-100 text-green-700' :
+                           item.status.includes('RTP') ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
+                         }`}>
+                           {item.status}
+                         </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <button className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors">
+                          <Phone size={16} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -90,43 +96,51 @@ export default function TeleCalling() {
                <PhoneCall size={18} className="text-blue-600" /> Active Call Action
             </h3>
             
-            <div className="space-y-4">
-              <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
-                 <p className="text-xs font-semibold text-gray-500 uppercase">Calling</p>
-                 <p className="text-lg font-bold text-gray-900 mt-0.5">Meena Kumari</p>
-                 <p className="text-sm font-mono text-blue-600 mt-1">+91 98765 43210</p>
+            {mockCalls.length === 0 ? (
+              <div className="py-8 text-center text-gray-400">
+                <Phone className="mx-auto h-8 w-8 text-gray-300 mb-2 opacity-50" />
+                <p className="text-sm font-semibold text-gray-600">No Active Call</p>
+                <p className="text-xs text-gray-400 mt-1">Select an account or click auto-dialer to start calling.</p>
               </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                   <p className="text-xs font-semibold text-gray-500 uppercase">Calling</p>
+                   <p className="text-lg font-bold text-gray-900 mt-0.5">Meena Kumari</p>
+                   <p className="text-sm font-mono text-blue-600 mt-1">+91 98765 43210</p>
+                </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Call Disposition</label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-                  <option>Select Outcome</option>
-                  <option>PTP (Promise to Pay)</option>
-                  <option>RTP (Refused to Pay)</option>
-                  <option>RNR (Ring No Response)</option>
-                  <option>Switch Off / Not Reachable</option>
-                  <option>Dispute</option>
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">PTP Date (If applicable)</label>
-                <input type="date" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-1">Remarks / Notes</label>
-                <textarea 
-                  rows="3" 
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter details of conversation..."
-                ></textarea>
-              </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Call Disposition</label>
+                  <select className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
+                    <option>Select Outcome</option>
+                    <option>PTP (Promise to Pay)</option>
+                    <option>RTP (Refused to Pay)</option>
+                    <option>RNR (Ring No Response)</option>
+                    <option>Switch Off / Not Reachable</option>
+                    <option>Dispute</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">PTP Date (If applicable)</label>
+                  <input type="date" className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500" />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1">Remarks / Notes</label>
+                  <textarea 
+                    rows="3" 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                    placeholder="Enter details of conversation..."
+                  ></textarea>
+                </div>
 
-              <button className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-green-700 mt-4">
-                <CheckCircle2 size={16} /> Save & Dial Next
-              </button>
-            </div>
+                <button className="w-full flex justify-center items-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg text-sm font-bold shadow-sm hover:bg-green-700 mt-4">
+                  <CheckCircle2 size={16} /> Save & Dial Next
+                </button>
+              </div>
+            )}
           </div>
         </div>
 

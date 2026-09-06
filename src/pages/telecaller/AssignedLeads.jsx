@@ -24,18 +24,20 @@ export default function MyLeads() {
       try {
         setLoading(true);
         const token = localStorage.getItem('token');
+        if (!token) return;
+        
         const url = selectedStaff && selectedStaff !== 'all'
-          ? `${import.meta.env.VITE_API_BASE_URL}/employees/my-created-leads?employeeId=${selectedStaff}`
-          : `${import.meta.env.VITE_API_BASE_URL}/employees/my-created-leads`;
+          ? `${import.meta.env.VITE_API_BASE_URL}/employees/my-leads?employeeId=${selectedStaff}`
+          : `${import.meta.env.VITE_API_BASE_URL}/employees/my-leads`;
 
-        const response = await fetch(url, {
+        const res = await fetch(url, {
           headers: {
             'Authorization': `Bearer ${token}`
           }
         });
         
-        if (response.ok) {
-          const data = await response.json();
+        if (res.ok) {
+          const data = await res.json();
           const normalizedLeads = (data.leads || []).map(l => ({
             id: l.leadId || l._id,
             customerName: l.name,
@@ -50,7 +52,21 @@ export default function MyLeads() {
             sourceType: 'Lead'
           }));
           
-          setLeadsData(normalizedLeads.sort((a,b) => new Date(b.lastContact) - new Date(a.lastContact)));
+          const normalizedApps = (data.loanApplications || []).map(l => ({
+            id: l.applicationId || l._id,
+            customerName: l.customer,
+            mobile: l.mobile,
+            loanType: l.loanType || "Other",
+            amount: l.amount || "0",
+            status: l.status || "Pending",
+            priority: "Normal",
+            nextFollowup: "-",
+            lastContact: l.updatedAt ? new Date(l.updatedAt).toLocaleDateString() : "-",
+            dbId: l._id,
+            sourceType: 'LoanApplication'
+          }));
+          
+          setLeadsData([...normalizedLeads, ...normalizedApps].sort((a,b) => new Date(b.lastContact) - new Date(a.lastContact)));
         }
       } catch (err) {
         console.error("Error fetching leads:", err);
@@ -76,8 +92,8 @@ export default function MyLeads() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">My Created Leads</h1>
-          <p className="text-[14px] text-gray-500 mt-1">Manage leads you have personally added.</p>
+          <h1 className="text-2xl font-bold text-gray-900">Assigned Leads</h1>
+          <p className="text-[14px] text-gray-500 mt-1">View and manage all leads & applications assigned to you.</p>
         </div>
         <div className="flex items-center gap-3">
           <SupervisorStaffFilter onSelectStaff={setSelectedStaff} role="tele" />
