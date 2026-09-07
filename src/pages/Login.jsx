@@ -49,26 +49,27 @@ const LoginPage = () => {
         }
         
         if (response.ok) {
+          const actualRole = data.role || data.employee?.role || role;
+          const userEmail = data.email || data.employee?.email || email;
+
           // For Super Admin, do strict role check
           if (role === 'Super Admin') {
-            const backendRoleStr = (data.role || '').toLowerCase().replace(/ /g, '');
-            const uiRoleStr = 'superadmin';
-            if (backendRoleStr !== uiRoleStr && backendRoleStr !== 'super admin') {
-              toast.error(`Invalid role selected. This account is assigned as ${data.role || 'another role'}.`);
+            const backendRoleStr = (actualRole || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (backendRoleStr !== 'superadmin') {
+              toast.error(`Invalid role selected. This account is assigned as ${actualRole || 'another role'}.`);
+              setIsLoading(false);
               return;
             }
           }
 
-          const actualRole = data.role || role;
           localStorage.setItem('isAuthenticated', 'true');
-          // For Admin, use their actual role from DB so sidebar filters correctly
           localStorage.setItem('userRole', role === 'Super Admin' ? 'Super Admin' : actualRole);
-          localStorage.setItem('userEmail', data.email);
+          localStorage.setItem('userEmail', userEmail);
           localStorage.setItem('token', data.token);
           
-          // Store permissions from backend (the ones SuperAdmin granted them)
+          // Store permissions from backend
           const roleKey = actualRole.toLowerCase().replace(/ /g, '_');
-          storePermissions(data.permissions || ROLE_PERMISSIONS[roleKey] || []);
+          storePermissions(data.permissions || data.employee?.permissions || ROLE_PERMISSIONS[roleKey] || []);
           toast.success(`Login Successful! Welcome, ${actualRole}.`);
           const cleanActual = actualRole.toLowerCase().replace(/[^a-z0-9]/g, '');
           if (cleanActual.includes('tele')) {
@@ -102,21 +103,40 @@ const LoginPage = () => {
       const data = await response.json();
       
       if (response.ok) {
-        const backendRoleStr = (data.role || '').toLowerCase().replace(/ /g, '');
-        const uiRoleStr = effectiveRole.toLowerCase().replace(/ /g, '');
+        const actualRole = data.role || data.employee?.role || effectiveRole;
+        const userEmail = data.email || data.employee?.email || email;
 
-        if (backendRoleStr !== uiRoleStr) {
-          toast.error(`Invalid role selected. This account is assigned as ${data.role || 'another role'}.`);
+        const normalizeRole = (r) => {
+          const s = (r || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (s === 'hr' || s === 'hradmin') return 'hradmin';
+          if (s === 'telecaller' || s === 'telecallersoperator' || s === 'telecallers' || s === 'telecalleroperator' || s === 'seniortelecaller') return 'telecaller';
+          if (s === 'agent' || s === 'agentoperator' || s === 'agentmanager' || s === 'agentexec') return 'agent';
+          if (s === 'accountant' || s === 'accountantadmin') return 'accountant';
+          if (s === 'credit' || s === 'creditadmin') return 'credit';
+          if (s === 'operation' || s === 'operationadmin' || s === 'operations') return 'operation';
+          if (s === 'sales' || s === 'salesadmin') return 'sales';
+          if (s === 'admin') return 'admin';
+          if (s === 'superadmin') return 'superadmin';
+          return s;
+        };
+
+        const backendNorm = normalizeRole(actualRole);
+        const uiNorm = normalizeRole(effectiveRole);
+
+        if (backendNorm !== uiNorm && !backendNorm.includes(uiNorm) && !uiNorm.includes(backendNorm)) {
+          toast.error(`Invalid role selected. This account is assigned as ${actualRole || 'another role'}.`);
+          setIsLoading(false);
           return;
         }
 
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('userRole', effectiveRole);
-        localStorage.setItem('userEmail', data.email);
+        localStorage.setItem('userEmail', userEmail);
         localStorage.setItem('token', data.token);
         
         // Store permissions from backend
-        storePermissions(data.permissions || ROLE_PERMISSIONS[uiRoleStr] || []);
+        const uiRoleStr = effectiveRole.toLowerCase().replace(/ /g, '');
+        storePermissions(data.permissions || data.employee?.permissions || ROLE_PERMISSIONS[uiRoleStr] || []);
         
         toast.success(`Login Successful! Welcome, ${effectiveRole}.`);
 
