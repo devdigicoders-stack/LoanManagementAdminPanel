@@ -122,7 +122,7 @@ export default function AccountantLayout() {
         <div className="p-6 flex items-center justify-between">
           <div>
             <h2 className="text-[20px] font-extrabold tracking-tight" style={{ color: tc.text }}>
-              NGM <span style={{ color: tc.blue }}>Accounts</span>
+              NUOG Housing <span style={{ color: tc.blue }}>Accounts</span>
             </h2>
             <p className="text-[11px] font-bold mt-0.5" style={{ color: tc.muted }}>Financial Management</p>
           </div>

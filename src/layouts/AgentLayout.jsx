@@ -116,7 +116,7 @@ export default function AgentLayout() {
               <span className="font-extrabold text-base" style={{ color: "#1e7ba8" }}>N</span>
             </div>
             <div>
-              <p className="font-extrabold text-[14px] leading-tight" style={{ color: "#344054" }}>NGM Loans</p>
+              <p className="font-extrabold text-[14px] leading-tight" style={{ color: "#344054" }}>NUOG Housing</p>
               <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: "#8ED3F4" }}>Agent</p>
             </div>
           </div>

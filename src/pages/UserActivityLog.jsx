@@ -52,7 +52,7 @@ export default function UserActivityLog() {
             <div className="space-y-4 pt-4 border-t border-slate-100">
               <div>
                 <p className="text-[11px] font-medium text-slate-500 mb-0.5">Email</p>
-                <p className="text-[12px] font-bold text-slate-800">ravi.kumar@ngm.com</p>
+                <p className="text-[12px] font-bold text-slate-800">ravi.kumar@nuoghousing.com</p>
               </div>
               <div>
                 <p className="text-[11px] font-medium text-slate-500 mb-0.5">Last Login</p>

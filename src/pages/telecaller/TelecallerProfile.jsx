@@ -19,7 +19,7 @@ export default function TelecallerProfile() {
 
   const [form, setForm] = useState({
     name: localStorage.getItem(nameKey) || "Telecaller",
-    email: localStorage.getItem("userEmail") || "telecaller@ngm.com",
+    email: localStorage.getItem("userEmail") || "telecaller@nuoghousing.com",
     mobile: "9876543210"
   });
 

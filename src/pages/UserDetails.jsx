@@ -123,7 +123,7 @@ export default function UserDetails() {
                     <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-[#489b0d] shrink-0">
                       <Mail size={14} />
                     </div>
-                    <span className="text-[13px] font-bold text-slate-700">ravi.kumar@ngm.com</span>
+                    <span className="text-[13px] font-bold text-slate-700">ravi.kumar@nuoghousing.com</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-[#489b0d] shrink-0">

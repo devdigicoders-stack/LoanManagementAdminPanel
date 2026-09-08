@@ -1,5 +1,4 @@
-import React from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import {
   ChevronRight,
   Plus,
@@ -10,10 +9,57 @@ import {
   Calendar,
 } from "lucide-react";
 
-const mockFollowUps = [];
-
-
 export default function FollowUps() {
+  const [followUps, setFollowUps] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [canAssign, setCanAssign] = useState(false);
+  const [status, setStatus] = useState("all");
+  const [loading, setLoading] = useState(true);
+  const token = localStorage.getItem("token");
+  const api = import.meta.env.VITE_API_BASE_URL;
+
+  const loadFollowUps = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch(`${api}/followups?status=${status}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok) {
+        setFollowUps(data.followUps || []);
+        setCanAssign(data.canAssign === true);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFollowUps();
+  }, [status]);
+
+  useEffect(() => {
+    if (!canAssign) return;
+    fetch(`${api}/employees?status=Active`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((response) => response.json())
+      .then((data) => setEmployees(Array.isArray(data) ? data : []));
+  }, [canAssign]);
+
+  const assignFollowUp = async (followUpId, assignedToId) => {
+    if (!assignedToId) return;
+    const response = await fetch(`${api}/followups/${followUpId}/assign`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ assignedToId }),
+    });
+    if (response.ok) loadFollowUps();
+  };
+
   const getStatusStyle = (status) => {
     switch (status) {
       case "Upcoming":
@@ -57,11 +103,12 @@ export default function FollowUps() {
 
         {/* Filters */}
         <div className="flex flex-wrap items-center gap-3">
-          <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white min-w-[140px]">
-            <option>All Employees</option>
-          </select>
-          <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white min-w-[140px]">
-            <option>All Status</option>
+          <select value={status} onChange={(event) => setStatus(event.target.value)} className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white min-w-[140px]">
+            <option value="all">All Status</option>
+            <option value="Upcoming">Upcoming</option>
+            <option value="Due Today">Due Today</option>
+            <option value="Completed">Completed</option>
+            <option value="Missed">Missed</option>
           </select>
           <div className="h-10 px-3 flex items-center justify-between rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 bg-white min-w-[120px]">
             <span>Today</span>
@@ -76,22 +123,22 @@ export default function FollowUps() {
       {/* Follow Ups List */}
       <div className="bg-white rounded-lg border border-slate-100 shadow-sm overflow-hidden p-2">
         <div className="flex flex-col divide-y divide-slate-100">
-          {mockFollowUps.length === 0 ? (
+          {loading ? (
+            <div className="p-12 text-center text-slate-400 font-medium text-sm">Loading follow-ups...</div>
+          ) : followUps.length === 0 ? (
             <div className="p-12 text-center text-slate-400 font-medium text-sm">
               No follow-ups found.
             </div>
-          ) : mockFollowUps.map((item) => (
+          ) : followUps.map((item) => (
             <div
               key={item.id}
               className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-md transition-colors cursor-pointer group"
             >
               {/* Left: Avatar & Name */}
               <div className="flex items-center gap-4 w-[250px]">
-                <img
-                  src={item.avatar}
-                  alt={item.leadName}
-                  className="w-10 h-10 rounded-full object-cover border border-slate-200"
-                />
+                <div className="w-10 h-10 rounded-full bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold border border-emerald-100">
+                  {(item.leadName || "L").slice(0, 2).toUpperCase()}
+                </div>
                 <div>
                   <h4 className="text-[14px] font-bold text-slate-800 leading-none mb-1">
                     {item.leadName}
@@ -113,7 +160,7 @@ export default function FollowUps() {
                 <div className="flex items-center gap-2">
                   <Calendar size={14} className="text-slate-400" />
                   <span className="text-[13px] font-semibold text-slate-700">
-                    {item.datetime}
+                    {new Date(item.scheduledAt).toLocaleString()}
                   </span>
                 </div>
               </div>
@@ -125,9 +172,20 @@ export default function FollowUps() {
                 >
                   {item.status}
                 </span>
-                <button className="p-1.5 text-slate-400 hover:text-slate-800 rounded-md hover:bg-slate-200 transition-colors">
-                  <MoreVertical size={16} />
-                </button>
+                {canAssign ? (
+                  <select
+                    value={item.assignedToId || ""}
+                    onChange={(event) => assignFollowUp(item._id, event.target.value)}
+                    className="h-8 max-w-[170px] rounded border border-slate-200 px-2 text-[11px] font-semibold text-slate-600"
+                  >
+                    <option value="">Assign employee</option>
+                    {employees.map((employee) => (
+                      <option key={employee._id} value={employee._id}>
+                        {employee.name} ({employee.empId})
+                      </option>
+                    ))}
+                  </select>
+                ) : <MoreVertical size={16} className="text-slate-400" />}
               </div>
             </div>
           ))}

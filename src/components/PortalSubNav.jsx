@@ -16,6 +16,7 @@ const PORTAL_CONFIGS = [
     icon: FileText,
     tabs: [
       { name: 'Loan Applications', path: '/loans', icon: FileText, exact: true },
+      { name: 'Offer Management', path: '/loans/offers', icon: CircleDollarSign },
       { name: 'Document Center', path: '/loans/documents', icon: FolderOpen },
       { name: 'Active Loans', path: '/loans/active', icon: CheckCircle2 },
       { name: 'EMI Collections', path: '/loans/collections', icon: CircleDollarSign },

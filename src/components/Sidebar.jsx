@@ -119,6 +119,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     if (isMaster || isAdmin) {
       const portalItems = [
         ...(isMaster || hasPermission('Loan Applications') || hasPermission('Loan Management') ? [{ name: "Loan Management", icon: FileText, path: "/loans", badge: "Loans" }] : []),
+        ...(isMaster || hasPermission('Offer Management') || hasPermission('Loan Management') ? [{ name: "Offer Management", icon: CircleDollarSign, path: "/offers", badge: "Offers" }] : []),
         ...(isMaster || hasPermission('Lead Management') ? [{ name: "Lead Management", icon: Target, path: "/leads", badge: "Leads" }] : []),
         ...(isMaster || hasPermission('Telecaller Portal') ? [{ name: "Telecaller Portal", icon: PhoneCall, path: "/telecaller", badge: "Calling" }] : []),
         ...(isMaster || hasPermission('Field Agent Portal') ? [{ name: "Field Agent Portal", icon: MapPin, path: "/agent", badge: "Field" }] : []),
@@ -128,6 +129,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       ];
 
       const adminItems = [
+        ...(isMaster || hasPermission('Offer Management') ? [{ name: "Manage Offers", icon: CircleDollarSign, path: "/offers" }] : []),
         ...(isMaster || hasPermission('Manage Users') ? [{ name: "Manage Users", icon: UserCheck, path: "/users" }] : []),
         ...(isMaster || hasPermission('Permission Management') || hasPermission('Role & Permission Management') ? [{ name: "Permission Management", icon: Lock, path: "/users/roles" }] : []),
         ...(isMaster || hasPermission('Reports & Analytics') ? [{ name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
@@ -286,7 +288,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
             </div>
             {isOpen && (
               <div className="flex flex-col">
-                <span className="font-extrabold text-[var(--color-brand-text)] text-[16px] leading-tight">NGM Loans</span>
+                <span className="font-extrabold text-[var(--color-brand-text)] text-[16px] leading-tight">NUOG Housing</span>
                 <span className="text-[10px] font-bold text-[#489b0d] uppercase tracking-wider">{userRole}</span>
               </div>
             )}

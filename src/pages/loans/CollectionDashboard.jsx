@@ -158,9 +158,37 @@ export default function CollectionDashboard() {
             <CollectorRow name="Amit Verma" collected="₹25.4 L" rate="62%" rateColor="bg-red-500" />
           </div>
         </div>
-
       </div>
 
+      {/* Collection Offers & Settlements Row */}
+      <div className="bg-gradient-to-r from-indigo-900 via-indigo-800 to-slate-900 rounded-2xl p-6 text-white shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-indigo-700/50">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+              Live OTS Pipeline
+            </span>
+            <span className="text-xs text-indigo-200">Active Recovery Campaigns</span>
+          </div>
+          <h2 className="text-xl font-extrabold text-white">Collection Offers & Settlement Management</h2>
+          <p className="text-xs text-indigo-200 max-w-xl">
+            Track One-Time Settlements (OTS), penal interest waivers, overdue concessions, and monitor how many customer offers have been Approved.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="bg-white/10 backdrop-blur-xs px-4 py-2.5 rounded-xl border border-white/10 text-center min-w-[130px]">
+            <span className="text-[11px] text-indigo-200 uppercase font-bold tracking-wider block">Approved Offers</span>
+            <span className="text-2xl font-extrabold text-emerald-400">14 Approved</span>
+          </div>
+          <Link
+            to="/loans/offers"
+            className="px-5 py-3 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg transition flex items-center gap-2"
+          >
+            <span>Manage Collection Offers</span>
+            <ChevronRight size={16} />
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

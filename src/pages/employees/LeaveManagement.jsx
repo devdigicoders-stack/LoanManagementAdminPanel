@@ -37,7 +37,9 @@ export default function LeaveManagement() {
   const handleApprove = (leave) => {
     Swal.fire({
       title: 'Approve Leave?',
-      text: 'Are you sure you want to approve this leave request?',
+      text: `Approve ticket ${leave.ticketId || leave.id} for ${leave.employeeName}?`,
+      input: 'text',
+      inputPlaceholder: 'Optional approval note / comment...',
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#10b981',
@@ -53,7 +55,7 @@ export default function LeaveManagement() {
               'Content-Type': 'application/json',
               'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ status: 'Approved' })
+            body: JSON.stringify({ status: 'Approved', adminComment: result.value || 'Approved by HR/Admin' })
           });
           if (res.ok) {
             toast.success('Leave request approved successfully');
@@ -72,7 +74,7 @@ export default function LeaveManagement() {
   const handleReject = (leave) => {
     Swal.fire({
       title: 'Reject Leave',
-      text: 'Please provide a reason for rejecting this leave:',
+      text: `Provide reason for rejecting ticket ${leave.ticketId || leave.id}:`,
       input: 'textarea',
       inputPlaceholder: 'Type your reason here...',
       showCancelButton: true,
@@ -113,25 +115,28 @@ export default function LeaveManagement() {
 
   const handleView = (req) => {
     Swal.fire({
-      title: `Leave Details - ${req.employeeName}`,
+      title: `Leave Ticket Details - ${req.ticketId || 'LEV'}`,
       html: `
         <div class="text-left text-sm space-y-3 mt-4">
+          <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Ticket ID:</span> <span class="font-mono font-bold text-emerald-700">${req.ticketId || '-'}</span></div>
+          <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Employee:</span> <span class="font-semibold">${req.employeeName} (${req.empId || '-'})</span></div>
           <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Department:</span> <span>${req.department}</span></div>
+          <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Assigned HR:</span> <span class="font-semibold text-sky-700">${req.assignedHr || 'Admin / HR'}</span></div>
           <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Leave Type:</span> <span>${req.type}</span></div>
           <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Duration:</span> <span>${new Date(req.startDate).toLocaleDateString()} to ${new Date(req.endDate).toLocaleDateString()} (${req.days} Days)</span></div>
           <div class="flex justify-between border-b pb-2"><span class="font-bold text-slate-500">Applied On:</span> <span>${new Date(req.appliedDate).toLocaleDateString()}</span></div>
           <div class="border-b pb-2">
             <span class="font-bold text-slate-500 block mb-1">Reason:</span> 
-            <p class="text-slate-700 bg-slate-50 p-2 rounded">${req.reason}</p>
+            <p class="text-slate-700 bg-slate-50 p-2 rounded border border-slate-200">${req.reason}</p>
           </div>
           ${req.adminComment ? `<div class="border-b pb-2">
-            <span class="font-bold text-slate-500 block mb-1">Admin Comment:</span> 
-            <p class="text-slate-700 bg-slate-50 p-2 rounded">${req.adminComment}</p>
+            <span class="font-bold text-slate-500 block mb-1">Admin/HR Remarks:</span> 
+            <p class="text-slate-700 bg-emerald-50 p-2 rounded border border-emerald-200">${req.adminComment}</p>
           </div>` : ''}
           <div class="flex justify-between pt-2"><span class="font-bold text-slate-500">Current Status:</span> <span class="font-bold ${req.status === 'Approved' ? 'text-emerald-600' : req.status === 'Rejected' ? 'text-red-600' : 'text-amber-600'}">${req.status}</span></div>
         </div>
       `,
-      confirmButtonColor: '#8ED3F4',
+      confirmButtonColor: '#047857',
       confirmButtonText: 'Close'
     });
   };
@@ -212,7 +217,9 @@ export default function LeaveManagement() {
           <table className="w-full text-left border-collapse min-w-[1000px]">
             <thead>
               <tr className="border-b border-[var(--color-brand-border)]">
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Ticket ID</th>
                 <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Employee</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Assigned HR</th>
                 <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Leave Type</th>
                 <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Duration</th>
                 <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Applied Date</th>
@@ -224,8 +231,18 @@ export default function LeaveManagement() {
               {leaveRequests.map((req) => (
                 <tr key={req.id} className="hover:bg-[var(--color-brand-hover-bg)] transition-colors group">
                   <td className="py-4 px-6">
+                    <span className="font-mono text-[12.5px] font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-200">
+                      {req.ticketId || `LEV-${(req.id || '').toString().slice(-4)}`}
+                    </span>
+                  </td>
+                  <td className="py-4 px-6">
                     <p className="text-[14px] font-bold text-[var(--color-brand-text)]">{req.employeeName}</p>
-                    <p className="text-[12px] text-[var(--color-brand-text-secondary)] mt-0.5">{req.department}</p>
+                    <p className="text-[12px] text-[var(--color-brand-text-secondary)] mt-0.5">{req.empId ? `${req.empId} • ` : ''}{req.department}</p>
+                  </td>
+                  <td className="py-4 px-6">
+                    <span className="text-[12.5px] font-semibold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-md">
+                      {req.assignedHr || 'Admin HR'}
+                    </span>
                   </td>
                   <td className="py-4 px-6">
                     <p className="text-[13px] font-semibold text-[var(--color-brand-text)]">{req.type}</p>

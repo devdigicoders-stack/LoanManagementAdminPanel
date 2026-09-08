@@ -60,6 +60,7 @@ import OverdueLoans from './pages/loans/OverdueLoans';
 import ForeclosureRequests from './pages/loans/ForeclosureRequests';
 import TopUpRequests from './pages/loans/TopUpRequests';
 import LoanClosure from './pages/loans/LoanClosure';
+import ManageOffers from './pages/loans/ManageOffers';
 import DocumentCenter from './pages/loans/DocumentCenter';
 import VerifyDocuments from './pages/loans/VerifyDocuments';
 import DocumentViewer from './pages/loans/DocumentViewer';
@@ -345,6 +346,8 @@ function App() {
           <Route path="loans/top-up" element={<TopUpRequests />} />
           <Route path="loans/overdue" element={<OverdueLoans />} />
           <Route path="loans/documents" element={<DocumentCenter />} />
+          <Route path="loans/offers" element={<ManageOffers />} />
+          <Route path="offers" element={<ManageOffers />} />
           
           {/* System Routes */}
           <Route path="settings" element={<Settings />} />

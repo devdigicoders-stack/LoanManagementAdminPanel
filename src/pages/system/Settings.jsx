@@ -68,7 +68,7 @@ export default function Settings() {
                   </div>
                   <div>
                     <label className="block text-[12px] font-bold text-slate-700 mb-2">Support Email</label>
-                    <input type="email" defaultValue="support@ngm.com" className="w-full h-11 px-4 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-[#489b0d] focus:ring-1 focus:ring-[#489b0d]" />
+                    <input type="email" defaultValue="support@nuoghousing.com" className="w-full h-11 px-4 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-800 focus:outline-none focus:border-[#489b0d] focus:ring-1 focus:ring-[#489b0d]" />
                   </div>
                 </div>
 

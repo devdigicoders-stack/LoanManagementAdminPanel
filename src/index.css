@@ -30,6 +30,10 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
+button, [role="button"], input[type="button"], input[type="submit"], input[type="reset"] {
+  cursor: pointer;
+}
+
 /* Custom Scrollbar for a cleaner look */
 ::-webkit-scrollbar {
   width: 6px;

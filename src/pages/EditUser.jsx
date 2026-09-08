@@ -38,7 +38,7 @@ export default function EditUser() {
               
               <div>
                 <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Email Address <span className="text-red-500">*</span></label>
-                <input type="email" defaultValue="ravi.kumar@ngm.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
+                <input type="email" defaultValue="ravi.kumar@nuoghousing.com" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
               </div>
               
               <div>

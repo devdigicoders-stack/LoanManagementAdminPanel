@@ -37,7 +37,7 @@ export default function ResetPassword() {
             <img src="https://i.pravatar.cc/150?u=1" alt="Ravi Kumar" className="w-16 h-16 rounded-full border-2 border-slate-50 object-cover" />
             <div>
               <h2 className="text-[16px] font-bold text-slate-800 mb-0.5">Ravi Kumar</h2>
-              <p className="text-[12px] font-medium text-slate-500 mb-0.5">ravi.kumar@ngm.com</p>
+              <p className="text-[12px] font-medium text-slate-500 mb-0.5">ravi.kumar@nuoghousing.com</p>
               <p className="text-[12px] font-bold text-[#489b0d]">Super Admin</p>
             </div>
           </div>
