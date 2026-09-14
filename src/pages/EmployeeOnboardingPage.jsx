@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   User, Mail, Phone, Home, CreditCard, Briefcase, GraduationCap,
@@ -85,10 +85,10 @@ export default function EmployeeOnboardingPage() {
   const [submitted, setSubmitted] = useState(false);
 
   const [form, setForm] = useState({
+    email: '', mobile: '', pan: '', aadhar: '',
     fathersName: '', mothersName: '', fathersMobile: '',
     maritalStatus: '', drivingLicence: '', vehicleNumber: '',
-    presentAddress: '', permanentAddress: '', landmark: '',
-    mobile: '', pan: '', aadhar: '',
+    pincode: '', presentAddress: '', permanentAddress: '', landmark: '',
     bankAccType: '', bankAccName: '', bankName: '', bankBranch: '',
     bankAccNum: '', bankAccNumConfirm: '', bankIfsc: '',
     qual1Type: '', qual1Inst: '', qual1Dist: '', qual1Year: '', qual1Perc: '',
@@ -113,28 +113,38 @@ export default function EmployeeOnboardingPage() {
         if (data.onboardingStatus === 'Submitted' || data.onboardingStatus === 'Done') {
           setSubmitted(true);
         }
+        if (data.state || data.district || data.city) {
+          setPincodeInfo({
+            state: data.state || '',
+            district: data.district || '',
+            city: data.city || ''
+          });
+        }
         // Pre-fill editable info from existing data
         setForm(f => ({
           ...f,
+          email: data.email || '',
           mobile: data.mobile || '',
           pan: data.pan || '',
           aadhar: data.aadhar || '',
           fathersName: data.fathersName || '',
           mothersName: data.mothersName || '',
           fathersMobile: data.fathersMobile || '',
-          maritalStatus: data.maritalStatus || '',
+          maritalStatus: data.maritalStatus || 'Single',
           drivingLicence: data.drivingLicence || '',
           vehicleNumber: data.vehicleNumber || '',
+          pincode: data.pincode || '',
           presentAddress: data.presentAddress || '',
-          permanentAddress: data.permanentAddress || '',
+          permanentAddress: data.permanentAddress || data.presentAddress || '',
           landmark: data.landmark || '',
-          bankAccType: data.bankAccType || '',
-          bankAccName: data.bankAccName || '',
+          bankAccType: data.bankAccType || 'Savings',
+          bankAccName: data.bankAccName || data.name || '',
           bankName: data.bankName || '',
           bankBranch: data.bankBranch || '',
           bankAccNum: data.bankAccNum || '',
+          bankAccNumConfirm: data.bankAccNum || '',
           bankIfsc: data.bankIfsc || '',
-          qual1Type: data.qual1Type || '',
+          qual1Type: data.qual1Type || 'Graduate',
           qual1Inst: data.qual1Inst || '',
           qual1Dist: data.qual1Dist || '',
           qual1Year: data.qual1Year || '',
@@ -309,10 +319,11 @@ export default function EmployeeOnboardingPage() {
         <div className="bg-gradient-to-br from-[#0EA5E9] to-[#0284C7] rounded-2xl p-6 mb-8 text-white shadow-lg">
           <p className="text-sm font-semibold opacity-80 mb-1">Welcome to HAUS Nuo-Pay</p>
           <h1 className="text-2xl font-extrabold mb-1">{employee.name}</h1>
-          <p className="text-sm opacity-80">{employee.designation} Â· {employee.division}</p>
-          <p className="text-xs mt-3 opacity-60">Employee ID: {employee.empId}</p>
+          <p className="text-sm opacity-90">{employee.designation} · {employee.division}</p>
+          <p className="text-xs mt-1 opacity-90 font-medium">📧 {employee.email}</p>
+          <p className="text-xs mt-1 opacity-70">Employee ID: {employee.empId}</p>
           <div className="mt-4 bg-white/10 rounded-xl p-3 text-sm">
-            <p>ðŸ“‹ Please fill this form carefully. All the information you submit will be verified by HR.</p>
+            <p>📋 Please fill this form carefully. All the information you submit will be verified by HR.</p>
           </div>
         </div>
 
@@ -322,11 +333,12 @@ export default function EmployeeOnboardingPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <SectionHeader icon={User} title="Personal Information" />
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <Input label="Email Address" required name="email" value={form.email} onChange={handleChange} placeholder="Your email address" type="email" />
+              <Input label="Mobile Number" required name="mobile" value={form.mobile} onChange={handleChange} placeholder="Your contact number" type="tel" />
               <Input label="Father's Name" required name="fathersName" value={form.fathersName} onChange={handleChange} placeholder="Enter father's full name" />
               <Input label="Father's Mobile" name="fathersMobile" value={form.fathersMobile} onChange={handleChange} placeholder="Father's mobile number" type="tel" />
               <Input label="Mother's Name" name="mothersName" value={form.mothersName} onChange={handleChange} placeholder="Enter mother's full name" />
               <Select label="Marital Status" required name="maritalStatus" value={form.maritalStatus} onChange={handleChange} options={MARITAL_STATUS} />
-              <Input label="Mobile Number" required name="mobile" value={form.mobile} onChange={handleChange} placeholder="Your contact number" type="tel" />
               <Input label="Driving Licence No." name="drivingLicence" value={form.drivingLicence} onChange={handleChange} placeholder="DL number (if any)" />
               <Input label="Vehicle Number" name="vehicleNumber" value={form.vehicleNumber} onChange={handleChange} placeholder="Vehicle number (if any)" />
             </div>

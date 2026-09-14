@@ -3,10 +3,12 @@ import { X, UserPlus, MapPin, Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import { validate } from '../../utils/validation';
+import InputError from '../../components/common/InputError';
 
 export default function AddEmployee() {
   const navigate = useNavigate();
-
+  const [errors, setErrors] = useState({});
   // state for form fields
   const [formData, setFormData] = useState({
     fullName: '', role: '', email: '', password: '', mobile: '', designation: '', division: '',
@@ -104,6 +106,18 @@ export default function AddEmployee() {
 
   const handleSave = (e) => {
     e.preventDefault();
+    // Validation before confirmation
+    const newErrors = {};
+    if (!validate.mobile(formData.mobile.trim())) newErrors.mobile = 'Invalid mobile number (must start with 6-9 and be 10 digits)';
+    if (formData.pan && !validate.pan(formData.pan.trim())) newErrors.pan = 'Invalid PAN number (5 letters, 4 digits, 1 letter)';
+    if (formData.aadhar && !validate.aadhaar(formData.aadhar.trim())) newErrors.aadhar = 'Invalid Aadhaar number (12 digits)';
+    if (formData.pincode && !validate.pincode(formData.pincode.trim())) newErrors.pincode = 'Invalid pincode (6 digits)';
+    if (!validate.email(formData.email.trim())) newErrors.email = 'Invalid email address';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please correct highlighted errors');
+      return;
+    }
     Swal.fire({
       title: 'Create Employee?',
       text: 'Are you sure you want to add this employee to the system?',
@@ -224,6 +238,7 @@ export default function AddEmployee() {
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Email ID *</label>
                 <input required type="email" name="email" value={formData.email} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200" />
+                <InputError message={errors.email} />
               </div>
               {needsAuth && (
                 <div>
@@ -233,7 +248,8 @@ export default function AddEmployee() {
               )}
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Mobile No. *</label>
-                <input required type="tel" name="mobile" value={formData.mobile} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200" />
+                <input required type="tel" name="mobile" pattern="[6-9]\\d{9}" title="Enter 10 digit mobile starting with 6-9" value={formData.mobile} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200" />
+                <InputError message={errors.mobile} />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Designation *</label>
@@ -268,6 +284,7 @@ export default function AddEmployee() {
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Pincode</label>
                 <input type="text" name="pincode" placeholder="6-digit pincode" value={formData.pincode} onChange={handlePincodeChange} maxLength={6} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-teal-300 focus:ring-1 focus:ring-teal-200 placeholder:text-gray-400" />
+                <InputError message={errors.pincode} />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">District</label>
@@ -291,10 +308,12 @@ export default function AddEmployee() {
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">PAN Number *</label>
                 <input required type="text" name="pan" placeholder="ABCDE1234F" value={formData.pan} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 uppercase focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200 placeholder:text-gray-400 placeholder:normal-case" />
+                <InputError message={errors.pan} />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Aadhar Number *</label>
                 <input required type="text" name="aadhar" placeholder="12-digit Aadhar" value={formData.aadhar} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200 placeholder:text-gray-400" />
+                <InputError message={errors.aadhar} />
               </div>
             </div>
           </div>

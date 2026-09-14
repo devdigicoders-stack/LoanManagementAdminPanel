@@ -150,6 +150,62 @@ export default function PublicOnboardingForm() {
               achievement: data.achievement || 0,
               incentives: data.incentives || 0
             });
+
+            // Pre-fill form fields from fetched candidate data
+            setFormData(prev => ({
+              ...prev,
+              fathersName: data.fathersName || '',
+              mothersName: data.mothersName || '',
+              fathersMobile: data.fathersMobile || '',
+              maritalStatus: data.maritalStatus || 'Single',
+              drivingLicence: data.drivingLicence || '',
+              vehicleNumber: data.vehicleNumber || '',
+              presentAddress: data.presentAddress || '',
+              permanentAddress: data.permanentAddress || data.presentAddress || '',
+              landmark: data.landmark || '',
+              pincode: data.pincode || '',
+              district: data.district || '',
+              state: data.state || '',
+              ref1Rel: data.ref1Rel || '',
+              ref1Name: data.ref1Name || '',
+              ref1Mobile: data.ref1Mobile || '',
+              ref1Address: data.ref1Address || '',
+              ref2Rel: data.ref2Rel || '',
+              ref2Name: data.ref2Name || '',
+              ref2Mobile: data.ref2Mobile || '',
+              ref2Address: data.ref2Address || '',
+              qual1Type: data.qual1Type || 'Graduation',
+              qual1Inst: data.qual1Inst || '',
+              qual1Dist: data.qual1Dist || '',
+              qual1Year: data.qual1Year || '',
+              qual1Perc: data.qual1Perc || '',
+              expCompany: data.expCompany || '',
+              expPosition: data.expPosition || '',
+              expPhone: data.expPhone || '',
+              expStart: data.expStart || '',
+              expEnd: data.expEnd || '',
+              expGross: data.expGross || '',
+              expMonthly: data.expMonthly || '',
+              expReason: data.expReason || '',
+              expAddress: data.expAddress || '',
+              expRmName: data.expRmName || '',
+              expRmDesig: data.expRmDesig || '',
+              expRmMobile: data.expRmMobile || '',
+              expRmEmail: data.expRmEmail || '',
+              expRmBranch: data.expRmBranch || '',
+              bankAccType: data.bankAccType || 'Savings Account',
+              bankAccName: data.bankAccName || data.name || '',
+              bankName: data.bankName || '',
+              bankBranch: data.bankBranch || '',
+              bankAccNum: data.bankAccNum || '',
+              bankAccNumConfirm: data.bankAccNum || '',
+              bankIfsc: data.bankIfsc || ''
+            }));
+
+            if (data.expCompany || data.expPosition) {
+              setIsExperienced(true);
+            }
+
             if (data.onboardingStatus === 'Done') {
               setCurrentStep(8);
             }
@@ -175,6 +231,23 @@ export default function PublicOnboardingForm() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    if (name === 'pincode' && value.length === 6 && /^\d+$/.test(value)) {
+      fetch(`https://api.postalpincode.in/pincode/${value}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data && data[0]?.Status === 'Success') {
+            const po = data[0].PostOffice[0];
+            setFormData(prev => ({
+              ...prev,
+              district: po.District,
+              state: po.State
+            }));
+            toast.success(`Location: ${po.District}, ${po.State}`);
+          }
+        })
+        .catch(() => {});
+    }
   };
 
   const handleBack = () => {
@@ -481,11 +554,7 @@ export default function PublicOnboardingForm() {
                   </div>
                   <div>
                     <label className="block text-[13px] font-bold text-gray-700 mb-1.5">State (auto-filled) <span className="text-red-500">*</span></label>
-                    <select name="state" value={formData.state} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500">
-                      <option value="">Select state</option>
-                      <option value="Delhi">Delhi</option>
-                      <option value="Maharashtra">Maharashtra</option>
-                    </select>
+                    <input type="text" name="state" placeholder="State" value={formData.state} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
                   </div>
                 </div>
               </div>
