@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Users, UserCheck, Calendar, FileText, Briefcase, Building2, 
-  TrendingUp, TrendingDown, ArrowRight, Zap, CheckCircle, XCircle, Clock
+  TrendingUp, TrendingDown, ArrowRight, Zap, CheckCircle, XCircle, Clock,
+  Lock, Unlock, AlertCircle
 } from 'lucide-react';
 import Highcharts from 'highcharts';
 import { HighchartsReact } from 'highcharts-react-official';
@@ -18,7 +19,7 @@ const Card = ({ children, className = "" }) => (
 );
 
 const Trend = ({ value, isUp }) => (
-  <span className={`text-[12px] font-bold flex items-center gap-1 ${isUp ? 'textemerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'} px-2 py-0.5 rounded-full whitespace-nowrap`}>
+  <span className={`text-[12px] font-bold flex items-center gap-1 ${isUp ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'} px-2 py-0.5 rounded-full whitespace-nowrap`}>
     {isUp ? <TrendingUp size={14} strokeWidth={2.5} /> : <TrendingDown size={14} strokeWidth={2.5} />}
     {value}
   </span>
@@ -37,6 +38,7 @@ export default function HRDashboard() {
     onLeaveToday: 0
   });
 
+  const [unblockQueries, setUnblockQueries] = useState([]);
   const [departmentData, setDepartmentData] = useState([]);
   const [growthData, setGrowthData] = useState({ categories: [], total: [], newHires: [] });
   const [attendanceData, setAttendanceData] = useState({ categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], present: [0,0,0,0,0], absent: [0,0,0,0,0] });
@@ -44,7 +46,23 @@ export default function HRDashboard() {
 
   useEffect(() => {
     fetchDashboardData();
+    fetchUnblockQueries();
   }, []);
+
+  const fetchUnblockQueries = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/unblock-queries`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUnblockQueries(Array.isArray(data.requests) ? data.requests : []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch unblock queries:', err);
+    }
+  };
 
   const fetchDashboardData = async () => {
     try {
@@ -151,14 +169,48 @@ export default function HRDashboard() {
             </h1>
             <p className="text-[15px] text-slate-500 font-medium mt-2">Overview of human resources and employee activities.</p>
           </div>
-          <button className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
-            <Zap size={16} className="text-yellow-400 fill-yellow-400" /> Export HR Report
-          </button>
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => navigate('/employees')}
+              className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2.5 rounded-xl font-bold text-sm shadow transition-all"
+            >
+              <Users size={16} /> Manage Employees
+            </button>
+            <button className="flex items-center gap-2 bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
+              <Zap size={16} className="text-yellow-400 fill-yellow-400" /> Export HR Report
+            </button>
+          </div>
         </div>
       </div>
 
+      {/* Pending Login Unblock Queries Alert Banner (If Any) */}
+      {unblockQueries.length > 0 && (
+        <div className="bg-gradient-to-r from-rose-500 to-amber-600 rounded-[20px] p-5 text-white shadow-lg shadow-rose-500/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+              <Lock size={22} className="text-white" />
+            </div>
+            <div>
+              <h4 className="text-base font-black flex items-center gap-2">
+                <span>{unblockQueries.length} Employee(s) Waiting for Login Approval / Unblock</span>
+                <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping" />
+              </h4>
+              <p className="text-xs text-rose-100 mt-0.5">
+                Employees have submitted unlock queries directly from the login page. You can approve their login in 1 click.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => navigate('/employees')}
+            className="px-4 py-2 bg-white text-rose-700 font-extrabold text-xs rounded-xl shadow hover:bg-rose-50 transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <Unlock size={14} /> Review & Unblock Now &rarr;
+          </button>
+        </div>
+      )}
+
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-5">
         
         <Card className="flex flex-col relative overflow-hidden group">
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-gradient-to-br from-blue-50 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
@@ -170,6 +222,29 @@ export default function HRDashboard() {
           </div>
           <p className="text-[12px] font-bold text-slate-500 mb-1">Total Employees</p>
           <h3 className="text-2xl font-black text-slate-800 tracking-tight">{stats.totalEmployees}</h3>
+        </Card>
+
+        {/* Login Unlock Queries Card */}
+        <Card 
+          onClick={() => navigate('/employees')}
+          className={`flex flex-col relative overflow-hidden group cursor-pointer transition-all ${
+            unblockQueries.length > 0 ? 'border-rose-300 ring-2 ring-rose-100 bg-rose-50/20' : ''
+          }`}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${
+              unblockQueries.length > 0 ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-slate-100 text-slate-600 border-slate-200'
+            }`}>
+              <Lock size={20} strokeWidth={2.5} />
+            </div>
+            {unblockQueries.length > 0 ? (
+              <span className="text-[11px] font-extrabold text-rose-700 bg-rose-100 px-2 py-0.5 rounded-full animate-pulse">Action Needed</span>
+            ) : (
+              <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">All Clear</span>
+            )}
+          </div>
+          <p className="text-[12px] font-bold text-slate-500 mb-1">Unlock Queries</p>
+          <h3 className="text-2xl font-black text-rose-900 tracking-tight">{unblockQueries.length}</h3>
         </Card>
 
         <Card className="flex flex-col relative overflow-hidden group">

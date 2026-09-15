@@ -2,7 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   Search, UserPlus, Link2, Check, Hourglass, Edit, Eye, 
   Trash2, Phone, User, DollarSign, AlertCircle, X, 
-  Send, Users, CheckCircle2, Filter, Sparkles, UserCheck, ChevronDown
+  Send, Users, CheckCircle2, Filter, Sparkles, UserCheck, ChevronDown,
+  Lock, Unlock, KeyRound
 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
@@ -24,10 +25,12 @@ export default function ManageEmployees() {
   const [hrFilter, setHrFilter] = useState('all'); // 'all', 'unassigned', or specific hrId
   const [onboardingFilter, setOnboardingFilter] = useState('all'); // 'all', 'Done', 'Pending'
   const [onlyMyAssigned, setOnlyMyAssigned] = useState(false);
+  const [lateLockFilter, setLateLockFilter] = useState('all'); // 'all', 'locked', 'pendingQuery'
 
   // Modals state
   const [assignHrModal, setAssignHrModal] = useState({ isOpen: false, employee: null, selectedHrId: '' });
   const [assignTelecallerModal, setAssignTelecallerModal] = useState({ isOpen: false, employee: null, selectedTelecallerId: '', notes: '' });
+  const [unblockModalState, setUnblockModalState] = useState({ isOpen: false, employee: null, hrRemark: '', isProcessing: false });
   const [isSubmittingModal, setIsSubmittingModal] = useState(false);
   const [hrSearchText, setHrSearchText] = useState('');
   const [isHrDropdownOpen, setIsHrDropdownOpen] = useState(false);
@@ -90,6 +93,11 @@ export default function ManageEmployees() {
           role: emp.role,
           designation: emp.designation,
           status: emp.status,
+          isLateLocked: !!emp.isLateLocked,
+          lateLockReason: emp.lateLockReason || '',
+          hrLoginApprovedDate: emp.hrLoginApprovedDate || '',
+          hrApprovedBy: emp.hrApprovedBy || '',
+          unblockRequest: emp.unblockRequest || { status: 'None', queryText: '' },
           onboarding: emp.onboardingStatus || 'Pending',
           assignedHRId: emp.assignedHRId || null,
           assignedHRName: emp.assignedHRName || null,
@@ -191,6 +199,158 @@ export default function ManageEmployees() {
           }
         } catch (error) {
           toast.error('Server error');
+        }
+      }
+    });
+  };
+
+  const handleApproveLateLogin = (id, empName) => {
+    Swal.fire({
+      title: 'Approve Late Login?',
+      text: `Are you sure you want to unblock ${empName} and approve their login for today?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, Unblock & Approve'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/status`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ unlockLate: true })
+          });
+
+          if (res.ok) {
+            const updated = await res.json();
+            setEmployees(employees.map(emp =>
+              emp.id === id ? {
+                ...emp,
+                status: 'Active',
+                isLateLocked: false,
+                lateLockReason: '',
+                hrLoginApprovedDate: updated.hrLoginApprovedDate,
+                unblockRequest: {
+                  ...emp.unblockRequest,
+                  status: 'Approved',
+                  hrRemark: 'Unblocked by HR'
+                }
+              } : emp
+            ));
+            toast.success(`${empName}'s late login approved & ID unblocked!`);
+          } else {
+            toast.error('Failed to unblock employee');
+          }
+        } catch (error) {
+          toast.error('Server error');
+        }
+      }
+    });
+  };
+
+  const handleProcessUnblockQuery = async (employeeId, action, remark = '') => {
+    try {
+      setUnblockModalState(prev => ({ ...prev, isProcessing: true }));
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${employeeId}/process-unblock`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ action, hrRemark: remark })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || 'Action saved successfully!');
+        setEmployees(prev => prev.map(emp => {
+          if (emp.id === employeeId) {
+            return {
+              ...emp,
+              isLateLocked: action === 'Approved' ? false : emp.isLateLocked,
+              lateLockReason: action === 'Approved' ? '' : emp.lateLockReason,
+              status: action === 'Approved' ? 'Active' : emp.status,
+              unblockRequest: {
+                ...emp.unblockRequest,
+                status: action === 'Approved' ? 'Approved' : 'Rejected',
+                hrRemark: remark
+              }
+            };
+          }
+          return emp;
+        }));
+        setUnblockModalState({ isOpen: false, employee: null, hrRemark: '', isProcessing: false });
+      } else {
+        toast.error(data.message || 'Failed to process unblock request');
+        setUnblockModalState(prev => ({ ...prev, isProcessing: false }));
+      }
+    } catch (err) {
+      toast.error('Server error processing request');
+      setUnblockModalState(prev => ({ ...prev, isProcessing: false }));
+    }
+  };
+
+  const handleAdminResetPassword = (emp) => {
+    Swal.fire({
+      title: `Reset Password for ${emp.name}`,
+      html: `
+        <div style="text-align: left; font-size: 13px; color: #475569; margin-bottom: 8px;">
+          <p><strong>Employee ID:</strong> ${emp.empId}</p>
+          <p><strong>Email / Login ID:</strong> ${emp.email}</p>
+          <p style="margin-top: 10px; color: #166534; background: #f0fdf4; padding: 6px 10px; border-radius: 6px; border: 1px solid #bbf7d0;">
+            🔑 <em>No previous password required. Enter a new password below to instantly update.</em>
+          </p>
+        </div>
+      `,
+      input: 'password',
+      inputLabel: 'Enter New Password',
+      inputPlaceholder: 'Minimum 6 characters',
+      inputAttributes: {
+        autocapitalize: 'off',
+        autocorrect: 'off'
+      },
+      showCancelButton: true,
+      confirmButtonColor: '#10b981',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Update Password',
+      preConfirm: (password) => {
+        if (!password || password.trim().length < 4) {
+          Swal.showValidationMessage('Password must be at least 4 characters');
+          return false;
+        }
+        return password.trim();
+      }
+    }).then(async (result) => {
+      if (result.isConfirmed && result.value) {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${emp.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ password: result.value })
+          });
+
+          if (res.ok) {
+            Swal.fire({
+              icon: 'success',
+              title: 'Password Updated!',
+              html: `Password for <strong>${emp.name}</strong> has been successfully changed.<br/><span style="color: #64748b; font-size: 12px;">Employee can now login using their new password.</span>`,
+              confirmButtonColor: '#10b981'
+            });
+          } else {
+            toast.error('Failed to update password');
+          }
+        } catch (error) {
+          toast.error('Server error updating password');
         }
       }
     });
@@ -336,6 +496,20 @@ export default function ManageEmployees() {
   const totalCount = employees.length;
   const unassignedHrCount = useMemo(() => employees.filter(e => !e.assignedHRId).length, [employees]);
   const pendingOnboardingCount = useMemo(() => employees.filter(e => e.onboarding !== 'Done').length, [employees]);
+  const pendingQueriesCount = useMemo(() => employees.filter(e => e.isLateLocked || e.unblockRequest?.status === 'Pending').length, [employees]);
+
+  // Filtered employees
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(emp => {
+      if (lateLockFilter === 'locked') {
+        return emp.isLateLocked;
+      }
+      if (lateLockFilter === 'pendingQuery') {
+        return emp.unblockRequest?.status === 'Pending' || emp.isLateLocked;
+      }
+      return true;
+    });
+  }, [employees, lateLockFilter]);
 
   return (
     <div className="w-full bg-slate-50/50 min-h-screen pb-16">
@@ -351,7 +525,7 @@ export default function ManageEmployees() {
               <div>
                 <h1 className="text-xl font-bold text-gray-900 tracking-tight">Employees & HR Delegation</h1>
                 <p className="text-xs text-gray-500 font-medium mt-0.5">
-                  Assign HRs to employees, delegate pending onboardings to telecallers, and track salaries.
+                  Assign HRs to employees, review late login queries, delegate pending onboardings, and manage staff.
                 </p>
               </div>
             </div>
@@ -388,11 +562,36 @@ export default function ManageEmployees() {
         </div>
 
         {/* Quick KPI summary counters */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
-          <div className="bg-gray-50 border border-gray-200/70 rounded-lg p-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-5">
+          <div 
+            onClick={() => setLateLockFilter('all')}
+            className={`border rounded-lg p-3 cursor-pointer transition-all ${lateLockFilter === 'all' ? 'bg-white border-gray-300 ring-2 ring-purple-100' : 'bg-gray-50 border-gray-200/70 hover:bg-white'}`}
+          >
             <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider block">Total Listed</span>
             <span className="text-lg font-bold text-gray-900 mt-0.5 block">{totalCount}</span>
           </div>
+
+          {/* Pending Unlock Queries / Late Blocked KPI Pill */}
+          <div 
+            onClick={() => setLateLockFilter(lateLockFilter === 'pendingQuery' ? 'all' : 'pendingQuery')}
+            className={`border rounded-lg p-3 cursor-pointer transition-all ${lateLockFilter === 'pendingQuery' ? 'bg-rose-50 border-rose-300 ring-2 ring-rose-200' : 'bg-white border-gray-200/70 hover:border-rose-200'}`}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-semibold text-rose-700 uppercase tracking-wider flex items-center gap-1">
+                <Lock size={12} /> Unlock Queries
+              </span>
+              {pendingQueriesCount > 0 && (
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping" />
+              )}
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <span className="text-lg font-bold text-rose-900">{pendingQueriesCount}</span>
+              {pendingQueriesCount > 0 && (
+                <span className="text-[10px] font-extrabold bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded">Needs HR Action</span>
+              )}
+            </div>
+          </div>
+
           <div 
             onClick={() => setHrFilter(hrFilter === 'unassigned' ? 'all' : 'unassigned')}
             className={`border rounded-lg p-3 cursor-pointer transition-all ${hrFilter === 'unassigned' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-200' : 'bg-white border-gray-200/70 hover:border-amber-200'}`}
@@ -403,6 +602,7 @@ export default function ManageEmployees() {
             </div>
             <span className="text-lg font-bold text-amber-900 mt-0.5 block">{unassignedHrCount}</span>
           </div>
+
           <div 
             onClick={() => setOnboardingFilter(onboardingFilter === 'PendingOrSubmitted' ? 'all' : 'PendingOrSubmitted')}
             className={`border rounded-lg p-3 cursor-pointer transition-all ${onboardingFilter === 'PendingOrSubmitted' ? 'bg-orange-50 border-orange-300 ring-2 ring-orange-200' : 'bg-white border-gray-200/70 hover:border-orange-200'}`}
@@ -413,6 +613,7 @@ export default function ManageEmployees() {
             </div>
             <span className="text-lg font-bold text-orange-900 mt-0.5 block">{pendingOnboardingCount}</span>
           </div>
+
           <div 
             onClick={() => navigate('/hr/payroll')}
             className="bg-white border border-gray-200/70 hover:border-green-300 rounded-lg p-3 cursor-pointer transition-all group"
@@ -421,7 +622,7 @@ export default function ManageEmployees() {
               <span className="text-[11px] font-semibold text-green-700 uppercase tracking-wider">Payroll & Salary</span>
               <DollarSign size={14} className="text-green-600 group-hover:translate-x-0.5 transition-transform" />
             </div>
-            <span className="text-xs font-semibold text-gray-500 mt-1 block">Open Payroll Portal &rarr;</span>
+            <span className="text-xs font-semibold text-gray-500 mt-1 block">Open Payroll &rarr;</span>
           </div>
         </div>
       </div>
@@ -476,11 +677,27 @@ export default function ManageEmployees() {
             </select>
           </div>
 
-          {(hrFilter !== 'all' || onboardingFilter !== 'all' || searchTerm || onlyMyAssigned) && (
+          {/* Filter by Unlock Query Status */}
+          <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
+            <Lock size={13} className="text-gray-400" />
+            <span className="text-gray-500 font-medium">Unlock Queries:</span>
+            <select
+              value={lateLockFilter}
+              onChange={(e) => setLateLockFilter(e.target.value)}
+              className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer"
+            >
+              <option value="all">All Status</option>
+              <option value="pendingQuery">Pending Queries / Locked ({pendingQueriesCount})</option>
+              <option value="locked">All Locked IDs</option>
+            </select>
+          </div>
+
+          {(hrFilter !== 'all' || onboardingFilter !== 'all' || lateLockFilter !== 'all' || searchTerm || onlyMyAssigned) && (
             <button
               onClick={() => {
                 setHrFilter('all');
                 setOnboardingFilter('all');
+                setLateLockFilter('all');
                 setSearchTerm('');
                 setOnlyMyAssigned(false);
               }}
@@ -504,12 +721,12 @@ export default function ManageEmployees() {
                   <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Role & Designation</th>
                   <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Assigned HR</th>
                   <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Onboarding & Chaser</th>
-                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status & Login Lock</th>
                   <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {employees.map((emp) => {
+                {filteredEmployees.map((emp) => {
                   const isDone = emp.onboarding === 'Done';
                   const hasHR = !!emp.assignedHRName;
                   const hasChaser = !!emp.assignedTelecallerName;
@@ -645,19 +862,67 @@ export default function ManageEmployees() {
                         </div>
                       </td>
 
-                      {/* Status Toggle */}
+                      {/* Status Toggle & Late Lock Indicator */}
                       <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleStatusToggle(emp.id, emp.status)}
-                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${emp.status === 'Active' ? 'bg-emerald-500' : 'bg-gray-300'}`}
-                            title={emp.status === 'Active' ? 'Deactivate Employee' : 'Activate Employee'}
-                          >
-                            <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${emp.status === 'Active' ? 'translate-x-4' : 'translate-x-0'}`} />
-                          </button>
-                          <span className={`text-[11px] font-bold ${emp.status === 'Active' ? 'text-emerald-600' : 'text-gray-400'}`}>
-                            {emp.status}
-                          </span>
+                        <div className="flex flex-col gap-1.5">
+                          <div className="flex items-center gap-2">
+                            <button 
+                              onClick={() => handleStatusToggle(emp.id, emp.status)}
+                              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${emp.status === 'Active' ? 'bg-emerald-500' : 'bg-gray-300'}`}
+                              title={emp.status === 'Active' ? 'Deactivate Employee' : 'Activate Employee'}
+                            >
+                              <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${emp.status === 'Active' ? 'translate-x-4' : 'translate-x-0'}`} />
+                            </button>
+                            <span className={`text-[11px] font-bold ${emp.status === 'Active' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                              {emp.status}
+                            </span>
+                          </div>
+
+                          {/* Pending Unblock Query Badge (Highest Priority) */}
+                          {emp.unblockRequest?.status === 'Pending' ? (
+                            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-300/80 rounded-lg px-2 py-1 w-fit shadow-xs">
+                              <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-extrabold text-amber-900 flex items-center gap-1">
+                                  <span>Login Query:</span>
+                                  <span className="text-amber-700 underline font-normal truncate max-w-[120px]" title={emp.unblockRequest.queryText}>
+                                    "{emp.unblockRequest.queryText}"
+                                  </span>
+                                </span>
+                              </div>
+                              {(isHR || isMasterAdmin) && (
+                                <button
+                                  onClick={() => setUnblockModalState({ isOpen: true, employee: emp, hrRemark: '' })}
+                                  className="ml-1 text-[10px] font-black text-white bg-amber-600 hover:bg-amber-700 px-2 py-0.5 rounded shadow-xs flex items-center gap-1 transition-all"
+                                  title="Review Query & Unblock"
+                                >
+                                  <Unlock size={10} /> Review & Unblock
+                                </button>
+                              )}
+                            </div>
+                          ) : emp.isLateLocked ? (
+                            /* Late Locked without pending query */
+                            <div className="flex items-center gap-1.5 bg-red-50 border border-red-200 rounded px-1.5 py-1 w-fit">
+                              <Lock size={12} className="text-red-600 shrink-0" />
+                              <span className="text-[10px] font-extrabold text-red-700" title={emp.lateLockReason}>
+                                Late Blocked
+                              </span>
+                              {(isHR || isMasterAdmin) && (
+                                <button
+                                  onClick={() => handleApproveLateLogin(emp.id, emp.name)}
+                                  className="ml-1 text-[10px] font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-2 py-0.5 rounded shadow-sm flex items-center gap-1 transition-all"
+                                  title="Unblock and approve late login for today"
+                                >
+                                  <Unlock size={10} /> Unblock
+                                </button>
+                              )}
+                            </div>
+                          ) : emp.unblockRequest?.status === 'Approved' && emp.hrLoginApprovedDate ? (
+                            <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded w-fit">
+                              <CheckCircle2 size={11} />
+                              <span>Approved for Today ({emp.hrApprovedBy || 'HR'})</span>
+                            </div>
+                          ) : null}
                         </div>
                       </td>
 
@@ -700,6 +965,17 @@ export default function ManageEmployees() {
                           >
                             <Eye size={14} />
                           </button>
+
+                          {/* Quick Reset Password (HR, Admin, Super Admin) */}
+                          {(isMasterAdmin || isHR) && (
+                            <button
+                              onClick={() => handleAdminResetPassword(emp)}
+                              title="Reset Employee Password (No previous password required)"
+                              className="flex items-center justify-center p-1.5 border border-amber-200 bg-amber-50/70 text-amber-700 hover:bg-amber-100 hover:border-amber-300 rounded transition-colors"
+                            >
+                              <KeyRound size={14} />
+                            </button>
+                          )}
 
                           {/* Edit Employee */}
                           <button 
@@ -1044,6 +1320,119 @@ export default function ManageEmployees() {
                 {isSubmittingModal ? 'Saving...' : 'Assign Telecaller'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* HR UNBLOCK QUERY & APPROVAL MODAL */}
+      {/* ========================================================================= */}
+      {unblockModalState.isOpen && unblockModalState.employee && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[24px] shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200">
+            
+            {/* Header */}
+            <div className="bg-gradient-to-r from-purple-700 to-indigo-700 p-6 text-white relative">
+              <button
+                onClick={() => setUnblockModalState({ isOpen: false, employee: null, hrRemark: '', isProcessing: false })}
+                className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 hover:bg-black/20 rounded-full p-1.5 transition-colors"
+              >
+                <X size={18} />
+              </button>
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+                  <Unlock size={24} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">Review Login Unlock Query</h3>
+                  <p className="text-xs text-purple-200">Employee Login Approval & ID Unblock</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Body */}
+            <div className="p-6 space-y-4">
+              
+              {/* Employee Info Card */}
+              <div className="bg-gray-50 border border-gray-200/80 rounded-2xl p-4 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 font-medium">Employee:</span>
+                  <span className="font-bold text-gray-900 text-sm">{unblockModalState.employee.name}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 font-medium">Employee ID:</span>
+                  <span className="font-mono font-bold text-gray-800 bg-white px-2 py-0.5 rounded border border-gray-200">
+                    {unblockModalState.employee.empId}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500 font-medium">Role & Designation:</span>
+                  <span className="font-semibold text-gray-800">{unblockModalState.employee.role} - {unblockModalState.employee.designation}</span>
+                </div>
+                {unblockModalState.employee.mobile && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-500 font-medium">Mobile:</span>
+                    <span className="font-mono font-medium text-gray-700">{unblockModalState.employee.mobile}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Employee Query / Reason */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700 flex items-center gap-1.5">
+                  <AlertCircle size={14} className="text-amber-600" />
+                  <span>Employee Query / Reason for Unblock</span>
+                </label>
+                <div className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 text-xs text-amber-950 font-medium leading-relaxed">
+                  {unblockModalState.employee.unblockRequest?.queryText || unblockModalState.employee.lateLockReason || 'Requesting HR to unblock ID for login.'}
+                </div>
+              </div>
+
+              {/* HR Remark */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">HR Remark / Comment (Optional)</label>
+                <input
+                  type="text"
+                  value={unblockModalState.hrRemark}
+                  onChange={(e) => setUnblockModalState(prev => ({ ...prev, hrRemark: e.target.value }))}
+                  placeholder="e.g. Approved for today after manager consultation"
+                  className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                />
+              </div>
+
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                disabled={unblockModalState.isProcessing}
+                onClick={() => handleProcessUnblockQuery(unblockModalState.employee.id, 'Rejected', unblockModalState.hrRemark)}
+                className="px-4 py-2 text-xs font-bold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 rounded-xl border border-rose-200 transition-all disabled:opacity-50"
+              >
+                Reject Query
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setUnblockModalState({ isOpen: false, employee: null, hrRemark: '', isProcessing: false })}
+                  className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800 bg-white border border-gray-200 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={unblockModalState.isProcessing}
+                  onClick={() => handleProcessUnblockQuery(unblockModalState.employee.id, 'Approved', unblockModalState.hrRemark)}
+                  className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md shadow-emerald-600/20 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Unlock size={14} />
+                  <span>{unblockModalState.isProcessing ? 'Processing...' : 'Approve & Unblock ID'}</span>
+                </button>
+              </div>
+            </div>
+
           </div>
         </div>
       )}

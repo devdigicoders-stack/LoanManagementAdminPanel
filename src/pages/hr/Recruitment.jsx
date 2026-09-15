@@ -607,8 +607,17 @@ export default function Recruitment() {
                           />
                         </td>
                         <td className="py-3 px-4">
-                          <span className="font-bold text-gray-900 block">{app.name}</span>
-                          <span className="text-xs text-gray-500">Exp: {app.expectedSalary || 'N/A'}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-gray-900 block">{app.name}</span>
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              app.candidateType === 'Experienced'
+                                ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                                : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                            }`}>
+                              {app.candidateType || 'Fresher'}
+                            </span>
+                          </div>
+                          <span className="text-xs text-gray-500">Exp CTC: {app.expectedSalary || 'N/A'}</span>
                         </td>
                         <td className="py-3 px-4 font-bold text-blue-600">{app.jobId?.title || 'Unknown Job'}</td>
                         <td className="py-3 px-4">
@@ -832,7 +841,16 @@ export default function Recruitment() {
                      {isEditingApp ? (
                        <input type="text" value={editAppForm.name} onChange={e=>setEditAppForm({...editAppForm, name: e.target.value})} className="border border-blue-300 p-1 rounded w-full mt-3 text-center text-sm font-bold focus:ring-1 focus:ring-blue-500" />
                      ) : (
-                       <h3 className="font-bold text-gray-900 mt-3 text-center">{selectedApp.name}</h3>
+                       <div className="mt-3 text-center">
+                         <h3 className="font-bold text-gray-900">{selectedApp.name}</h3>
+                         <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${
+                           selectedApp.candidateType === 'Experienced'
+                             ? 'bg-indigo-100 text-indigo-800 border border-indigo-200'
+                             : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                         }`}>
+                           {selectedApp.candidateType === 'Experienced' ? '💼 Experienced' : '🎓 Fresher'}
+                         </span>
+                       </div>
                      )}
                      
                      {isEditingApp ? (
@@ -863,15 +881,33 @@ export default function Recruitment() {
                           <FileText size={14} /> View Resume
                         </a>
                       )}
-                      {selectedApp.coverLetterUrl && (
-                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.coverLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-purple-50 text-purple-700 rounded text-xs font-bold mb-2 hover:bg-purple-100">
-                          <FileText size={14} /> View Cover Letter
+                      {selectedApp.profilePhotoUrl && (
+                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.profilePhotoUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-emerald-50 text-emerald-700 rounded text-xs font-bold mb-2 hover:bg-emerald-100">
+                          <FileText size={14} /> View Candidate Photo
                         </a>
                       )}
                       {selectedApp.salarySlipUrl && (
-                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.salarySlipUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded text-xs font-bold hover:bg-green-100">
+                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.salarySlipUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded text-xs font-bold mb-2 hover:bg-green-100">
                           <FileText size={14} /> View Salary Slip
                         </a>
+                      )}
+                      {selectedApp.experienceLetterUrl && (
+                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.experienceLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-indigo-50 text-indigo-700 rounded text-xs font-bold mb-2 hover:bg-indigo-100">
+                          <FileText size={14} /> View Experience Letter
+                        </a>
+                      )}
+                      {selectedApp.relievingLetterUrl && (
+                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.relievingLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-amber-50 text-amber-700 rounded text-xs font-bold mb-2 hover:bg-amber-100">
+                          <FileText size={14} /> View Relieving Letter
+                        </a>
+                      )}
+                      {selectedApp.coverLetterUrl && (
+                        <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.coverLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-purple-50 text-purple-700 rounded text-xs font-bold hover:bg-purple-100">
+                          <FileText size={14} /> View Cover Letter
+                        </a>
+                      )}
+                      {!selectedApp.resumeUrl && !selectedApp.profilePhotoUrl && !selectedApp.salarySlipUrl && !selectedApp.experienceLetterUrl && !selectedApp.relievingLetterUrl && !selectedApp.coverLetterUrl && (
+                        <p className="text-xs text-gray-400 italic">No documents attached.</p>
                       )}
                    </div>
                    
@@ -957,7 +993,15 @@ export default function Recruitment() {
                         </p>
                         {exp.summary && <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">{exp.summary}</p>}
                       </div>
-                    )) : <p className="text-sm text-gray-500 italic">No experience added.</p>}
+                    )) : (
+                      <div className="bg-slate-50 border border-dashed border-slate-200 rounded-lg p-3 text-center">
+                        <p className="text-xs text-slate-500 font-medium">
+                          {selectedApp.candidateType === 'Fresher'
+                            ? '🎓 Candidate applied as a Fresher (No prior work experience required)'
+                            : 'No prior experience provided.'}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <div>

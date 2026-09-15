@@ -26,7 +26,15 @@ export default function AddEmployee() {
   const grossYearly = formData.grossMonthly ? (parseFloat(formData.grossMonthly) * 12).toString() : '';
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let finalValue = value;
+    if (name === 'pan') {
+      finalValue = value.toUpperCase();
+    }
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: '' }));
+    }
   };
 
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
@@ -106,13 +114,19 @@ export default function AddEmployee() {
 
   const handleSave = (e) => {
     e.preventDefault();
+    const cleanMobile = (formData.mobile || '').trim();
+    const cleanPan = (formData.pan || '').trim().toUpperCase();
+    const cleanAadhar = (formData.aadhar || '').replace(/\s+/g, '');
+    const cleanPincode = (formData.pincode || '').trim();
+    const cleanEmail = (formData.email || '').trim();
+
     // Validation before confirmation
     const newErrors = {};
-    if (!validate.mobile(formData.mobile.trim())) newErrors.mobile = 'Invalid mobile number (must start with 6-9 and be 10 digits)';
-    if (formData.pan && !validate.pan(formData.pan.trim())) newErrors.pan = 'Invalid PAN number (5 letters, 4 digits, 1 letter)';
-    if (formData.aadhar && !validate.aadhaar(formData.aadhar.trim())) newErrors.aadhar = 'Invalid Aadhaar number (12 digits)';
-    if (formData.pincode && !validate.pincode(formData.pincode.trim())) newErrors.pincode = 'Invalid pincode (6 digits)';
-    if (!validate.email(formData.email.trim())) newErrors.email = 'Invalid email address';
+    if (!validate.mobile(cleanMobile)) newErrors.mobile = 'Invalid mobile number (must start with 6-9 and be 10 digits)';
+    if (cleanPan && !validate.pan(cleanPan)) newErrors.pan = 'Invalid PAN number (5 letters, 4 digits, 1 letter)';
+    if (cleanAadhar && !validate.aadhaar(cleanAadhar)) newErrors.aadhar = 'Invalid Aadhaar number (12 digits)';
+    if (cleanPincode && !validate.pincode(cleanPincode)) newErrors.pincode = 'Invalid pincode (6 digits)';
+    if (!validate.email(cleanEmail)) newErrors.email = 'Invalid email address';
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) {
       toast.error('Please correct highlighted errors');
@@ -143,19 +157,19 @@ export default function AddEmployee() {
               'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({
-              name: formData.fullName,
+              name: formData.fullName.trim(),
               role: badgeRole,
-              email: formData.email,
+              email: cleanEmail,
               password: needsAuth ? formData.password : undefined,
-              mobile: formData.mobile,
-              designation: formData.designation,
+              mobile: cleanMobile,
+              designation: formData.designation.trim(),
               division: formData.division,
-              pincode: formData.pincode,
+              pincode: cleanPincode,
               district: formData.district,
               state: formData.state,
               city: formData.city,
-              pan: formData.pan,
-              aadhar: formData.aadhar,
+              pan: cleanPan,
+              aadhar: cleanAadhar,
               grossMonthly: formData.grossMonthly ? Number(formData.grossMonthly) : undefined,
               transportation: formData.transportation ? Number(formData.transportation) : undefined,
               performance: formData.performance ? Number(formData.performance) : undefined,
@@ -248,7 +262,7 @@ export default function AddEmployee() {
               )}
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Mobile No. *</label>
-                <input required type="tel" name="mobile" pattern="[6-9]\\d{9}" title="Enter 10 digit mobile starting with 6-9" value={formData.mobile} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200" />
+                <input required type="tel" name="mobile" maxLength={10} placeholder="Enter 10-digit mobile number" value={formData.mobile} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-purple-300 focus:ring-1 focus:ring-purple-200 placeholder:text-gray-400" />
                 <InputError message={errors.mobile} />
               </div>
               <div>
@@ -307,12 +321,12 @@ export default function AddEmployee() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-5 px-1">
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">PAN Number *</label>
-                <input required type="text" name="pan" placeholder="ABCDE1234F" value={formData.pan} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 uppercase focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200 placeholder:text-gray-400 placeholder:normal-case" />
+                <input required type="text" name="pan" maxLength={10} placeholder="ABCDE1234F" value={formData.pan} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 uppercase focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200 placeholder:text-gray-400 placeholder:normal-case" />
                 <InputError message={errors.pan} />
               </div>
               <div>
                 <label className="block text-[13px] font-bold text-gray-700 mb-1.5">Aadhar Number *</label>
-                <input required type="text" name="aadhar" placeholder="12-digit Aadhar" value={formData.aadhar} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200 placeholder:text-gray-400" />
+                <input required type="text" name="aadhar" maxLength={12} placeholder="12-digit Aadhar" value={formData.aadhar} onChange={handleChange} className="w-full bg-white border border-gray-200 rounded-lg py-2.5 px-4 text-[14px] text-gray-800 focus:outline-none focus:border-orange-300 focus:ring-1 focus:ring-orange-200 placeholder:text-gray-400" />
                 <InputError message={errors.aadhar} />
               </div>
             </div>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, Users, BarChart3, FileCheck, ChevronDown } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, Users, BarChart3, FileCheck, ChevronDown, AlertCircle, Send, CheckCircle2, Clock, X, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { storePermissions, ROLE_PERMISSIONS, clearPermissions } from '../utils/permissions';
@@ -13,6 +13,17 @@ const LoginPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  // Unlock Request Modal State
+  const [showUnblockModal, setShowUnblockModal] = useState(false);
+  const [unblockIdentifier, setUnblockIdentifier] = useState('');
+  const [unblockName, setUnblockName] = useState('');
+  const [unblockReason, setUnblockReason] = useState('Late due to heavy traffic / public transport delay');
+  const [customReason, setCustomReason] = useState('');
+  const [isSubmittingQuery, setIsSubmittingQuery] = useState(false);
+  const [querySubmittedSuccess, setQuerySubmittedSuccess] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
+  const [statusCheckResult, setStatusCheckResult] = useState(null);
+
   // Clear auth state when login page mounts (keep role-specific pics intact)
   useEffect(() => {
     localStorage.removeItem('isAuthenticated');
@@ -21,6 +32,14 @@ const LoginPage = () => {
     localStorage.removeItem('userEmail');
     clearPermissions();
   }, []);
+
+  const openUnlockModalForUser = (userData = {}) => {
+    setUnblockIdentifier(userData.empId || userData.email || email);
+    setUnblockName(userData.name || '');
+    setStatusCheckResult(null);
+    setQuerySubmittedSuccess(false);
+    setShowUnblockModal(true);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -82,7 +101,11 @@ const LoginPage = () => {
             navigate('/');
           }
         } else {
-          toast.error(data.message || 'Invalid email or password.');
+          if (data.isLateBlocked) {
+            openUnlockModalForUser(data);
+          } else {
+            toast.error(data.message || 'Invalid email or password.');
+          }
         }
       } catch (error) {
         toast.error('Server error. Please check if backend is running.');
@@ -153,12 +176,89 @@ const LoginPage = () => {
           navigate("/");
         }
       } else {
-        toast.error(data.message || 'Invalid email or password.');
+        if (data.isLateBlocked) {
+          openUnlockModalForUser(data);
+        } else {
+          toast.error(data.message || 'Invalid email or password.');
+        }
       }
     } catch (error) {
       toast.error('Server error. Please check if backend is running.');
     }
     setIsLoading(false);
+  };
+
+  const handleSendUnblockQuery = async (e) => {
+    e.preventDefault();
+    if (!unblockIdentifier.trim()) {
+      toast.error('Please enter your Employee ID or registered Email');
+      return;
+    }
+
+    const finalQueryText = unblockReason === 'Custom' ? customReason.trim() : unblockReason;
+    if (!finalQueryText) {
+      toast.error('Please provide a reason / explanation for HR');
+      return;
+    }
+
+    setIsSubmittingQuery(true);
+    const API_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_BASE_URL}`;
+
+    try {
+      const res = await fetch(`${API_URL}/employees/request-unblock`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          identifier: unblockIdentifier,
+          queryText: finalQueryText
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        setQuerySubmittedSuccess(true);
+        toast.success('Query HR Panel par bhej di gayi hai!');
+      } else {
+        toast.error(data.message || 'Failed to submit query to HR');
+      }
+    } catch (error) {
+      toast.error('Network error. Could not connect to server.');
+    } finally {
+      setIsSubmittingQuery(false);
+    }
+  };
+
+  const handleCheckStatus = async () => {
+    if (!unblockIdentifier.trim()) {
+      toast.error('Please enter Employee ID or Email to check status');
+      return;
+    }
+
+    setIsCheckingStatus(true);
+    const API_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_BASE_URL}`;
+
+    try {
+      const res = await fetch(`${API_URL}/employees/check-unblock-status?identifier=${encodeURIComponent(unblockIdentifier.trim())}`);
+      const data = await res.json();
+      if (res.ok) {
+        setStatusCheckResult(data);
+        if (data.canLoginNow) {
+          toast.success('Badhai ho! HR ne aapki ID unblock kar di hai. Ab aap sign in kar sakte hain.');
+        } else if (data.unblockRequest?.status === 'Pending') {
+          toast('Aapki request HR ke review me hai (Pending).', { icon: '⏳' });
+        } else if (data.unblockRequest?.status === 'Rejected') {
+          toast.error('HR dwara request reject kar di gayi hai: ' + (data.unblockRequest?.hrRemark || 'Contact HR Admin'));
+        } else {
+          toast('HR Approval abhi pending hai.', { icon: 'ℹ️' });
+        }
+      } else {
+        toast.error(data.message || 'Employee not found');
+      }
+    } catch (error) {
+      toast.error('Failed to check status');
+    } finally {
+      setIsCheckingStatus(false);
+    }
   };
 
   const roles = [
@@ -374,12 +474,211 @@ const LoginPage = () => {
                 )}
               </button>
 
+              {/* In-app HR Unblock Request Trigger */}
+              <div className="pt-3 border-t border-slate-100 flex flex-col items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => openUnlockModalForUser({ email, empId: email })}
+                  className="text-[12.5px] font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-3.5 py-1.5 rounded-full border border-amber-200/70 transition-all flex items-center gap-1.5"
+                >
+                  <AlertCircle size={14} />
+                  <span>ID Locked / Late? <strong>Submit Query to HR</strong></span>
+                </button>
+              </div>
+
             </form>
 
           </div>
         </div>
 
       </div>
+
+      {/* ========================================================================= */}
+      {/* IN-APP HR LOGIN QUERY / UNBLOCK REQUEST MODAL */}
+      {/* ========================================================================= */}
+      {showUnblockModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-[24px] shadow-2xl border border-slate-100 w-full max-w-lg overflow-hidden relative animate-in zoom-in-95 duration-200">
+            
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-amber-500 to-amber-600 p-6 text-white relative">
+              <button
+                onClick={() => setShowUnblockModal(false)}
+                className="absolute top-4 right-4 text-white/80 hover:text-white bg-black/10 hover:bg-black/20 rounded-full p-1.5 transition-colors"
+              >
+                <X size={18} />
+              </button>
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shrink-0">
+                  <Clock size={24} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold">HR Login Query & Unblock Request</h3>
+                  <p className="text-xs text-amber-100">Directly submit query to HR Panel without SMS/WhatsApp</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 max-h-[80vh] overflow-y-auto space-y-5">
+              
+              <div className="bg-amber-50 border border-amber-200/80 rounded-2xl p-4 text-xs text-amber-900 space-y-1">
+                <p className="font-semibold flex items-center gap-1.5 text-amber-800">
+                  <AlertCircle size={15} />
+                  <span>Late Login / ID Block Alert</span>
+                </p>
+                <p className="text-slate-600 leading-relaxed">
+                  Office timings me late hone par ya account locked hone par, aap yahan se direct HR Panel ko unlock query bhej sakte hain. HR unblock karte hi aap login kar sakenge.
+                </p>
+              </div>
+
+              <form onSubmit={handleSendUnblockQuery} className="space-y-4">
+                
+                {/* Identifier Input */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Employee ID / Registered Email</label>
+                  <input
+                    type="text"
+                    value={unblockIdentifier}
+                    onChange={(e) => setUnblockIdentifier(e.target.value)}
+                    placeholder="e.g. NuoGM-EMP-2025-XXXX or email@company.com"
+                    required
+                    className="w-full text-xs font-medium px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  />
+                  {unblockName && (
+                    <p className="text-[11px] text-slate-500 font-medium">Employee Name: <span className="text-slate-800 font-bold">{unblockName}</span></p>
+                  )}
+                </div>
+
+                {/* Reason Selection */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700">Select Late / Unlock Reason</label>
+                  <select
+                    value={unblockReason}
+                    onChange={(e) => setUnblockReason(e.target.value)}
+                    className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 bg-white focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                  >
+                    <option value="Late due to heavy traffic / public transport delay">Traffic / Transport Delay</option>
+                    <option value="Directly visited client site / Outdoor official visit">Direct Client Site Visit</option>
+                    <option value="Personal medical issue / Family emergency">Medical / Family Emergency</option>
+                    <option value="Technical glitch / System login issue">Technical Glitch / System Issue</option>
+                    <option value="Custom">Other Reason (Type Custom Message)</option>
+                  </select>
+                </div>
+
+                {/* Custom Reason Text */}
+                {unblockReason === 'Custom' && (
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-slate-700">Type Your Explanation / Message for HR</label>
+                    <textarea
+                      rows={3}
+                      value={customReason}
+                      onChange={(e) => setCustomReason(e.target.value)}
+                      placeholder="Explain your reason clearly so HR can approve quickly..."
+                      required
+                      className="w-full text-xs px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 resize-none"
+                    />
+                  </div>
+                )}
+
+                {/* Submit to HR Button */}
+                <button
+                  type="submit"
+                  disabled={isSubmittingQuery}
+                  className="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl shadow-md shadow-amber-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {isSubmittingQuery ? (
+                    <RefreshCw size={14} className="animate-spin" />
+                  ) : (
+                    <Send size={14} />
+                  )}
+                  <span>{isSubmittingQuery ? 'Sending Query to HR...' : 'Submit Query to HR Panel'}</span>
+                </button>
+
+              </form>
+
+              {/* Status Section & Live Checker */}
+              <div className="pt-4 border-t border-slate-100 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-700">Check HR Approval Status</span>
+                  <button
+                    type="button"
+                    onClick={handleCheckStatus}
+                    disabled={isCheckingStatus}
+                    className="text-xs font-semibold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition-all flex items-center gap-1.5 disabled:opacity-50"
+                  >
+                    <RefreshCw size={12} className={isCheckingStatus ? 'animate-spin' : ''} />
+                    <span>Check Live Status</span>
+                  </button>
+                </div>
+
+                {statusCheckResult && (
+                  <div className={`p-3 rounded-xl border text-xs ${
+                    statusCheckResult.canLoginNow 
+                      ? 'bg-emerald-50 border-emerald-200 text-emerald-900' 
+                      : statusCheckResult.unblockRequest?.status === 'Pending'
+                      ? 'bg-blue-50 border-blue-200 text-blue-900'
+                      : 'bg-slate-50 border-slate-200 text-slate-700'
+                  }`}>
+                    {statusCheckResult.canLoginNow ? (
+                      <div className="space-y-2">
+                        <p className="font-bold flex items-center gap-1.5 text-emerald-700">
+                          <CheckCircle2 size={16} />
+                          <span>Approved by {statusCheckResult.hrApprovedBy || 'HR Admin'}!</span>
+                        </p>
+                        <p className="text-[11px] text-emerald-800">Aapki ID unblock ho chuki hai. Aap ab login kar sakte hain.</p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUnblockModal(false);
+                            toast.success('Ab aap apna password daal kar Sign In karein.');
+                          }}
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-lg transition-all"
+                        >
+                          Sign In Now
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <p className="font-bold">Current Status: <span className="uppercase text-amber-600">{statusCheckResult.unblockRequest?.status || 'No Request'}</span></p>
+                        <p className="text-[11px] text-slate-500">Late Locked: {statusCheckResult.isLateLocked ? 'Yes (Locked)' : 'No'}</p>
+                        {statusCheckResult.unblockRequest?.hrRemark && (
+                          <p className="text-[11px] text-slate-600">HR Remark: <em>{statusCheckResult.unblockRequest.hrRemark}</em></p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {querySubmittedSuccess && !statusCheckResult && (
+                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 space-y-1">
+                    <p className="font-bold flex items-center gap-1.5 text-emerald-700">
+                      <CheckCircle2 size={15} />
+                      <span>Query Successfully Submitted!</span>
+                    </p>
+                    <p className="text-[11px] text-emerald-800">
+                      Aapki request HR panel par chali gayi hai. HR se approve hone ke baad aap upar "Check Live Status" daba sakte hain ya direct sign in kar sakte hain.
+                    </p>
+                  </div>
+                )}
+              </div>
+
+            </div>
+
+            {/* Modal Footer */}
+            <div className="bg-slate-50 p-4 border-t border-slate-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowUnblockModal(false)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white border border-slate-200 rounded-xl transition-all"
+              >
+                Close
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );

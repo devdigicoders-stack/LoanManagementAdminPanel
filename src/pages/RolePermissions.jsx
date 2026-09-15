@@ -4,23 +4,67 @@ import {
   Save, RefreshCw, Loader2, Search, Check, X, Phone, 
   Briefcase, UserCheck, AlertCircle, ChevronDown, CheckCircle2,
   Users2, Sparkles, SlidersHorizontal, Layers, Layout, ChevronUp,
-  CreditCard, DollarSign
+  CreditCard, DollarSign, Crown, Network, Building2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { ROLE_SIDEBAR_PAGES } from '../utils/permissions';
 
-// Only roles that have system login accounts and passwords generated (auth roles)
-const AUTH_LOGIN_ROLES = [
-  'Admin',
-  'HR Admin',
-  'Operation Admin',
-  'Tele callers operator',
-  'Agent operator',
-  'Accountant Admin',
-  'Credit Admin'
+// Role definitions with department leadership metadata
+const DEPARTMENT_HEAD_ROLES = [
+  {
+    role: 'Admin',
+    department: 'Executive Administration',
+    isHead: true,
+    subRoles: ['Branch Manager', 'System Administrator', 'Office Coordinator'],
+    description: 'Master organizational control & all department governance'
+  },
+  {
+    role: 'HR Admin',
+    department: 'Human Resources (HR)',
+    isHead: true,
+    subRoles: ['HR Manager', 'HR Executive', 'Recruitment Specialist', 'Payroll Officer'],
+    description: 'Leads recruitment, staff onboarding, attendance, leaves and payroll'
+  },
+  {
+    role: 'Operation Admin',
+    department: 'Operations & Processing',
+    isHead: true,
+    subRoles: ['Operation Manager', 'Operation Executive', 'Treasury Officer', 'Verification Executive'],
+    description: 'Leads loan application processing, field & desktop verification, customer follow-ups'
+  },
+  {
+    role: 'Credit Admin',
+    department: 'Credit & Underwriting',
+    isHead: true,
+    subRoles: ['Credit Manager', 'Underwriter', 'Risk Analyst', 'Sanction Officer'],
+    description: 'Leads credit assessment, risk evaluation, loan approvals and CIBIL checks'
+  },
+  {
+    role: 'Accountant Admin',
+    department: 'Accounts & Finance',
+    isHead: true,
+    subRoles: ['Chief Accountant', 'Senior Accountant', 'Cashier', 'Disbursement Officer'],
+    description: 'Leads financial ledger, EMI reconciliations, expenses and collection accounting'
+  },
+  {
+    role: 'Tele callers operator',
+    department: 'Telecalling & Inside Sales',
+    isHead: true,
+    subRoles: ['Telecalling Team Leader', 'Telecaller Executive', 'Customer Care Executive'],
+    description: 'Leads inbound lead calling, customer follow-ups, and conversion tracking'
+  },
+  {
+    role: 'Agent operator',
+    department: 'Field Sales & Verification',
+    isHead: true,
+    subRoles: ['Field Investigation Officer', 'Relationship Executive', 'Sales Officer'],
+    description: 'Leads on-ground customer visits, physical KYC verification, and agent sourcing'
+  }
 ];
+
+const AUTH_LOGIN_ROLES = DEPARTMENT_HEAD_ROLES.map(d => d.role);
 
 const normalizeStr = (str) => (str || '').trim().toLowerCase().replace(/[^a-z0-9]/g, '');
 
@@ -93,14 +137,29 @@ export default function RolePermissions() {
     }
   };
 
-  // Only the 5 system admin login roles
   const allRolesList = useMemo(() => AUTH_LOGIN_ROLES, []);
 
   // Filtered roles based on search
   const filteredRoles = useMemo(() => {
-    if (!roleSearchTerm) return allRolesList;
-    return allRolesList.filter(r => r.toLowerCase().includes(roleSearchTerm.toLowerCase()));
-  }, [allRolesList, roleSearchTerm]);
+    if (!roleSearchTerm) return DEPARTMENT_HEAD_ROLES;
+    const term = roleSearchTerm.toLowerCase();
+    return DEPARTMENT_HEAD_ROLES.filter(r => 
+      r.role.toLowerCase().includes(term) || 
+      r.department.toLowerCase().includes(term) ||
+      r.subRoles.some(sr => sr.toLowerCase().includes(term))
+    );
+  }, [roleSearchTerm]);
+
+  // Active role leadership info
+  const activeRoleMetadata = useMemo(() => {
+    return DEPARTMENT_HEAD_ROLES.find(r => r.role === selectedRole) || {
+      role: selectedRole,
+      department: 'Department',
+      isHead: true,
+      subRoles: [],
+      description: 'Department Head role'
+    };
+  }, [selectedRole]);
 
   // Employees belonging to the currently selected role
   const employeesInCurrentRole = useMemo(() => {
@@ -130,14 +189,6 @@ export default function RolePermissions() {
       .filter(([roleName]) => roleName !== selectedRole)
       .map(([roleName, pages]) => ({ roleName, pages }));
   }, [selectedRole]);
-
-  // All available pages for this role view (primary + others)
-  const allAvailablePageNames = useMemo(() => {
-    const list = new Set();
-    primaryRolePages.forEach(p => list.add(p.name));
-    otherRoleCategories.forEach(cat => cat.pages.forEach(p => list.add(p.name)));
-    return Array.from(list);
-  }, [primaryRolePages, otherRoleCategories]);
 
   // When selectedRole changes, reset employee selector and load permissions
   useEffect(() => {
@@ -209,12 +260,12 @@ export default function RolePermissions() {
   const handleSave = (target = 'current') => {
     const isBroadcastToRole = target === 'role' || selectedEmployeeId === 'all';
     const targetTitle = isBroadcastToRole
-      ? `all ${employeesInCurrentRole.length} employees with role "${selectedRole}"`
+      ? `all ${employeesInCurrentRole.length} employees with Department Head role "${selectedRole}"`
       : `${activeEmployee?.name || 'this employee'}`;
 
     Swal.fire({
-      title: 'Update Sidebar Access?',
-      text: `Apply these sidebar page permissions to ${targetTitle}?`,
+      title: 'Update Leadership & Sidebar Access?',
+      text: `Apply these permissions to ${targetTitle}?`,
       icon: 'question',
       showCancelButton: true,
       confirmButtonColor: '#489b0d',
@@ -290,21 +341,29 @@ export default function RolePermissions() {
         <div>
           <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2.5">
             <ShieldCheck className="text-[#489b0d]" size={26} />
-            Role & Sidebar Permissions
+            Department Head Roles & Permissions
           </h1>
           <p className="text-[13px] text-slate-500 font-medium mt-1">
-            Configure exactly which pages appear in each employee's sidebar menu. Unchecked pages will be hidden.
+            Configure permissions for each Department Head. The Head exercises operational authority and manages subordinate staff.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={fetchAdmins}
-          disabled={isLoading}
-          className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-[12px] hover:bg-slate-50 transition-colors bg-white shadow-xs"
-        >
-          <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> Refresh Staff List
-        </button>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/employees/departments"
+            className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg border border-blue-200 text-blue-700 bg-blue-50 font-bold text-[12px] hover:bg-blue-100 transition-colors"
+          >
+            <Building2 size={15} /> Department Org Chart
+          </Link>
+          <button
+            type="button"
+            onClick={fetchAdmins}
+            disabled={isLoading}
+            className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg border border-slate-200 text-slate-600 font-bold text-[12px] hover:bg-slate-50 transition-colors bg-white shadow-xs"
+          >
+            <RefreshCw size={14} className={isLoading ? 'animate-spin' : ''} /> Refresh Staff List
+          </button>
+        </div>
       </div>
 
       {isLoading ? (
@@ -317,25 +376,28 @@ export default function RolePermissions() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-          {/* ================= LEFT COLUMN: AUTH ROLES LIST ================= */}
-          <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200 shadow-sm p-4 h-fit">
+          {/* ================= LEFT COLUMN: DEPARTMENT HEAD ROLES LIST ================= */}
+          <div className="lg:col-span-4 bg-white rounded-xl border border-slate-200 shadow-sm p-4 h-fit space-y-3">
             
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-[15px] font-bold text-slate-800">System Roles</h3>
-                <p className="text-[11px] text-slate-400">Select a role to configure sidebar pages</p>
+                <h3 className="text-[15px] font-bold text-slate-800 flex items-center gap-1.5">
+                  <Crown size={16} className="text-amber-500" />
+                  Department Heads
+                </h3>
+                <p className="text-[11px] text-slate-400">Select head role to configure access</p>
               </div>
               <span className="text-[11px] font-bold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full">
-                {allRolesList.length} Roles
+                {DEPARTMENT_HEAD_ROLES.length} Heads
               </span>
             </div>
 
             {/* Role Search Box */}
-            <div className="relative mb-3">
+            <div className="relative">
               <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search roles..."
+                placeholder="Search department or head role..."
                 value={roleSearchTerm}
                 onChange={(e) => setRoleSearchTerm(e.target.value)}
                 className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-[12px] font-medium text-slate-700 focus:outline-none focus:border-[#489b0d] focus:bg-white transition-all"
@@ -343,44 +405,54 @@ export default function RolePermissions() {
             </div>
 
             {/* Roles Buttons List */}
-            <div className="space-y-1.5 max-h-[540px] overflow-y-auto custom-scrollbar pr-1">
-              {filteredRoles.map((role) => {
-                const isSelected = selectedRole === role;
-                const { icon: Icon, color, bg } = getRoleIcon(role);
-                const count = admins.filter(a => isRoleMatch(a.role, role)).length;
+            <div className="space-y-2 max-h-[580px] overflow-y-auto custom-scrollbar pr-1">
+              {filteredRoles.map((item) => {
+                const isSelected = selectedRole === item.role;
+                const { icon: Icon, color, bg } = getRoleIcon(item.role);
+                const count = admins.filter(a => isRoleMatch(a.role, item.role)).length;
 
                 return (
                   <button
-                    key={role}
+                    key={item.role}
                     type="button"
-                    onClick={() => setSelectedRole(role)}
-                    className={`w-full flex items-center justify-between p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    onClick={() => setSelectedRole(item.role)}
+                    className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer ${
                       isSelected
                         ? 'border-[#489b0d] bg-[#489b0d]/5 shadow-xs ring-1 ring-[#489b0d]/30'
                         : 'border-slate-100 hover:border-slate-300 hover:bg-slate-50'
                     }`}
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${isSelected ? 'bg-[#489b0d] text-white shadow-xs' : bg + ' ' + color}`}>
-                        <Icon size={16} strokeWidth={isSelected ? 2.5 : 2} />
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start gap-3 min-w-0">
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${isSelected ? 'bg-[#489b0d] text-white shadow-xs' : bg + ' ' + color}`}>
+                          <Icon size={16} strokeWidth={isSelected ? 2.5 : 2} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <h4 className={`text-[13px] font-bold truncate ${isSelected ? 'text-[#489b0d]' : 'text-slate-800'}`}>
+                              {item.role}
+                            </h4>
+                            <span className="px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[9px] font-bold rounded uppercase">
+                              HEAD
+                            </span>
+                          </div>
+                          <p className="text-[11px] font-semibold text-slate-500 truncate mt-0.5">
+                            {item.department}
+                          </p>
+                          <p className="text-[10px] text-slate-400 truncate mt-0.5">
+                            Subordinates: {item.subRoles.slice(0, 2).join(', ')}...
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className={`text-[13px] font-bold truncate ${isSelected ? 'text-[#489b0d]' : 'text-slate-800'}`}>
-                          {role}
-                        </h4>
-                        <p className="text-[11px] font-medium text-slate-400 truncate">
-                          {count > 0 ? `${count} ${count === 1 ? 'employee' : 'employees'} assigned` : 'No staff assigned'}
-                        </p>
-                      </div>
-                    </div>
 
-                    <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ml-2 ${
-                      count > 0 
-                        ? (isSelected ? 'bg-[#489b0d] text-white' : 'bg-emerald-50 text-emerald-700 border border-emerald-200') 
-                        : 'bg-slate-100 text-slate-400'
-                    }`}>
-                      {count}
-                    </span>
+                      <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                        count > 0 
+                          ? (isSelected ? 'bg-[#489b0d] text-white' : 'bg-emerald-50 text-emerald-700 border border-emerald-200') 
+                          : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        {count} Staff
+                      </span>
+                    </div>
                   </button>
                 );
               })}
@@ -397,20 +469,58 @@ export default function RolePermissions() {
           <div className="lg:col-span-8 flex flex-col">
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex-1 flex flex-col">
 
+              {/* Department Head Profile Banner */}
+              <div className="p-4 bg-gradient-to-r from-amber-500/10 via-emerald-500/5 to-blue-500/5 border border-amber-200/80 rounded-xl mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black shadow-xs shrink-0">
+                      <Crown size={22} />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-black text-slate-900">{selectedRole}</h3>
+                        <span className="px-2 py-0.5 bg-amber-500 text-white text-[10px] font-black rounded uppercase">
+                          DEPARTMENT HEAD
+                        </span>
+                      </div>
+                      <p className="text-xs font-bold text-slate-600 mt-0.5">
+                        Department: <span className="text-amber-800">{activeRoleMetadata.department}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Subordinates Managed */}
+                  <div className="text-xs sm:text-right">
+                    <p className="text-[11px] font-black text-slate-400 uppercase">Subordinate Roles</p>
+                    <p className="text-xs font-bold text-slate-700 mt-0.5">
+                      {activeRoleMetadata.subRoles.length} Managed Designations
+                    </p>
+                  </div>
+                </div>
+
+                {activeRoleMetadata.subRoles.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-amber-200/60 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] font-black text-slate-400 uppercase mr-1">Team Roles:</span>
+                    {activeRoleMetadata.subRoles.map((sr, idx) => (
+                      <span key={idx} className="text-[10px] font-bold px-2 py-0.5 bg-white text-slate-700 rounded border border-slate-200">
+                        {sr}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               {/* Role & Employee Selector Header */}
               <div className="border-b border-slate-100 pb-5 mb-6 space-y-4">
                 
                 {/* Top Row: Role Title & Select All */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#489b0d]/10 text-[#489b0d] uppercase tracking-wider">
-                        Role Selected
-                      </span>
-                      <h3 className="text-[18px] font-extrabold text-slate-800">{selectedRole}</h3>
-                    </div>
+                    <h3 className="text-[15px] font-extrabold text-slate-800">
+                      Sidebar Access & Privileges
+                    </h3>
                     <p className="text-[12px] text-slate-500 font-medium mt-0.5">
-                      Configure which pages appear in <strong>{selectedRole}</strong>'s sidebar menu.
+                      Check each page to enable it in the Head and team's sidebar menu.
                     </p>
                   </div>
 
@@ -433,13 +543,13 @@ export default function RolePermissions() {
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-2">
                     <label className="text-[12px] font-bold text-slate-700 flex items-center gap-2">
                       <Users2 size={15} className="text-[#489b0d]" />
-                      <span>Employee in this Role:</span>
+                      <span>Appointed Staff in this Head Role:</span>
                     </label>
 
                     {employeesInCurrentRole.length > 0 && (
                       <span className="text-[11px] font-medium text-slate-500">
                         {selectedEmployeeId === 'all' ? (
-                          <span className="text-[#489b0d] font-bold">Applying to All {employeesInCurrentRole.length} Employees</span>
+                          <span className="text-[#489b0d] font-bold">Applying to All {employeesInCurrentRole.length} Staff</span>
                         ) : (
                           <span>Editing Individual: <strong className="text-slate-800">{activeEmployee?.name}</strong></span>
                         )}
@@ -456,7 +566,7 @@ export default function RolePermissions() {
                           className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-bold text-slate-700 focus:outline-none focus:border-[#489b0d] focus:ring-2 focus:ring-[#489b0d]/20 transition-all cursor-pointer"
                         >
                           <option value="all">
-                            ✦ All Employees with this Role ({employeesInCurrentRole.length} Staff)
+                            ✦ All Staff with this Head Role ({employeesInCurrentRole.length} Staff)
                           </option>
                           {filteredEmployeesInRole.map((emp) => (
                             <option key={emp._id} value={emp._id}>
@@ -482,8 +592,8 @@ export default function RolePermissions() {
                     <div className="flex items-center gap-2.5 py-1 text-slate-500">
                       <AlertCircle size={16} className="text-amber-500 shrink-0" />
                       <p className="text-[12px] font-medium">
-                        No employees currently assigned to <strong>"{selectedRole}"</strong>. 
-                        Pre-configure pages below so new staff will inherit them upon creation.
+                        No employees currently appointed to <strong>"{selectedRole}"</strong>. 
+                        Pre-configure pages below so new Department Heads inherit them automatically.
                       </p>
                     </div>
                   )}
@@ -511,7 +621,7 @@ export default function RolePermissions() {
                     <div className="flex items-center gap-2">
                       <Layout size={16} className="text-[#489b0d]" />
                       <h4 className="text-[14px] font-extrabold text-slate-800">
-                        Sidebar Pages for {selectedRole}
+                        Primary Pages for {selectedRole}
                       </h4>
                     </div>
                     <span className="text-[11px] font-bold text-slate-400">
@@ -567,10 +677,10 @@ export default function RolePermissions() {
                       <Layers size={16} className="text-slate-600" />
                       <div>
                         <h4 className="text-[13px] font-bold text-slate-800">
-                          Cross-Departmental Access (Optional)
+                          Cross-Departmental Privileges (Optional)
                         </h4>
                         <p className="text-[11px] text-slate-500 font-medium">
-                          Grant additional access to other departments' pages (e.g. Sales, Operations, Loans)
+                          Grant additional access to other departments' pages (e.g. Sales, Operations, Accounts)
                         </p>
                       </div>
                     </div>
@@ -670,7 +780,7 @@ export default function RolePermissions() {
                     {isSaving ? (
                       <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> Saving...</>
                     ) : (
-                      <><Save size={16} /> Save Sidebar Access</>
+                      <><Save size={16} /> Save Leadership Permissions</>
                     )}
                   </button>
                 </div>
