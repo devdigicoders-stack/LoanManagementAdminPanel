@@ -197,7 +197,7 @@ export const syncPermissionsWithServer = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
-    const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
+    const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-wu4y.onrender.com/api';
     const res = await fetch(`${API_URL}/admin/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     });

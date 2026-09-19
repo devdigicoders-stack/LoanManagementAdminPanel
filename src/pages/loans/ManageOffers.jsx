@@ -73,7 +73,7 @@ export default function ManageOffers() {
 
   const [formData, setFormData] = useState(initialFormState);
 
-  const API_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
+  const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-wu4y.onrender.com/api';
 
   const formatLoanToOffer = (loan, index = 0) => {
     const amountNum = parseFloat(String(loan.amount || "500000").replace(/[^0-9.]/g, "")) || 500000;
