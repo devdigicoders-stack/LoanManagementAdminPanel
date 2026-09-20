@@ -499,19 +499,6 @@ const LoginPage = () => {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
                 )}
               </button>
-
-              {/* In-app HR Unblock Request Trigger */}
-              <div className="pt-3 border-t border-slate-100 flex flex-col items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => openUnlockModalForUser({ email, empId: email })}
-                  className="text-[12.5px] font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 px-3.5 py-1.5 rounded-full border border-amber-200/70 transition-all flex items-center gap-1.5"
-                >
-                  <AlertCircle size={14} />
-                  <span>ID Locked / Late? <strong>Submit Query to HR</strong></span>
-                </button>
-              </div>
-
             </form>
 
           </div>
