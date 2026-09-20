@@ -190,8 +190,9 @@ export default function EmployeeDetails() {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: Activity },
+    { id: 'activity', label: 'Activity & Candidates', icon: Briefcase },
     { id: 'personal', label: 'Personal', icon: User },
-    { id: 'professional', label: 'Professional', icon: Briefcase },
+    { id: 'professional', label: 'Professional', icon: Award },
     { id: 'documents', label: 'Documents', icon: FileText },
     { id: 'attendance', label: 'Attendance', icon: Clock },
     { id: 'leave', label: 'Leave', icon: Calendar },
@@ -359,7 +360,126 @@ export default function EmployeeDetails() {
                   </div>
                 </div>
               </div>
-              )
+              );
+            })()}
+
+            {activeTab === 'activity' && (() => {
+              const stats = employee.raw.recruitmentStats || {
+                totalAssigned: 0, applied: 0, reviewed: 0, interview: 0, shortlisted: 0, hired: 0, rejected: 0
+              };
+              const candidates = employee.raw.assignedCandidates || [];
+
+              return (
+                <div className="space-y-6 animate-in fade-in">
+                  {/* Performance / Tracking Cards */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
+                    <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 text-center">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase">Assigned</p>
+                      <p className="text-xl font-extrabold text-slate-800 mt-0.5">{stats.totalAssigned}</p>
+                    </div>
+                    <div className="bg-blue-50 p-3 rounded-xl border border-blue-200 text-center">
+                      <p className="text-[11px] font-bold text-blue-600 uppercase">Applied</p>
+                      <p className="text-xl font-extrabold text-blue-800 mt-0.5">{stats.applied}</p>
+                    </div>
+                    <div className="bg-indigo-50 p-3 rounded-xl border border-indigo-200 text-center">
+                      <p className="text-[11px] font-bold text-indigo-600 uppercase">Reviewed</p>
+                      <p className="text-xl font-extrabold text-indigo-800 mt-0.5">{stats.reviewed}</p>
+                    </div>
+                    <div className="bg-amber-50 p-3 rounded-xl border border-amber-200 text-center">
+                      <p className="text-[11px] font-bold text-amber-600 uppercase">Interview</p>
+                      <p className="text-xl font-extrabold text-amber-800 mt-0.5">{stats.interview}</p>
+                    </div>
+                    <div className="bg-purple-50 p-3 rounded-xl border border-purple-200 text-center">
+                      <p className="text-[11px] font-bold text-purple-600 uppercase">Shortlisted</p>
+                      <p className="text-xl font-extrabold text-purple-800 mt-0.5">{stats.shortlisted}</p>
+                    </div>
+                    <div className="bg-emerald-50 p-3 rounded-xl border border-emerald-200 text-center">
+                      <p className="text-[11px] font-bold text-emerald-600 uppercase">Hired</p>
+                      <p className="text-xl font-extrabold text-emerald-800 mt-0.5">{stats.hired}</p>
+                    </div>
+                    <div className="bg-rose-50 p-3 rounded-xl border border-rose-200 text-center">
+                      <p className="text-[11px] font-bold text-rose-600 uppercase">Rejected</p>
+                      <p className="text-xl font-extrabold text-rose-800 mt-0.5">{stats.rejected}</p>
+                    </div>
+                  </div>
+
+                  {/* Candidate Pipeline Table */}
+                  <div className="bg-white rounded-xl border border-[var(--color-brand-border)] overflow-hidden shadow-xs">
+                    <div className="p-4 border-b border-[var(--color-brand-border)] bg-[var(--color-brand-sky-pale)] flex justify-between items-center">
+                      <div>
+                        <h3 className="text-[14px] font-bold text-[var(--color-brand-text)]">Handled Candidates & Job Applications</h3>
+                        <p className="text-[11px] text-slate-500">Live recruitment activity and status tracking for this executive</p>
+                      </div>
+                      <span className="text-[12px] font-bold text-[#489b0d] bg-emerald-50 px-3 py-1 rounded-full">
+                        {candidates.length} Total Applicants
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr className="border-b border-[var(--color-brand-border)] bg-slate-50/50">
+                            <th className="py-3 px-4 text-[11px] font-bold text-slate-600 uppercase">Candidate</th>
+                            <th className="py-3 px-4 text-[11px] font-bold text-slate-600 uppercase">Job Role</th>
+                            <th className="py-3 px-4 text-[11px] font-bold text-slate-600 uppercase">Zone</th>
+                            <th className="py-3 px-4 text-[11px] font-bold text-slate-600 uppercase">Contact</th>
+                            <th className="py-3 px-4 text-[11px] font-bold text-slate-600 uppercase">Status</th>
+                            <th className="py-3 px-4 text-[11px] font-bold text-slate-600 uppercase">Last Updated</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-[var(--color-brand-border)]">
+                          {candidates.length === 0 ? (
+                            <tr>
+                              <td colSpan="6" className="py-10 text-center text-slate-400 font-medium text-[13px]">
+                                No candidates currently assigned or processed by this executive.
+                              </td>
+                            </tr>
+                          ) : (
+                            candidates.map((cand) => (
+                              <tr key={cand._id} className="hover:bg-slate-50/50 transition-colors">
+                                <td className="py-3 px-4">
+                                  <p className="text-[13px] font-bold text-slate-800">{cand.name}</p>
+                                  <p className="text-[11px] text-slate-400">{cand.applicationNo || 'App No: -'}</p>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <p className="text-[12px] font-bold text-slate-700">{cand.jobId?.title || 'Job Opening'}</p>
+                                  <p className="text-[11px] text-slate-400">{cand.jobId?.department || 'Recruitment'}</p>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 uppercase">
+                                    {cand.zone || 'NORTH'}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <p className="text-[12px] font-semibold text-slate-700">{cand.phone}</p>
+                                  <p className="text-[11px] text-slate-400 truncate max-w-[150px]">{cand.email}</p>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                                    cand.status === 'Hired' ? 'bg-emerald-100 text-emerald-800 border border-emerald-200' :
+                                    cand.status === 'Shortlisted' ? 'bg-purple-100 text-purple-800 border border-purple-200' :
+                                    cand.status === 'Interview' ? 'bg-amber-100 text-amber-800 border border-amber-200' :
+                                    cand.status === 'Reviewed' ? 'bg-indigo-100 text-indigo-800 border border-indigo-200' :
+                                    cand.status === 'Rejected' ? 'bg-rose-100 text-rose-800 border border-rose-200' :
+                                    'bg-blue-100 text-blue-800 border border-blue-200'
+                                  }`}>
+                                    {cand.status}
+                                  </span>
+                                </td>
+                                <td className="py-3 px-4 text-[12px] text-slate-500 font-medium">
+                                  {new Date(cand.updatedAt || cand.createdAt).toLocaleDateString('en-IN', {
+                                    day: 'numeric', month: 'short', year: 'numeric'
+                                  })}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              );
             })()}
 
             {activeTab === 'documents' && (

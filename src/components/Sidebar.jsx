@@ -18,6 +18,7 @@ import {
   LogOut,
   Building2,
   CalendarRange,
+  CalendarCheck,
   ListChecks,
   UserPlus,
   CircleDollarSign,
@@ -104,37 +105,48 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   const getNavGroups = () => {
     const isSuperAdmin = ['super admin', 'superadmin'].includes(userRole.toLowerCase());
     const isAdmin = ['admin', 'administrator'].includes(userRole.toLowerCase());
-    
-    // Only Super Admin should bypass permissions automatically. 
-    // Admins should follow their explicitly assigned permissions.
-    const isMaster = isSuperAdmin; 
+    const isHrHead = ['hr head', 'hrhead', 'hr_head'].includes(userRole.toLowerCase());
+    const isHrManager = ['hr manager', 'hrmanager', 'hr_manager'].includes(userRole.toLowerCase());
+    const isHrExecutive = ['hr executive', 'hrexecutive', 'hr_executive'].includes(userRole.toLowerCase());
+    const isHrAdmin = ['hr admin', 'hradmin', 'hr_admin'].includes(userRole.toLowerCase());
+    const isOps = ['operation admin', 'operationadmin', 'operation_admin', 'operations'].includes(userRole.toLowerCase());
 
-    // Helper to filter subitems for Admin
-    const filterSubs = (subs) => {
-      if (isSuperAdmin) return subs;
-      return subs.filter(s => hasPermission(s.name));
-    };
+    // ── SUPER ADMIN & MASTER ADMIN ────────────────────────────────────
+    if (isSuperAdmin || isAdmin) {
+      const coreItems = [
+        { name: "Customers", icon: Users, path: "/customers", badge: "Borrowers" },
+        { name: "All Leads", icon: Target, path: "/leads", badge: "Leads" },
+        { name: "Loan Applications", icon: FileText, path: "/loans", badge: "Loans" },
+        { name: "Document Desk", icon: FileCheck, path: "/loans/documents" },
+        { name: "Active Loans", icon: FileText, path: "/loans/active" },
+        { name: "EMI Collections", icon: CircleDollarSign, path: "/loans/collections" },
+        { name: "Disbursals & Finance", icon: CreditCard, path: "/accountant", badge: "Finance" },
+        { name: "Loan Offers", icon: CircleDollarSign, path: "/offers", badge: "Offers" },
+      ];
 
-    // ── MASTER ADMIN / SUPER ADMIN / CUSTOM ADMIN NAVIGATION ─────────
-    if (isMaster || isAdmin) {
+      const hrItems = [
+        { name: "Employee Directory", icon: Users, path: "/employees" },
+        { name: "Departments", icon: Building2, path: "/employees/departments" },
+        { name: "Recruitment", icon: UserPlus, path: "/hr/recruitment" },
+        { name: "Onboarding", icon: UserCheck, path: "/hr/onboarding" },
+        { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
+        { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
+        { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" },
+        { name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" },
+      ];
+
       const portalItems = [
-        ...(isMaster || hasPermission('Loan Applications') || hasPermission('Loan Management') ? [{ name: "Loan Management", icon: FileText, path: "/loans", badge: "Loans" }] : []),
-        ...(isMaster || hasPermission('Offer Management') || hasPermission('Loan Management') ? [{ name: "Offer Management", icon: CircleDollarSign, path: "/offers", badge: "Offers" }] : []),
-        ...(isMaster || hasPermission('Lead Management') ? [{ name: "Lead Management", icon: Target, path: "/leads", badge: "Leads" }] : []),
-        ...(isMaster || hasPermission('Telecaller Portal') ? [{ name: "Telecaller Portal", icon: PhoneCall, path: "/telecaller", badge: "Calling" }] : []),
-        ...(isMaster || hasPermission('Field Agent Portal') ? [{ name: "Field Agent Portal", icon: MapPin, path: "/agent", badge: "Field" }] : []),
-        ...(isMaster || hasPermission('Operations Portal') || hasPermission('Operation Dashboard') ? [{ name: "Operations & LOS", icon: ShieldAlert, path: "/operations/dashboard", badge: "LOS" }] : []),
-        ...(isMaster || hasPermission('Manage Employees') || hasPermission('Departments') ? [{ name: "Manage Employees", icon: Users, path: "/employees", badge: "HR" }] : []),
-        ...(isMaster || hasPermission('Accountant Portal') ? [{ name: "Accountant & Finance", icon: CreditCard, path: "/accountant", badge: "Finance" }] : []),
+        { name: "Operations LOS", icon: ShieldAlert, path: "/operations/dashboard", badge: "LOS" },
+        { name: "Telecaller Portal", icon: PhoneCall, path: "/telecaller" },
+        { name: "Field Agent Portal", icon: MapPin, path: "/agent" },
       ];
 
       const adminItems = [
-        ...(isMaster || hasPermission('Offer Management') ? [{ name: "Manage Offers", icon: CircleDollarSign, path: "/offers" }] : []),
-        ...(isMaster || hasPermission('Manage Users') ? [{ name: "Manage Users", icon: UserCheck, path: "/users" }] : []),
-        ...(isMaster || hasPermission('Permission Management') || hasPermission('Role & Permission Management') ? [{ name: "Permission Management", icon: Lock, path: "/users/roles" }] : []),
-        ...(isMaster || hasPermission('Reports & Analytics') ? [{ name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
-        ...(isMaster || hasPermission('Manage Complaints') ? [{ name: "Manage Complaints", icon: MessageSquare, path: "/complaints" }] : []),
-        ...(isMaster || hasPermission('Notifications') ? [{ name: "Notifications", icon: Bell, path: "/notifications" }] : []),
+        { name: "Team & Staff", icon: UserCheck, path: "/users" },
+        { name: "Roles & Permissions", icon: Lock, path: "/users/roles" },
+        { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
+        { name: "Complaints Desk", icon: MessageSquare, path: "/complaints" },
+        { name: "Announcements", icon: Bell, path: "/notifications" },
       ];
 
       return [
@@ -142,8 +154,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           title: "",
           items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }],
         },
-        ...(portalItems.length > 0 ? [{ title: "PORTALS & WORKFLOWS", items: portalItems }] : []),
-        ...(adminItems.length > 0 ? [{ title: "ADMIN & CONTROLS", items: adminItems }] : []),
+        { title: "CORE WORKFLOWS", items: coreItems },
+        { title: "HR & EMPLOYEES", items: hrItems },
+        { title: "PORTALS & FIELD", items: portalItems },
+        { title: "MANAGEMENT & CONTROLS", items: adminItems },
         {
           title: "ACCOUNT",
           items: [
@@ -155,7 +169,91 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       ];
     }
 
-    // ── SUB-ROLE USERS (Telecaller, Agent, HR, Accountant pure roles) ─────────
+    // ── HR ROLES (HR Head, HR Manager, HR Executive, HR Admin) ─────────
+    if (isHrHead || isHrManager || isHrExecutive || isHrAdmin) {
+      const hrWorkflowItems = [
+        ...(isHrHead || isHrManager || isHrAdmin || hasPermission('Manage Employees')
+          ? [{ name: "Employee Directory", icon: Users, path: "/employees" }] : []),
+        ...(isHrHead || isHrAdmin || hasPermission('Departments')
+          ? [{ name: "Departments", icon: Building2, path: "/employees/departments" }] : []),
+        { name: "Recruitment & Jobs", icon: Users, path: "/hr/recruitment" },
+        { name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" },
+        { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
+        ...(isHrExecutive ? [
+          { name: "My Leaves", icon: CalendarRange, path: "/employees/leave-management" }
+        ] : [
+          { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
+          { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" }
+        ]),
+        ...(isHrHead || isHrAdmin || hasPermission('Payroll & Salary')
+          ? [{ name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" }] : []),
+      ];
+
+      const hrManagementItems = [
+        ...(isHrHead || isHrManager || isHrAdmin || hasPermission('Manage Users')
+          ? [{ name: "Team & Staff", icon: UserCheck, path: "/users" }] : []),
+        ...(isHrHead || isHrAdmin || hasPermission('Reports & Analytics')
+          ? [{ name: "HR Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
+        { name: "Announcements", icon: Bell, path: "/notifications" },
+      ];
+
+      return [
+        {
+          title: "",
+          items: [{ name: "HR Dashboard", icon: LayoutDashboard, path: "/" }],
+        },
+        { title: "HR WORKFLOWS", items: hrWorkflowItems },
+        { title: "MANAGEMENT & TEAM", items: hrManagementItems },
+        {
+          title: "ACCOUNT",
+          items: [
+            { name: "My Profile", icon: User, path: "/profile" },
+            { name: "Change Password", icon: Lock, path: "/change-password" },
+            { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          ],
+        },
+      ];
+    }
+
+    // ── OPERATIONS ADMIN ──────────────────────────────────────────────
+    if (isOps) {
+      const opsItems = [
+        { name: "Operations Dashboard", icon: ShieldAlert, path: "/operations/dashboard" },
+        { name: "Applications Queue", icon: FileText, path: "/loans" },
+        { name: "Document Verification", icon: FileCheck, path: "/loans/documents" },
+        { name: "Verification Desk", icon: ShieldCheck, path: "/operations/verification" },
+        { name: "Follow-Up Desk", icon: ListChecks, path: "/operations/follow-ups" },
+        { name: "Active Running Loans", icon: FileText, path: "/loans/active" },
+        { name: "EMI Collections", icon: CircleDollarSign, path: "/loans/collections" },
+        { name: "Overdue & NPA", icon: AlertCircle, path: "/loans/overdue" },
+      ];
+
+      const opsExtra = [
+        { name: "Customers", icon: Users, path: "/customers" },
+        { name: "All Leads", icon: Target, path: "/leads" },
+        { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
+        { name: "Announcements", icon: Bell, path: "/notifications" },
+      ];
+
+      return [
+        {
+          title: "",
+          items: [{ name: "Operations LOS", icon: LayoutDashboard, path: "/" }],
+        },
+        { title: "OPERATIONS & LOS", items: opsItems },
+        { title: "CRM & REPORTING", items: opsExtra },
+        {
+          title: "ACCOUNT",
+          items: [
+            { name: "My Profile", icon: User, path: "/profile" },
+            { name: "Change Password", icon: Lock, path: "/change-password" },
+            { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          ],
+        },
+      ];
+    }
+
+    // ── SUB-ROLE USERS & DYNAMIC RBAC FALLBACK ─────────────────────────
     const items = {
       // HR
       departments: hasPermission('Departments'),
@@ -197,53 +295,53 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
     const hrItems = [
       ...(items.departments ? [{ name: "Departments", icon: Building2, path: "/employees/departments" }] : []),
-      ...(items.manageEmployees ? [{ name: "Manage Employees", icon: Users, path: "/employees" }] : []),
+      ...(items.manageEmployees ? [{ name: "Employees", icon: Users, path: "/employees" }] : []),
       ...(items.recruitment ? [{ name: "Recruitment", icon: Users, path: "/hr/recruitment" }] : []),
       ...(items.onboarding ? [{ name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" }] : []),
       ...(items.attendance ? [{ name: "Attendance", icon: ListChecks, path: "/employees/attendance" }] : []),
-      ...(items.leaveManagement ? [{ name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" }] : []),
+      ...(items.leaveManagement ? [{ name: "Leave Requests", icon: CalendarRange, path: "/employees/leave-management" }] : []),
       ...(items.payroll ? [{ name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" }] : []),
     ];
 
     const leadItems = [
-      ...(items.leadManagement ? [{ name: "Lead Management", icon: Target, path: "/leads" }] : []),
-      ...(items.assignedLeads ? [{ name: "Assigned Leads", icon: FolderOpen, path: "/telecaller/assigned-leads" }] : []),
-      ...(items.customerFollowups ? [{ name: "Customer Follow-ups", icon: CalendarRange, path: "/telecaller/followups" }] : []),
-      ...(items.telecallerPortal ? [{ name: "Telecaller Portal", icon: PhoneCall, path: "/telecaller" }] : []),
-      ...(items.fieldAgentPortal ? [{ name: "Field Agent Portal", icon: MapPin, path: "/agent" }] : []),
+      ...(items.leadManagement ? [{ name: "All Leads", icon: Target, path: "/leads" }] : []),
+      ...(items.assignedLeads ? [{ name: "My Assigned Leads", icon: FolderOpen, path: "/telecaller/assigned-leads" }] : []),
+      ...(items.customerFollowups ? [{ name: "Follow-ups", icon: CalendarRange, path: "/telecaller/followups" }] : []),
+      ...(items.telecallerPortal ? [{ name: "Telecaller Calling", icon: PhoneCall, path: "/telecaller" }] : []),
+      ...(items.fieldAgentPortal ? [{ name: "Field Agent Area", icon: MapPin, path: "/agent" }] : []),
     ];
 
     const loanItems = [
-      ...(items.loanApplications ? [{ name: "Loan Application", icon: FileText, path: "/loans" }] : []),
-      ...(items.approveRejectLoans ? [{ name: "Approve / Reject Loans", icon: CheckCircle2, path: "/loans" }] : []),
-      ...(items.documentVerification ? [{ name: "Document Center", icon: FileCheck, path: "/loans/documents" }] : []),
+      ...(items.loanApplications ? [{ name: "Applications", icon: FileText, path: "/loans" }] : []),
+      ...(items.approveRejectLoans ? [{ name: "Sanction Decisions", icon: CheckCircle2, path: "/loans" }] : []),
+      ...(items.documentVerification ? [{ name: "Document Desk", icon: FileCheck, path: "/loans/documents" }] : []),
       ...(items.activeLoans ? [{ name: "Active Loans", icon: FileText, path: "/loans/active" }] : []),
       ...(items.repaymentSchedule ? [{ name: "Repayment Schedule", icon: CalendarRange, path: "/loans/repayments" }] : []),
       ...(items.emiCollections ? [{ name: "EMI Collections", icon: CircleDollarSign, path: "/loans/collections" }] : []),
-      ...(items.overdueLoans ? [{ name: "Overdue Loans", icon: AlertCircle, path: "/loans/overdue" }] : []),
-      ...(items.appVerification ? [{ name: "Application Verification", icon: ShieldCheck, path: "/operations/verification" }] : []),
-      ...(items.followUps ? [{ name: "Follow-Up Management", icon: ListChecks, path: "/operations/follow-ups" }] : []),
+      ...(items.overdueLoans ? [{ name: "Overdue & NPA", icon: AlertCircle, path: "/loans/overdue" }] : []),
+      ...(items.appVerification ? [{ name: "Verification Desk", icon: ShieldCheck, path: "/operations/verification" }] : []),
+      ...(items.followUps ? [{ name: "Operations Follow-ups", icon: ListChecks, path: "/operations/follow-ups" }] : []),
     ];
 
     const financeItems = [
-      ...(items.accountantPortal ? [{ name: "Accountant Portal", icon: CreditCard, path: "/accountant" }] : []),
+      ...(items.accountantPortal ? [{ name: "Disbursals & Payouts", icon: CreditCard, path: "/accountant" }] : []),
     ];
 
     const adminItems = [
-      ...(items.manageUsers ? [{ name: "Manage Users", icon: UserCheck, path: "/users" }] : []),
-      ...(items.rolePermissions ? [{ name: "Permission Management", icon: Lock, path: "/users/roles" }] : []),
+      ...(items.manageUsers ? [{ name: "Team & Staff", icon: UserCheck, path: "/users" }] : []),
+      ...(items.rolePermissions ? [{ name: "Roles & Permissions", icon: Lock, path: "/users/roles" }] : []),
       ...(items.reports ? [{ name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
-      ...(items.manageComplaints ? [{ name: "Manage Complaints", icon: MessageSquare, path: "/complaints" }] : []),
-      ...(items.notifications ? [{ name: "Notifications", icon: Bell, path: "/notifications" }] : []),
+      ...(items.manageComplaints ? [{ name: "Complaints", icon: MessageSquare, path: "/complaints" }] : []),
+      ...(items.notifications ? [{ name: "Announcements", icon: Bell, path: "/notifications" }] : []),
     ];
 
     return [
       { title: "", items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }] },
-      ...(hrItems.length > 0 ? [{ title: "EMPLOYEE & HR MANAGEMENT", items: hrItems }] : []),
-      ...(leadItems.length > 0 ? [{ title: "LEAD & SALES MANAGEMENT", items: leadItems }] : []),
-      ...(loanItems.length > 0 ? [{ title: "LOAN OPERATIONS & RECOVERY", items: loanItems }] : []),
+      ...(hrItems.length > 0 ? [{ title: "HR & EMPLOYEES", items: hrItems }] : []),
+      ...(leadItems.length > 0 ? [{ title: "LEADS & SALES", items: leadItems }] : []),
+      ...(loanItems.length > 0 ? [{ title: "LOANS & RECOVERY", items: loanItems }] : []),
       ...(financeItems.length > 0 ? [{ title: "ACCOUNTS & FINANCE", items: financeItems }] : []),
-      ...(adminItems.length > 0 ? [{ title: "ADMIN & SYSTEM CONTROLS", items: adminItems }] : []),
+      ...(adminItems.length > 0 ? [{ title: "ADMIN CONTROLS", items: adminItems }] : []),
       {
         title: "ACCOUNT",
         items: [
@@ -322,28 +420,24 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                           type="button"
                           onClick={() => toggleDropdown(item.name)}
                           title={!isOpen ? item.name : undefined}
-                          className={`w-full flex items-center px-3 py-2.5 rounded-[10px] transition-all duration-200 group cursor-pointer ${
-                            isOpen ? "justify-between" : "justify-center"
-                          } ${
-                            isAnyChildActive
+                          className={`w-full flex items-center px-3 py-2.5 rounded-[10px] transition-all duration-200 group cursor-pointer ${isOpen ? "justify-between" : "justify-center"
+                            } ${isAnyChildActive
                               ? "bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] shadow-2xs border border-[var(--color-brand-border)] font-bold"
                               : "text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-sky-light)]/50 hover:text-[var(--color-brand-blue-dark)]"
-                          }`}
+                            }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
                             <Icon
                               size={18}
                               strokeWidth={isAnyChildActive ? 2.5 : 2}
-                              className={`shrink-0 ${
-                                isAnyChildActive
+                              className={`shrink-0 ${isAnyChildActive
                                   ? "text-[var(--color-brand-blue-dark)]"
                                   : "text-slate-400 group-hover:text-[var(--color-brand-blue-dark)]"
-                              }`}
+                                }`}
                             />
                             {isOpen && (
-                              <span className={`text-[13px] font-semibold tracking-wide truncate transition-all duration-300 ${
-                                isAnyChildActive ? "text-[var(--color-brand-blue-dark)] font-bold" : ""
-                              }`}>
+                              <span className={`text-[13px] font-semibold tracking-wide truncate transition-all duration-300 ${isAnyChildActive ? "text-[var(--color-brand-blue-dark)] font-bold" : ""
+                                }`}>
                                 {item.name}
                               </span>
                             )}
@@ -380,18 +474,16 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                                   onClick={() => {
                                     if (window.innerWidth < 1024 && setIsOpen) setIsOpen(false);
                                   }}
-                                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-all group/sub ${
-                                    isSubActive
+                                  className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-all group/sub ${isSubActive
                                       ? "bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] font-bold shadow-2xs"
                                       : "text-slate-600 hover:text-[var(--color-brand-blue-dark)] hover:bg-[var(--color-brand-sky-light)]/40"
-                                  }`}
+                                    }`}
                                 >
                                   <span
-                                    className={`w-1.5 h-1.5 rounded-full transition-all shrink-0 ${
-                                      isSubActive
+                                    className={`w-1.5 h-1.5 rounded-full transition-all shrink-0 ${isSubActive
                                         ? "bg-[var(--color-brand-blue-dark)] scale-125"
                                         : "bg-slate-300 group-hover/sub:bg-[var(--color-brand-blue-dark)]"
-                                    }`}
+                                      }`}
                                   />
                                   <span className="truncate">{sub.name}</span>
                                 </NavLink>
@@ -416,35 +508,30 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                         if (window.innerWidth < 1024 && setIsOpen) setIsOpen(false);
                       }}
                       title={!isOpen ? item.name : undefined}
-                      className={`flex items-center px-3 py-2.5 rounded-[10px] transition-all duration-200 group ${
-                        isOpen ? 'gap-3' : 'justify-center'
-                      } ${
-                        isActive
+                      className={`flex items-center px-3 py-2.5 rounded-[10px] transition-all duration-200 group ${isOpen ? 'gap-3' : 'justify-center'
+                        } ${isActive
                           ? "bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] shadow-sm border border-[var(--color-brand-border)] font-bold"
                           : "text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-sky-light)]/50 hover:text-[var(--color-brand-blue-dark)]"
-                      }`}
+                        }`}
                     >
                       <Icon
                         size={18}
                         strokeWidth={isActive ? 2.5 : 2}
-                        className={`shrink-0 ${
-                          isActive
+                        className={`shrink-0 ${isActive
                             ? "text-[var(--color-brand-blue-dark)]"
                             : item.isDanger
-                            ? "text-red-500 group-hover:text-red-600"
-                            : "text-slate-400 group-hover:text-[var(--color-brand-blue-dark)]"
-                        }`}
+                              ? "text-red-500 group-hover:text-red-600"
+                              : "text-slate-400 group-hover:text-[var(--color-brand-blue-dark)]"
+                          }`}
                       />
                       <span
-                        className={`text-[13px] font-semibold tracking-wide truncate transition-all duration-300 ${
-                          isOpen ? 'opacity-100 w-auto ml-1' : 'opacity-0 w-0 hidden'
-                        } ${
-                          isActive
+                        className={`text-[13px] font-semibold tracking-wide truncate transition-all duration-300 ${isOpen ? 'opacity-100 w-auto ml-1' : 'opacity-0 w-0 hidden'
+                          } ${isActive
                             ? "text-[var(--color-brand-blue-dark)]"
                             : item.isDanger
-                            ? "text-red-500 group-hover:text-red-600"
-                            : ""
-                        }`}
+                              ? "text-red-500 group-hover:text-red-600"
+                              : ""
+                          }`}
                       >
                         {item.name}
                       </span>

@@ -10,34 +10,136 @@ const DEPARTMENTS = [
   'OPERATIONAL', 'FIELD-SALES', 'BRANCH SALES', 'COLLECTIONS', 'OFFICIAL WORK'
 ];
 
+const DEPARTMENT_DESIGNATIONS = {
+  'OPERATIONAL': [
+    'HAUS NUO-Pay Offer- Liability',
+    'Branch Operations Manager',
+    'Credit Manager',
+    'Credit Underwriter',
+    'Credit Executive',
+    'Operation Manager',
+    'Operation Executive',
+    'Treasury Officer',
+    'Payroll Manager',
+    'Account Manager',
+    'Account Executive',
+    'HR Manager',
+    'HR Executive',
+    'KYC Verification Officer',
+    'Loan Documentation Specialist'
+  ],
+  'FIELD-SALES': [
+    'HAUS NUO-Pay Offer- Liability',
+    'Senior Field Loan Officer',
+    'Relationship Manager',
+    'Relationship Executive',
+    'Relationship Officer',
+    'Direct Sales Executive',
+    'Microfinance Field Officer',
+    'Rural Agri-Loan Officer',
+    'SME Business Acquisition Officer'
+  ],
+  'BRANCH SALES': [
+    'HAUS NUO-Pay Offer- Liability',
+    'Branch Relationship Manager',
+    'Regional Sales Manager',
+    'Area Sales Manager',
+    'Sales Trainer',
+    'Reporting Team Manager',
+    'Business Development Executive',
+    'Gold Loan Officer',
+    'Senior Sales Officer'
+  ],
+  'COLLECTIONS': [
+    'HAUS NUO-Pay Offer- Liability',
+    'Collection Manager',
+    'Collection Executive',
+    'Field Recovery Executive',
+    'Debt Recovery Officer',
+    'Legal Collections Specialist',
+    'Field Investigation Officer',
+    'Soft Calling Officer'
+  ],
+  'OFFICIAL WORK': [
+    'HAUS NUO-Pay Offer- Liability',
+    'Customer Care Executive - CCE',
+    'Customer Support Representative - CSR',
+    'Customer Service Representative',
+    'Front Desk Executive',
+    'MIS & Reporting Executive',
+    'Back Office Operations Executive',
+    'Admin & Facility Associate'
+  ]
+};
+
 const LOCATION_DATA = {
-  'ANDHRA PRADESH': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore'],
-  'ASSAM': ['Guwahati', 'Silchar', 'Dibrugarh', 'Jorhat'],
-  'BIHAR': ['Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur'],
-  'CHANDIGARH': ['Chandigarh'],
-  'CHHATTISGARH': ['Raipur', 'Bhilai', 'Bilaspur', 'Korba'],
-  'DELHI-NCR': ['New Delhi', 'Gurugram', 'Noida', 'Faridabad', 'Ghaziabad'],
-  'GOA': ['Panaji', 'Margao', 'Vasco da Gama', 'Mapusa'],
-  'GUJARAT': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot'],
-  'HARYANA': ['Gurugram', 'Faridabad', 'Panipat', 'Ambala'],
-  'JHARKHAND': ['Ranchi', 'Jamshedpur', 'Dhanbad', 'Bokaro'],
-  'KARNATAKA': ['Bengaluru', 'Mysuru', 'Hubballi', 'Mangaluru'],
-  'MADHYA PRADESH': ['Indore', 'Bhopal', 'Jabalpur', 'Gwalior'],
-  'MAHARASHTRA': ['Mumbai', 'Pune', 'Nagpur', 'Nashik'],
-  'ORISSA': ['Bhubaneswar', 'Cuttack', 'Rourkela', 'Berhampur'],
-  'PUNJAB': ['Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala'],
-  'RAJASTHAN': ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota'],
-  'TAMIL NADU': ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli'],
-  'TELANGANA': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar'],
-  'UTTAR PRADESH': ['Lucknow', 'Kanpur', 'Ghaziabad', 'Agra', 'Varanasi'],
-  'UTTARAKHAND': ['Dehradun', 'Haridwar', 'Roorkee', 'Haldwani'],
-  'WEST BENGAL': ['Kolkata', 'Asansol', 'Siliguri', 'Durgapur']
+  // North Zone
+  'HARYANA': ['Gurugram', 'Faridabad', 'Panipat', 'Ambala', 'Hisar', 'Karnal', 'Rohtak', 'Sonipat'],
+  'PUNJAB': ['Ludhiana', 'Amritsar', 'Jalandhar', 'Patiala', 'Bathinda', 'Mohali'],
+  'JAMMU': ['Jammu', 'Srinagar', 'Anantnag', 'Udhampur', 'Baramulla'],
+  'HIMACHAL PRADESH': ['Shimla', 'Dharamshala', 'Mandi', 'Solan', 'Kullu'],
+  'UTTARAKHAND': ['Dehradun', 'Haridwar', 'Roorkee', 'Haldwani', 'Rishikesh', 'Nainital'],
+  'UTTAR PRADESH': ['Lucknow', 'Kanpur', 'Noida', 'Ghaziabad', 'Agra', 'Varanasi', 'Prayagraj', 'Meerut', 'Bareilly', 'Aligarh', 'Gorakhpur', 'Moradabad', 'Ayodhya'],
+
+  // South Zone
+  'ANDHRA PRADESH': ['Visakhapatnam', 'Vijayawada', 'Guntur', 'Nellore', 'Kurnool', 'Tirupati', 'Kakinada'],
+  'KARNATAKA': ['Bengaluru', 'Mysuru', 'Hubballi', 'Mangaluru', 'Belagavi', 'Davangere', 'Kalaburagi'],
+  'KERALA': ['Kochi', 'Thiruvananthapuram', 'Kozhikode', 'Thrissur', 'Kollam', 'Alappuzha', 'Palakkad'],
+  'TAMIL NADU': ['Chennai', 'Coimbatore', 'Madurai', 'Tiruchirappalli', 'Salem', 'Tirunelveli', 'Erode', 'Vellore'],
+  'TELANGANA': ['Hyderabad', 'Warangal', 'Nizamabad', 'Karimnagar', 'Khammam', 'Secunderabad'],
+  'PUDUCHERRY': ['Puducherry', 'Karaikal', 'Oulgaret'],
+
+  // East Zone
+  'BIHAR': ['Patna', 'Gaya', 'Bhagalpur', 'Muzaffarpur', 'Purnia', 'Darbhanga', 'Bihar Sharif'],
+  'JHARKHAND': ['Ranchi', 'Jamshedpur', 'Dhanbad', 'Bokaro', 'Deoghar', 'Hazaribagh'],
+  'ORISSA': ['Bhubaneswar', 'Cuttack', 'Rourkela', 'Berhampur', 'Sambalpur', 'Puri'],
+  'CHHATTISGARH': ['Raipur', 'Bhilai', 'Bilaspur', 'Korba', 'Durg', 'Rajnandgaon'],
+  'WEST BENGAL': ['Kolkata', 'Asansol', 'Siliguri', 'Durgapur', 'Howrah', 'Bardhaman'],
+  'SIKKIM': ['Gangtok', 'Namchi', 'Geyzing', 'Mangan'],
+  'ASSAM': ['Guwahati', 'Silchar', 'Dibrugarh', 'Jorhat', 'Nagaon', 'Tinsukia'],
+
+  // West Zone
+  'MAHARASHTRA': ['Mumbai', 'Pune', 'Nagpur', 'Nashik', 'Thane', 'Aurangabad', 'Solapur', 'Navi Mumbai'],
+  'GUJARAT': ['Ahmedabad', 'Surat', 'Vadodara', 'Rajkot', 'Bhavnagar', 'Jamnagar', 'Gandhinagar'],
+  'MADHYA PRADESH': ['Indore', 'Bhopal', 'Jabalpur', 'Gwalior', 'Ujjain', 'Sagar', 'Dewas'],
+  'RAJASTHAN': ['Jaipur', 'Jodhpur', 'Udaipur', 'Kota', 'Bikaner', 'Ajmer', 'Bhilwara', 'Alwar'],
+  'GOA': ['Panaji', 'Margao', 'Vasco da Gama', 'Mapusa', 'Ponda'],
+
+  // Central Zone
+  'CHANDIGARH': ['Chandigarh', 'Mohali (Chandigarh Region)', 'Panchkula (Chandigarh Region)'],
+  'DELHI': ['New Delhi', 'Central Delhi', 'North Delhi', 'South Delhi', 'East Delhi', 'West Delhi', 'Dwarka', 'Connaught Place']
 };
 
 // Flatten all cities for location dropdown
 const ALL_LOCATIONS = Object.entries(LOCATION_DATA).flatMap(
   ([state, cities]) => cities.map(city => `${city}, ${state}`)
 );
+
+const ZONE_STATES_MAP = {
+  'NORTH': ['HARYANA', 'PUNJAB', 'JAMMU', 'HIMACHAL PRADESH', 'UTTARAKHAND', 'UTTAR PRADESH'],
+  'SOUTH': ['ANDHRA PRADESH', 'KARNATAKA', 'KERALA', 'TAMIL NADU', 'TELANGANA', 'PUDUCHERRY'],
+  'EAST': ['BIHAR', 'JHARKHAND', 'ORISSA', 'CHHATTISGARH', 'WEST BENGAL', 'SIKKIM', 'ASSAM'],
+  'WEST': ['MAHARASHTRA', 'GUJARAT', 'MADHYA PRADESH', 'RAJASTHAN', 'GOA'],
+  'CENTRAL': ['CHANDIGARH', 'DELHI']
+};
+
+const ZONE_DEFAULT_LOCATIONS = {
+  'NORTH': 'Lucknow, UTTAR PRADESH',
+  'SOUTH': 'Bengaluru, KARNATAKA',
+  'EAST': 'Patna, BIHAR',
+  'WEST': 'Mumbai, MAHARASHTRA',
+  'CENTRAL': 'New Delhi, DELHI',
+  'ALL': 'Bengaluru, KARNATAKA'
+};
+
+const getLocationsForZone = (zone) => {
+  if (!zone || zone === 'ALL') return ALL_LOCATIONS;
+  const states = ZONE_STATES_MAP[zone.toUpperCase()] || [];
+  const matched = Object.entries(LOCATION_DATA)
+    .filter(([st]) => states.includes(st.toUpperCase()))
+    .flatMap(([st, cities]) => cities.map(city => `${city}, ${st}`));
+  return matched.length > 0 ? matched : ALL_LOCATIONS;
+};
 
 // ── Searchable single-select dropdown ──────────────────────────────────────
 const SearchableSelect = ({ label, value, onChange, options, placeholder, required }) => {
@@ -168,7 +270,20 @@ export default function Recruitment() {
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [designations, setDesignations] = useState([]);
   
+  // Auth User context
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const userRole = (currentUser.role || '').toLowerCase();
+  const userDesig = (currentUser.designation || '').toLowerCase();
+  const isMasterAdmin = ['super admin', 'superadmin', 'admin'].includes(userRole);
+  const isHRLead = ['hr head', 'hr_head', 'hr admin', 'hr manager', 'hr_manager'].includes(userRole) || 
+                   userDesig.includes('hr head') || userDesig.includes('hr manager');
+  const isHRHead = isHRLead;
+  const isExecutive = !isMasterAdmin && !isHRHead && (userRole.includes('executive') || userDesig.includes('executive'));
+  const userZone = (currentUser.zone && currentUser.zone !== 'ALL') ? currentUser.zone.toUpperCase() : 'NORTH';
+  const canAssignApplications = isHRLead && !isMasterAdmin;
+
   // Assignment & Filter states
   const [appFilterTab, setAppFilterTab] = useState('all'); // 'all', 'unassigned', 'assigned'
   const [selectedAppIds, setSelectedAppIds] = useState([]);
@@ -182,6 +297,17 @@ export default function Recruitment() {
   
   const [showAppModal, setShowAppModal] = useState(false);
   const [selectedApp, setSelectedApp] = useState(null);
+
+  // Designation Modal & Form
+  const [showAddDesigModal, setShowAddDesigModal] = useState(false);
+  const [newDesigForm, setNewDesigForm] = useState({
+    name: '',
+    department: 'OPERATIONAL',
+    description: '',
+    status: 'Active'
+  });
+  const [desigSearch, setDesigSearch] = useState('');
+  const [desigDeptFilter, setDesigDeptFilter] = useState('all');
   
   // App Edit Form
   const [isEditingApp, setIsEditingApp] = useState(false);
@@ -189,27 +315,128 @@ export default function Recruitment() {
   
   // Job Form
   const [jobForm, setJobForm] = useState({
-    title: '', type: 'Full Time', department: 'OPERATIONAL', location: 'Bengaluru, Karnataka', description: DEFAULT_JOB_DESC, status: 'Open', openings: 1, skills: '', publishStatus: 'Published'
+    title: 'HAUS NUO-Pay Offer- Liability',
+    designation: 'HAUS NUO-Pay Offer- Liability',
+    type: 'Full Time',
+    department: 'OPERATIONAL',
+    location: isMasterAdmin || isHRHead ? 'Bengaluru, KARNATAKA' : (ZONE_DEFAULT_LOCATIONS[userZone] || 'Lucknow, UTTAR PRADESH'),
+    zone: isMasterAdmin || isHRHead ? 'ALL' : userZone,
+    description: DEFAULT_JOB_DESC,
+    status: 'Open',
+    openings: 1,
+    skills: '',
+    publishStatus: 'Published'
   });
 
   useEffect(() => {
     fetchJobs();
     fetchApplications();
     fetchEmployees();
+    fetchDesignations();
   }, []);
+
+  const fetchDesignations = async () => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/designations`);
+      if (res.ok) {
+        const data = await res.json();
+        setDesignations(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      console.error('Error fetching designations:', err);
+    }
+  };
+
+  const handleSaveDesignation = async (e) => {
+    e.preventDefault();
+    if (!newDesigForm.name.trim()) {
+      toast.error('Designation name is required');
+      return;
+    }
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/designations`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(newDesigForm)
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('Designation added successfully');
+        setShowAddDesigModal(false);
+        setNewDesigForm({ name: '', department: jobForm.department || 'OPERATIONAL', description: '', status: 'Active' });
+        await fetchDesignations();
+        // If adding while in job modal, select it in job form
+        if (showJobModal) {
+          setJobForm(prev => ({
+            ...prev,
+            designation: data.name,
+            title: prev.title || data.name
+          }));
+        }
+      } else {
+        toast.error(data.message || 'Failed to create designation');
+      }
+    } catch (err) {
+      toast.error('Server error creating designation');
+    }
+  };
+
+  const handleDeleteDesignation = (id, name) => {
+    Swal.fire({
+      title: 'Delete Designation?',
+      text: `Are you sure you want to remove "${name}"?`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#ef4444',
+      confirmButtonText: 'Yes, Delete'
+    }).then(async (result) => {
+      if (result.isConfirmed) {
+        try {
+          const token = localStorage.getItem('token');
+          const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/designations/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (res.ok) {
+            toast.success('Designation deleted');
+            fetchDesignations();
+          } else {
+            toast.error('Failed to delete designation');
+          }
+        } catch (err) {
+          toast.error('Server error');
+        }
+      }
+    });
+  };
 
   const fetchEmployees = async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users?type=staff`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
-        setEmployees(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : (data.users || []);
+        // Filter out superadmins and show relevant executives/staff
+        setEmployees(list.filter(u => !['superadmin', 'super admin', 'Super Admin'].includes(u.role)));
+      } else {
+        const fallback = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (fallback.ok) {
+          const fbData = await fallback.json();
+          setEmployees(Array.isArray(fbData) ? fbData : []);
+        }
       }
     } catch (err) {
-      console.error(err);
+      console.error('Error fetching staff list for assignment:', err);
     }
   };
 
@@ -404,11 +631,19 @@ export default function Recruitment() {
 
   const openNewJob = () => {
     setEditingJob(null);
+    const dept = 'OPERATIONAL';
+    const deptDesigs = designations.filter(d => d.department === dept);
+    const defaultDesig = deptDesigs.length > 0 ? deptDesigs[0].name : 'HAUS NUO-Pay Offer- Liability';
+    const effectiveZone = (isMasterAdmin || isHRHead) ? 'ALL' : userZone;
+    const defaultLoc = (isMasterAdmin || isHRHead) ? 'Bengaluru, KARNATAKA' : (ZONE_DEFAULT_LOCATIONS[userZone] || 'Lucknow, UTTAR PRADESH');
+
     setJobForm({
-      title: 'HAUS NUO-Pay Offer- Liability', 
+      title: 'HAUS NUO-Pay Offer- Liability',
+      designation: defaultDesig,
       type: 'Full Time', 
-      department: 'OPERATIONAL', 
-      location: 'Bengaluru, Karnataka', 
+      department: dept, 
+      zone: effectiveZone,
+      location: defaultLoc, 
       description: DEFAULT_JOB_DESC, 
       status: 'Open',
       publishStatus: 'Published',
@@ -422,8 +657,10 @@ export default function Recruitment() {
     setEditingJob(job);
     setJobForm({
       title: job.title || '',
+      designation: job.designation || job.title || '',
       type: job.type || 'Full Time',
       department: job.department || 'OPERATIONAL',
+      zone: job.zone || ((isMasterAdmin || isHRHead) ? 'ALL' : userZone),
       location: job.location || '',
       description: job.description || '',
       status: job.status || 'Open',
@@ -432,6 +669,182 @@ export default function Recruitment() {
       skills: job.skills || ''
     });
     setShowJobModal(true);
+  };
+
+  // Pagination & Filtering for Applications
+  const [appSearch, setAppSearch] = useState('');
+  const [appZoneFilter, setAppZoneFilter] = useState('all');
+  const [appStatusFilter, setAppStatusFilter] = useState('all');
+  const [appCurrentPage, setAppCurrentPage] = useState(1);
+  const [appPageSize, setAppPageSize] = useState(15);
+
+  // Pagination & Filtering for Jobs
+  const [jobSearch, setJobSearch] = useState('');
+  const [jobZoneFilter, setJobZoneFilter] = useState('all');
+  const [jobDeptFilter, setJobDeptFilter] = useState('all');
+  const [jobStatusFilter, setJobStatusFilter] = useState('all');
+  const [jobCurrentPage, setJobCurrentPage] = useState(1);
+  const [jobPageSize, setJobPageSize] = useState(15);
+
+  // Reset pagination on filter changes
+  useEffect(() => {
+    setAppCurrentPage(1);
+  }, [appSearch, appFilterTab, appZoneFilter, appStatusFilter, appPageSize]);
+
+  useEffect(() => {
+    setJobCurrentPage(1);
+  }, [jobSearch, jobZoneFilter, jobDeptFilter, jobStatusFilter, jobPageSize]);
+
+  // Filtered Applications
+  const filteredApplications = applications.filter(app => {
+    if (appFilterTab === 'unassigned' && app.assignedToId) return false;
+    if (appFilterTab === 'assigned' && !app.assignedToId) return false;
+    if (appZoneFilter !== 'all' && (app.zone || '').toUpperCase() !== appZoneFilter.toUpperCase()) return false;
+    if (appStatusFilter !== 'all' && (app.status || '').toLowerCase() !== appStatusFilter.toLowerCase()) return false;
+    if (appSearch) {
+      const q = appSearch.toLowerCase();
+      const matchName = (app.name || '').toLowerCase().includes(q);
+      const matchEmail = (app.email || '').toLowerCase().includes(q);
+      const matchPhone = (app.phone || '').toLowerCase().includes(q);
+      const matchAppNo = (app.applicationNo || '').toLowerCase().includes(q);
+      const matchJob = (app.jobId?.title || '').toLowerCase().includes(q);
+      const matchState = (app.state || '').toLowerCase().includes(q);
+      const matchZone = (app.zone || '').toLowerCase().includes(q);
+      if (!matchName && !matchEmail && !matchPhone && !matchAppNo && !matchJob && !matchState && !matchZone) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  const appTotalPages = Math.max(1, Math.ceil(filteredApplications.length / appPageSize));
+  const paginatedApplications = filteredApplications.slice(
+    (appCurrentPage - 1) * appPageSize,
+    appCurrentPage * appPageSize
+  );
+
+  // Filtered Jobs
+  const filteredJobs = jobs.filter(job => {
+    if (jobZoneFilter !== 'all' && (job.zone || 'ALL').toUpperCase() !== jobZoneFilter.toUpperCase()) return false;
+    if (jobDeptFilter !== 'all' && job.department !== jobDeptFilter) return false;
+    if (jobStatusFilter !== 'all' && job.status !== jobStatusFilter) return false;
+    if (jobSearch) {
+      const q = jobSearch.toLowerCase();
+      const matchTitle = (job.title || '').toLowerCase().includes(q);
+      const matchDept = (job.department || '').toLowerCase().includes(q);
+      const matchLoc = (job.location || '').toLowerCase().includes(q);
+      const matchZone = (job.zone || '').toLowerCase().includes(q);
+      const matchSkills = (job.skills || '').toLowerCase().includes(q);
+      if (!matchTitle && !matchDept && !matchLoc && !matchZone && !matchSkills) return false;
+    }
+    return true;
+  });
+
+  const jobTotalPages = Math.max(1, Math.ceil(filteredJobs.length / jobPageSize));
+  const paginatedJobs = filteredJobs.slice(
+    (jobCurrentPage - 1) * jobPageSize,
+    jobCurrentPage * jobPageSize
+  );
+
+  const renderPaginationBar = (currentPage, totalPages, pageSize, setPageSize, setPage, totalItems) => {
+    const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+    const endItem = Math.min(currentPage * pageSize, totalItems);
+
+    const getPageNumbers = () => {
+      const pages = [];
+      if (totalPages <= 7) {
+        for (let i = 1; i <= totalPages; i++) pages.push(i);
+      } else {
+        if (currentPage <= 4) {
+          pages.push(1, 2, 3, 4, 5, '...', totalPages);
+        } else if (currentPage >= totalPages - 3) {
+          pages.push(1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+        } else {
+          pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+        }
+      }
+      return pages;
+    };
+
+    return (
+      <div className="p-4 bg-white border-t border-gray-100 flex flex-wrap items-center justify-between gap-4 text-xs font-semibold text-gray-600">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-gray-500">Rows per page:</span>
+            <select
+              value={pageSize}
+              onChange={(e) => {
+                setPageSize(Number(e.target.value));
+                setPage(1);
+              }}
+              className="border border-gray-200 rounded-lg px-2.5 py-1.5 bg-gray-50 text-gray-800 font-bold focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+            >
+              {[15, 25, 50, 100].map(sz => (
+                <option key={sz} value={sz}>{sz}</option>
+              ))}
+            </select>
+          </div>
+          <span className="text-gray-400">|</span>
+          <div>
+            Showing <span className="text-gray-900 font-bold">{startItem}</span> to <span className="text-gray-900 font-bold">{endItem}</span> of <span className="text-gray-900 font-bold">{totalItems}</span> entries
+          </div>
+        </div>
+
+        <div className="flex items-center gap-1">
+          <button
+            onClick={() => setPage(1)}
+            disabled={currentPage === 1}
+            className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
+            title="First Page"
+          >
+            « First
+          </button>
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="px-3 py-1.5 border border-gray-200 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
+          >
+            ‹ Prev
+          </button>
+
+          <div className="flex items-center gap-1 mx-1">
+            {getPageNumbers().map((p, idx) => (
+              p === '...' ? (
+                <span key={`ellipsis-${idx}`} className="px-2 py-1 text-gray-400">...</span>
+              ) : (
+                <button
+                  key={p}
+                  onClick={() => setPage(p)}
+                  className={`w-8 h-8 rounded-lg font-bold text-xs transition-all ${
+                    currentPage === p
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'border border-gray-200 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {p}
+                </button>
+              )
+            ))}
+          </div>
+
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="px-3 py-1.5 border border-gray-200 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
+          >
+            Next ›
+          </button>
+          <button
+            onClick={() => setPage(totalPages)}
+            disabled={currentPage === totalPages || totalPages === 0}
+            className="px-2.5 py-1.5 border border-gray-200 rounded-lg text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed font-bold"
+            title="Last Page"
+          >
+            Last »
+          </button>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -491,13 +904,19 @@ export default function Recruitment() {
           onClick={() => setActiveTab('applications')}
           className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === 'applications' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
         >
-          Job Applications
+          Job Applications ({applications.length})
         </button>
         <button 
           onClick={() => setActiveTab('jobs')}
           className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === 'jobs' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
         >
-          Manage Jobs
+          Manage Jobs ({jobs.length})
+        </button>
+        <button 
+          onClick={() => setActiveTab('designations')}
+          className={`pb-2 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === 'designations' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-800'}`}
+        >
+          Department Designations ({designations.length})
         </button>
       </div>
 
@@ -505,94 +924,136 @@ export default function Recruitment() {
         
         {activeTab === 'applications' && (
           <div>
-            {/* Sub Filter & Bulk Action Bar */}
+            {/* Filter Toolbar */}
             <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-3">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setAppFilterTab('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    appFilterTab === 'all' ? 'bg-blue-600 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
-                  }`}
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="flex gap-1.5 bg-gray-200/70 p-1 rounded-lg">
+                  <button
+                    onClick={() => setAppFilterTab('all')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      appFilterTab === 'all' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    All ({applications.length})
+                  </button>
+                  <button
+                    onClick={() => setAppFilterTab('unassigned')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      appFilterTab === 'unassigned' ? 'bg-amber-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Unassigned ({applications.filter(a => !a.assignedToId).length})
+                  </button>
+                  <button
+                    onClick={() => setAppFilterTab('assigned')}
+                    className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
+                      appFilterTab === 'assigned' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    Assigned ({applications.filter(a => a.assignedToId).length})
+                  </button>
+                </div>
+
+                {/* Zone Filter */}
+                <select
+                  value={appZoneFilter}
+                  onChange={(e) => setAppZoneFilter(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold bg-white text-gray-700 focus:ring-1 focus:ring-blue-500"
                 >
-                  All Applications ({applications.length})
-                </button>
-                <button
-                  onClick={() => setAppFilterTab('unassigned')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    appFilterTab === 'unassigned' ? 'bg-amber-600 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
-                  }`}
+                  <option value="all">All Zones</option>
+                  <option value="NORTH">North Zone</option>
+                  <option value="SOUTH">South Zone</option>
+                  <option value="EAST">East Zone</option>
+                  <option value="WEST">West Zone</option>
+                  <option value="CENTRAL">Central Zone</option>
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={appStatusFilter}
+                  onChange={(e) => setAppStatusFilter(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold bg-white text-gray-700 focus:ring-1 focus:ring-blue-500"
                 >
-                  Unassigned ({applications.filter(a => !a.assignedToId).length})
-                </button>
-                <button
-                  onClick={() => setAppFilterTab('assigned')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                    appFilterTab === 'assigned' ? 'bg-green-600 text-white shadow-sm' : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
-                  }`}
-                >
-                  Assigned ({applications.filter(a => a.assignedToId).length})
-                </button>
+                  <option value="all">All Statuses</option>
+                  <option value="applied">Applied</option>
+                  <option value="reviewed">Reviewed</option>
+                  <option value="shortlisted">Shortlisted</option>
+                  <option value="interview">Interview</option>
+                  <option value="selected">Selected</option>
+                  <option value="hired">Hired</option>
+                  <option value="rejected">Rejected</option>
+                </select>
               </div>
 
-              {selectedAppIds.length > 0 && (
-                <button
-                  onClick={() => { setAssigningApp(null); setTargetEmployeeId(''); setShowAssignModal(true); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm"
-                >
-                  <UserCheck size={14} /> Bulk Assign ({selectedAppIds.length})
-                </button>
-              )}
+              <div className="flex items-center gap-3">
+                {/* Search Bar */}
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search candidate, job, phone..."
+                    value={appSearch}
+                    onChange={(e) => setAppSearch(e.target.value)}
+                    className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs w-64 bg-white focus:outline-none focus:border-blue-500"
+                  />
+                  {appSearch && (
+                    <button onClick={() => setAppSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                {canAssignApplications && selectedAppIds.length > 0 && (
+                  <button
+                    onClick={() => { setAssigningApp(null); setTargetEmployeeId(''); setShowAssignModal(true); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm"
+                  >
+                    <UserCheck size={14} /> Bulk Assign ({selectedAppIds.length})
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[1100px]">
                 <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase">
-                    <th className="py-3 px-4 w-10">
-                      <input
-                        type="checkbox"
-                        checked={
-                          applications.length > 0 &&
-                          applications.filter(a => {
-                            if (appFilterTab === 'unassigned') return !a.assignedToId;
-                            if (appFilterTab === 'assigned') return !!a.assignedToId;
-                            return true;
-                          }).every(a => selectedAppIds.includes(a._id))
-                        }
-                        onChange={(e) => {
-                          const visibleApps = applications.filter(a => {
-                            if (appFilterTab === 'unassigned') return !a.assignedToId;
-                            if (appFilterTab === 'assigned') return !!a.assignedToId;
-                            return true;
-                          });
-                          if (e.target.checked) {
-                            setSelectedAppIds(visibleApps.map(a => a._id));
-                          } else {
-                            setSelectedAppIds([]);
+                  <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                    {canAssignApplications && (
+                      <th className="py-3 px-4 w-10 whitespace-nowrap">
+                        <input
+                          type="checkbox"
+                          checked={
+                            paginatedApplications.length > 0 &&
+                            paginatedApplications.every(a => selectedAppIds.includes(a._id))
                           }
-                        }}
-                        className="rounded text-blue-600"
-                      />
-                    </th>
-                    <th className="py-3 px-4">Candidate</th>
-                    <th className="py-3 px-4">Applied For</th>
-                    <th className="py-3 px-4">Contact</th>
-                    <th className="py-3 px-4">Assigned To</th>
-                    <th className="py-3 px-4">Date</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4 text-right">Actions</th>
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              const newIds = Array.from(new Set([...selectedAppIds, ...paginatedApplications.map(a => a._id)]));
+                              setSelectedAppIds(newIds);
+                            } else {
+                              const pageIds = new Set(paginatedApplications.map(a => a._id));
+                              setSelectedAppIds(selectedAppIds.filter(id => !pageIds.has(id)));
+                            }
+                          }}
+                          className="rounded text-blue-600"
+                        />
+                      </th>
+                    )}
+                    <th className="py-3 px-4 whitespace-nowrap">App No & Candidate</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Zone & State</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Applied For</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Contact</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Assigned HR Exec</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Date</th>
+                    <th className="py-3 px-4 whitespace-nowrap">Status</th>
+                    <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 text-sm">
-                  {applications
-                    .filter(app => {
-                      if (appFilterTab === 'unassigned') return !app.assignedToId;
-                      if (appFilterTab === 'assigned') return !!app.assignedToId;
-                      return true;
-                    })
-                    .map(app => (
-                      <tr key={app._id} className="hover:bg-blue-50/50 transition-colors">
-                        <td className="py-3 px-4">
+                  {paginatedApplications.map(app => (
+                    <tr key={app._id} className="hover:bg-blue-50/50 transition-colors">
+                      {canAssignApplications && (
+                        <td className="py-3 px-4 whitespace-nowrap">
                           <input
                             type="checkbox"
                             checked={selectedAppIds.includes(app._id)}
@@ -606,120 +1067,370 @@ export default function Recruitment() {
                             className="rounded text-blue-600"
                           />
                         </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-gray-900 block">{app.name}</span>
-                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              app.candidateType === 'Experienced'
-                                ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                                : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
-                            }`}>
-                              {app.candidateType || 'Fresher'}
-                            </span>
-                          </div>
-                          <span className="text-xs text-gray-500">Exp CTC: {app.expectedSalary || 'N/A'}</span>
-                        </td>
-                        <td className="py-3 px-4 font-bold text-blue-600">{app.jobId?.title || 'Unknown Job'}</td>
-                        <td className="py-3 px-4">
-                          <div className="text-xs text-gray-700">{app.email}</div>
-                          <div className="text-xs text-gray-500">{app.phone}</div>
-                        </td>
-                        <td className="py-3 px-4">
-                          {app.assignedTo ? (
-                            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-1 rounded w-max border border-emerald-200">
+                      )}
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {app.applicationNo && (
+                          <span className="font-mono text-[10.5px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block mb-1 whitespace-nowrap">
+                            {app.applicationNo}
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-gray-900">{app.name}</span>
+                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold whitespace-nowrap ${
+                            app.candidateType === 'Experienced'
+                              ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
+                              : 'bg-emerald-100 text-emerald-700 border border-emerald-200'
+                          }`}>
+                            {app.candidateType || 'Fresher'}
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-500 block mt-0.5">Exp CTC: {app.expectedSalary || 'N/A'}</span>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${
+                          app.zone === 'NORTH' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                          app.zone === 'SOUTH' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                          app.zone === 'EAST' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                          app.zone === 'WEST' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                          'bg-slate-50 text-slate-700 border-slate-200'
+                        }`}>
+                          <MapPin size={10} /> {app.zone || 'NORTH'}
+                        </span>
+                        <div className="text-[11.5px] text-gray-500 mt-0.5 font-medium whitespace-nowrap">
+                          {app.state || 'State Mapped'}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className="font-bold text-blue-600 block">{app.jobId?.title || 'Unknown Job'}</span>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <div className="text-xs font-medium text-gray-700">{app.email}</div>
+                        <div className="text-xs text-gray-500">{app.phone}</div>
+                      </td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        {app.assignedTo && app.assignedTo !== 'Unassigned' ? (
+                          <div>
+                            <div className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 whitespace-nowrap">
                               <UserCheck size={12} /> {app.assignedTo}
                             </div>
-                          ) : (
-                            <span className="text-xs font-bold text-amber-700 bg-amber-50 px-2 py-1 rounded border border-amber-200">
-                              Unassigned
-                            </span>
-                          )}
-                        </td>
-                        <td className="py-3 px-4 text-gray-500 text-xs">{new Date(app.createdAt).toLocaleDateString()}</td>
-                        <td className="py-3 px-4">
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold ${
-                            app.status === 'Hired' ? 'bg-green-100 text-green-700' :
-                            app.status === 'Shortlisted' ? 'bg-blue-100 text-blue-700' :
-                            app.status === 'Interview' ? 'bg-purple-100 text-purple-700' :
-                            app.status === 'Reviewed' ? 'bg-sky-100 text-sky-700' :
-                            app.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-700'
-                          }`}>
-                            {app.status}
+                            {app.assignedManagerName && (
+                              <span className="text-[10px] text-gray-500 font-medium mt-0.5 block whitespace-nowrap">
+                                Mgr: {app.assignedManagerName}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-block text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 whitespace-nowrap">
+                            Unassigned
                           </span>
-                        </td>
-                        <td className="py-3 px-4 text-right flex justify-end gap-2">
-                          <button
-                            onClick={() => { setAssigningApp(app); setTargetEmployeeId(app.assignedToId?._id || app.assignedToId || ''); setShowAssignModal(true); }}
-                            className="flex items-center gap-1 px-2.5 py-1.5 bg-white border border-gray-300 text-gray-700 rounded text-xs font-bold hover:bg-gray-50"
-                            title="Assign to Employee"
+                        )}
+                      </td>
+                      <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{new Date(app.createdAt).toLocaleDateString()}</td>
+                      <td className="py-3 px-4 whitespace-nowrap">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${
+                          app.status === 'Hired' ? 'bg-green-100 text-green-700 border border-green-200' :
+                          app.status === 'Shortlisted' ? 'bg-blue-100 text-blue-700 border border-blue-200' :
+                          app.status === 'Interview' ? 'bg-purple-100 text-purple-700 border border-purple-200' :
+                          app.status === 'Reviewed' ? 'bg-sky-100 text-sky-700 border border-sky-200' :
+                          app.status === 'Rejected' ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-gray-100 text-gray-700 border border-gray-200'
+                        }`}>
+                          {app.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {canAssignApplications && (
+                            <button
+                              onClick={() => { setAssigningApp(app); setTargetEmployeeId(app.assignedToId?._id || app.assignedToId || ''); setShowAssignModal(true); }}
+                              className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-300 text-gray-700 rounded-md text-xs font-bold hover:bg-gray-50 cursor-pointer whitespace-nowrap shadow-2xs"
+                              title="Assign to HR Executive"
+                            >
+                              <UserCheck size={12} /> Reassign
+                            </button>
+                          )}
+                          <button 
+                            onClick={() => { setSelectedApp(app); setShowAppModal(true); }} 
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-xs font-bold hover:bg-blue-100 cursor-pointer whitespace-nowrap shadow-2xs"
                           >
-                            <UserCheck size={13} /> Assign
+                            <Eye size={12} /> View
                           </button>
-                          <button onClick={() => { setSelectedApp(app); setShowAppModal(true); }} className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded text-xs font-bold hover:bg-blue-100">
-                            <Eye size={13} /> View
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  {applications.length === 0 && <tr><td colSpan="8" className="text-center py-10 text-gray-500">No applications found.</td></tr>}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {paginatedApplications.length === 0 && (
+                    <tr>
+                      <td colSpan="9" className="text-center py-12 text-gray-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Users size={32} className="text-gray-300" />
+                          <p className="font-semibold text-gray-600">No applications match your filter.</p>
+                          <p className="text-xs text-gray-400">Try adjusting your search terms or zone filters.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
+
+            {/* Applications Pagination */}
+            {renderPaginationBar(
+              appCurrentPage,
+              appTotalPages,
+              appPageSize,
+              setAppPageSize,
+              setAppCurrentPage,
+              filteredApplications.length
+            )}
           </div>
         )}
 
         {activeTab === 'jobs' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-gray-50 border-b border-gray-200">
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Job Title</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Type / Dept</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Location</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Seats</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Status</th>
-                  <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100 text-sm">
-                {jobs.map(job => (
-                  <tr key={job._id} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="py-3 px-4 font-bold text-gray-900">{job.title}</td>
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-gray-700">{job.type}</div>
-                      <div className="text-xs text-gray-500">{job.department}</div>
-                    </td>
-                    <td className="py-3 px-4 text-gray-600">{job.location}</td>
-                    <td className="py-3 px-4 text-sm font-bold text-gray-700">
-                      {job.hiredCount !== undefined ? job.hiredCount : 0} / {job.openings || 1}
-                    </td>
-                    <td className="py-3 px-4">
-                      <div className="flex flex-col gap-1 items-start">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
-                          job.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                        }`}>
-                          {job.status === 'Open' ? 'Active' : job.status}
-                        </span>
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
-                          job.publishStatus === 'Draft' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                        }`}>
-                          {job.publishStatus || 'Published'}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right flex justify-end gap-2">
-                       <button onClick={() => handleEditJob(job)} title="Edit Job" className="p-2 text-blue-600 hover:bg-blue-50 rounded">
-                         <Edit2 size={16} />
-                       </button>
-                       <button onClick={() => handleDeleteJob(job._id)} title="Delete Job" className="p-2 text-red-600 hover:bg-red-50 rounded">
-                         <Trash2 size={16} />
-                       </button>
-                    </td>
+          <div>
+            {/* Jobs Filter Toolbar */}
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Zone Filter */}
+                <select
+                  value={jobZoneFilter}
+                  onChange={(e) => setJobZoneFilter(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold bg-white text-gray-700 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="all">All Zones ({jobs.length})</option>
+                  <option value="NORTH">NORTH Zone ({jobs.filter(j => (j.zone || 'NORTH').toUpperCase() === 'NORTH').length})</option>
+                  <option value="SOUTH">SOUTH Zone ({jobs.filter(j => (j.zone || '').toUpperCase() === 'SOUTH').length})</option>
+                  <option value="EAST">EAST Zone ({jobs.filter(j => (j.zone || '').toUpperCase() === 'EAST').length})</option>
+                  <option value="WEST">WEST Zone ({jobs.filter(j => (j.zone || '').toUpperCase() === 'WEST').length})</option>
+                  <option value="CENTRAL">CENTRAL Zone ({jobs.filter(j => (j.zone || '').toUpperCase() === 'CENTRAL').length})</option>
+                </select>
+
+                {/* Department Filter */}
+                <select
+                  value={jobDeptFilter}
+                  onChange={(e) => setJobDeptFilter(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold bg-white text-gray-700 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="all">All Departments ({jobs.length})</option>
+                  {DEPARTMENTS.map(dept => (
+                    <option key={dept} value={dept}>{dept} ({jobs.filter(j => j.department === dept).length})</option>
+                  ))}
+                </select>
+
+                {/* Status Filter */}
+                <select
+                  value={jobStatusFilter}
+                  onChange={(e) => setJobStatusFilter(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold bg-white text-gray-700 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="Open">Active (Open)</option>
+                  <option value="Inactive">Inactive</option>
+                  <option value="Closed">Closed</option>
+                </select>
+              </div>
+
+              {/* Search Bar */}
+              <div className="relative">
+                <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search job title, location, skills..."
+                  value={jobSearch}
+                  onChange={(e) => setJobSearch(e.target.value)}
+                  className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs w-64 bg-white focus:outline-none focus:border-blue-500"
+                />
+                {jobSearch && (
+                  <button onClick={() => setJobSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                    <X size={12} />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Job Title & Role</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Type / Dept</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Location & Zone</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Seats</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
                   </tr>
-                ))}
-                {jobs.length === 0 && <tr><td colSpan="5" className="text-center py-10 text-gray-500">No jobs posted yet.</td></tr>}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {paginatedJobs.map(job => (
+                    <tr key={job._id} className="hover:bg-blue-50/50 transition-colors">
+                      <td className="py-3 px-4">
+                        <span className="font-bold text-gray-900 block">{job.title}</span>
+                        {job.designation && (
+                          <span className="inline-block mt-0.5 px-2 py-0.5 bg-sky-50 text-sky-700 border border-sky-200 rounded text-[10px] font-bold">
+                            Role: {job.designation}
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="font-medium text-gray-700">{job.type}</div>
+                        <div className="text-xs text-gray-500">{job.department}</div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="text-gray-800 font-medium text-xs">{job.location}</div>
+                        <span className="inline-block mt-0.5 px-2 py-0.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded text-[10px] font-bold">
+                          {job.zone ? `${job.zone} Zone` : 'NORTH Zone'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-sm font-bold text-gray-700">
+                        {job.hiredCount !== undefined ? job.hiredCount : 0} / {job.openings || 1}
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-1 items-start">
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-bold ${
+                            job.status === 'Open' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                          }`}>
+                            {job.status === 'Open' ? 'Active' : job.status}
+                          </span>
+                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
+                            job.publishStatus === 'Draft' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                          }`}>
+                            {job.publishStatus || 'Published'}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right flex justify-end gap-2">
+                         <button onClick={() => handleEditJob(job)} title="Edit Job" className="p-2 text-blue-600 hover:bg-blue-50 rounded">
+                           <Edit2 size={16} />
+                         </button>
+                         <button onClick={() => handleDeleteJob(job._id)} title="Delete Job" className="p-2 text-red-600 hover:bg-red-50 rounded">
+                           <Trash2 size={16} />
+                         </button>
+                      </td>
+                    </tr>
+                  ))}
+                  {paginatedJobs.length === 0 && (
+                    <tr>
+                      <td colSpan="6" className="text-center py-12 text-gray-500">
+                        <div className="flex flex-col items-center justify-center gap-2">
+                          <Briefcase size={32} className="text-gray-300" />
+                          <p className="font-semibold text-gray-600">No jobs match your filter criteria.</p>
+                          <p className="text-xs text-gray-400">Try clearing the search or changing department filters.</p>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Jobs Pagination */}
+            {renderPaginationBar(
+              jobCurrentPage,
+              jobTotalPages,
+              jobPageSize,
+              setJobPageSize,
+              setJobCurrentPage,
+              filteredJobs.length
+            )}
+          </div>
+        )}
+
+        {activeTab === 'designations' && (
+          <div>
+            {/* Designations Toolbar */}
+            <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <select
+                  value={desigDeptFilter}
+                  onChange={(e) => setDesigDeptFilter(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-2.5 py-1.5 text-xs font-bold bg-white text-gray-700 focus:ring-1 focus:ring-blue-500"
+                >
+                  <option value="all">All Departments ({designations.length})</option>
+                  {DEPARTMENTS.map(dept => (
+                    <option key={dept} value={dept}>{dept} ({designations.filter(d => d.department === dept).length})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search designation..."
+                    value={desigSearch}
+                    onChange={(e) => setDesigSearch(e.target.value)}
+                    className="pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs w-64 bg-white focus:outline-none focus:border-blue-500"
+                  />
+                  {desigSearch && (
+                    <button onClick={() => setDesigSearch('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                      <X size={12} />
+                    </button>
+                  )}
+                </div>
+
+                <button
+                  onClick={() => {
+                    setNewDesigForm({ name: '', department: 'OPERATIONAL', description: '', status: 'Active' });
+                    setShowAddDesigModal(true);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-sm"
+                >
+                  <Plus size={14} /> Add Designation
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-50 border-b border-gray-200">
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Designation Name</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Department</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Description</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase">Status</th>
+                    <th className="py-3 px-4 text-xs font-bold text-gray-500 uppercase text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100 text-sm">
+                  {designations
+                    .filter(d => {
+                      if (desigDeptFilter !== 'all' && d.department !== desigDeptFilter) return false;
+                      if (desigSearch && !d.name.toLowerCase().includes(desigSearch.toLowerCase())) return false;
+                      return true;
+                    })
+                    .map(desig => (
+                      <tr key={desig._id} className="hover:bg-blue-50/50 transition-colors">
+                        <td className="py-3 px-4 font-bold text-gray-900">{desig.name}</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-block px-2 py-0.5 bg-slate-100 text-slate-800 rounded font-semibold text-xs border border-slate-200">
+                            {desig.department}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-gray-500 text-xs">{desig.description || 'Standard departmental role'}</td>
+                        <td className="py-3 px-4">
+                          <span className="inline-block px-2 py-0.5 bg-green-100 text-green-700 rounded text-[11px] font-bold">
+                            {desig.status || 'Active'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <button
+                            onClick={() => handleDeleteDesignation(desig._id, desig.name)}
+                            title="Delete Designation"
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  {designations.length === 0 && (
+                    <tr>
+                      <td colSpan="5" className="text-center py-12 text-gray-500">No designations added yet.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </div>
@@ -735,18 +1446,134 @@ export default function Recruitment() {
             <div className="p-4 overflow-y-auto flex-1">
               <form id="jobForm" onSubmit={handleSaveJob} className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
+                  <SearchableSelect
+                    label="Department"
+                    required
+                    value={jobForm.department}
+                    onChange={val => {
+                      const deptDesigs = designations.filter(d => d.department === val);
+                      const nextDesig = deptDesigs.length > 0 ? deptDesigs[0].name : (DEPARTMENT_DESIGNATIONS[val]?.[0] || 'HAUS NUO-Pay Offer- Liability');
+                      setJobForm({
+                        ...jobForm,
+                        department: val,
+                        designation: nextDesig,
+                        title: jobForm.title === jobForm.designation || !jobForm.title ? nextDesig : jobForm.title
+                      });
+                    }}
+                    options={DEPARTMENTS}
+                    placeholder="Select department"
+                  />
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-gray-700">Designation *</label>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNewDesigForm({ name: '', department: jobForm.department || 'OPERATIONAL', description: '', status: 'Active' });
+                          setShowAddDesigModal(true);
+                        }}
+                        className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5"
+                      >
+                        <Plus size={12} /> Add New
+                      </button>
+                    </div>
+                    <select
+                      required
+                      value={jobForm.designation}
+                      onChange={e => {
+                        const val = e.target.value;
+                        setJobForm({
+                          ...jobForm,
+                          designation: val,
+                          title: jobForm.title === jobForm.designation || !jobForm.title ? val : jobForm.title
+                        });
+                      }}
+                      className="w-full border border-gray-300 rounded p-2 text-sm bg-white focus:ring-1 focus:ring-blue-500 font-medium text-gray-900"
+                    >
+                      <option value="">Select Designation</option>
+                      {(designations.filter(d => d.department === jobForm.department).length > 0
+                        ? designations.filter(d => d.department === jobForm.department)
+                        : (DEPARTMENT_DESIGNATIONS[jobForm.department] || []).map(name => ({ name }))
+                      ).map((d, idx) => (
+                        <option key={idx} value={d.name}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Job Title *</label>
-                    <input required type="text" value={jobForm.title} onChange={e=>setJobForm({...jobForm, title: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500" />
+                    <input
+                      required
+                      type="text"
+                      placeholder="e.g. HAUS NUO-Pay Offer- Liability"
+                      value={jobForm.title}
+                      onChange={e=>setJobForm({...jobForm, title: e.target.value})}
+                      className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500"
+                    />
                   </div>
+                </div>
+
+                <div className="grid grid-cols-4 gap-4">
+                  <SearchableSelect
+                    label="Job Type"
+                    required
+                    value={jobForm.type}
+                    onChange={val => setJobForm({...jobForm, type: val})}
+                    options={JOB_TYPES}
+                    placeholder="Select job type"
+                  />
+                  <div>
+                    <label className="block text-xs font-bold text-gray-700 mb-1">
+                      Zone {isExecutive ? '(Assigned)' : '*'}
+                    </label>
+                    {isExecutive ? (
+                      <div className="flex items-center justify-between border border-blue-200 bg-blue-50/70 rounded p-2 text-xs font-bold text-blue-900 h-[38px]">
+                        <span className="px-2 py-0.5 bg-blue-600 text-white rounded text-[11px] font-extrabold">{userZone}</span>
+                        <span className="text-[11px] text-blue-700 font-medium">Assigned Zone</span>
+                      </div>
+                    ) : (
+                      <select
+                        value={jobForm.zone || 'ALL'}
+                        onChange={e => {
+                          const newZ = e.target.value;
+                          const locs = getLocationsForZone(newZ);
+                          setJobForm({
+                            ...jobForm,
+                            zone: newZ,
+                            location: locs.includes(jobForm.location) ? jobForm.location : (ZONE_DEFAULT_LOCATIONS[newZ] || locs[0] || '')
+                          });
+                        }}
+                        className="w-full border border-gray-300 rounded p-2 text-sm bg-white focus:ring-1 focus:ring-blue-500 font-bold text-gray-800 h-[38px]"
+                      >
+                        <option value="ALL">ALL (Pan-India)</option>
+                        <option value="NORTH">NORTH Zone</option>
+                        <option value="SOUTH">SOUTH Zone</option>
+                        <option value="EAST">EAST Zone</option>
+                        <option value="WEST">WEST Zone</option>
+                        <option value="CENTRAL">CENTRAL Zone</option>
+                      </select>
+                    )}
+                  </div>
+                  <SearchableSelect
+                    label="Location"
+                    required
+                    value={jobForm.location}
+                    onChange={val => setJobForm({...jobForm, location: val})}
+                    options={getLocationsForZone(jobForm.zone)}
+                    placeholder="Select city"
+                  />
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Status (Active/Inactive)</label>
-                    <select value={jobForm.status} onChange={e=>setJobForm({...jobForm, status: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500">
+                    <select value={jobForm.status} onChange={e=>setJobForm({...jobForm, status: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 h-[38px]">
                       <option value="Open">Active (Open)</option>
                       <option value="Inactive">Inactive</option>
                       <option value="Closed">Closed</option>
                     </select>
                   </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Publish Status</label>
                     <select value={jobForm.publishStatus || 'Published'} onChange={e=>setJobForm({...jobForm, publishStatus: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500">
@@ -754,8 +1581,6 @@ export default function Recruitment() {
                       <option value="Published">Published (Live on Website)</option>
                     </select>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-gray-700 mb-1">Number of Openings</label>
                     <input type="number" min="1" value={jobForm.openings} onChange={e=>setJobForm({...jobForm, openings: parseInt(e.target.value) || 1})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500" />
@@ -765,32 +1590,7 @@ export default function Recruitment() {
                     <input type="text" placeholder="e.g. Sales, Communication" value={jobForm.skills} onChange={e=>setJobForm({...jobForm, skills: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500" />
                   </div>
                 </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <SearchableSelect
-                    label="Job Type"
-                    required
-                    value={jobForm.type}
-                    onChange={val => setJobForm({...jobForm, type: val})}
-                    options={JOB_TYPES}
-                    placeholder="Select job type"
-                  />
-                  <SearchableSelect
-                    label="Department"
-                    required
-                    value={jobForm.department}
-                    onChange={val => setJobForm({...jobForm, department: val})}
-                    options={DEPARTMENTS}
-                    placeholder="Select department"
-                  />
-                  <SearchableSelect
-                    label="Location"
-                    required
-                    value={jobForm.location}
-                    onChange={val => setJobForm({...jobForm, location: val})}
-                    options={ALL_LOCATIONS}
-                    placeholder="Select city"
-                  />
-                </div>
+
                 <div>
                   <label className="block text-xs font-bold text-gray-700 mb-1">Job Description * (HTML/Text)</label>
                   <textarea required rows={12} value={jobForm.description} onChange={e=>setJobForm({...jobForm, description: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500" />
@@ -801,6 +1601,69 @@ export default function Recruitment() {
               <button onClick={() => setShowJobModal(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-100">Cancel</button>
               <button form="jobForm" type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700">Save Job</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Add Designation Modal */}
+      {showAddDesigModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md flex flex-col">
+            <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
+              <h2 className="text-base font-bold text-gray-900">Add New Designation</h2>
+              <button onClick={() => setShowAddDesigModal(false)} className="text-gray-400 hover:text-gray-600"><X size={18}/></button>
+            </div>
+            <form onSubmit={handleSaveDesignation} className="p-4 space-y-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Designation Name *</label>
+                <input
+                  required
+                  autoFocus
+                  type="text"
+                  placeholder="e.g. Senior Credit Officer"
+                  value={newDesigForm.name}
+                  onChange={e => setNewDesigForm({...newDesigForm, name: e.target.value})}
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Department *</label>
+                <select
+                  value={newDesigForm.department}
+                  onChange={e => setNewDesigForm({...newDesigForm, department: e.target.value})}
+                  className="w-full border border-gray-300 rounded p-2 text-sm bg-white focus:ring-1 focus:ring-blue-500"
+                >
+                  {DEPARTMENTS.map(dept => (
+                    <option key={dept} value={dept}>{dept}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Description (Optional)</label>
+                <input
+                  type="text"
+                  placeholder="Brief role overview"
+                  value={newDesigForm.description}
+                  onChange={e => setNewDesigForm({...newDesigForm, description: e.target.value})}
+                  className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddDesigModal(false)}
+                  className="px-3.5 py-1.5 border border-gray-300 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-100"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 shadow-sm"
+                >
+                  Save Designation
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -1064,10 +1927,10 @@ export default function Recruitment() {
                 onChange={(e) => setTargetEmployeeId(e.target.value)}
                 className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 font-medium"
               >
-                <option value="">Select Employee...</option>
+                <option value="">Select HR Executive / Manager / Employee...</option>
                 {employees.map(emp => (
                   <option key={emp._id} value={emp._id}>
-                    {emp.name} ({emp.designation || emp.role || 'Employee'})
+                    {emp.name} ({emp.designation || emp.role || 'Employee'}) - Zone: {emp.zone || 'ALL'}
                   </option>
                 ))}
               </select>

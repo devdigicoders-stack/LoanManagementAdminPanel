@@ -103,17 +103,26 @@ export default function Notifications() {
 
   const deleteNotification = (id) => {
     Swal.fire({
-      title: 'Hide Notification?',
-      text: "This will remove it from your view.",
+      title: 'Delete Notification?',
+      text: "This will permanently remove this notification from the database.",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#cbd5e1',
-      confirmButtonText: 'Yes, hide it!'
-    }).then((result) => {
+      confirmButtonText: 'Yes, delete it!'
+    }).then(async (result) => {
       if (result.isConfirmed) {
-        setNotifications(notifications.filter(n => n.id !== id));
-        toast.success("Notification hidden");
+        try {
+          const token = localStorage.getItem('token');
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          setNotifications(notifications.filter(n => n.id !== id));
+          toast.success("Notification deleted successfully");
+        } catch (err) {
+          toast.error("Failed to delete notification");
+        }
       }
     });
   };

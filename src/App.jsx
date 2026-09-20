@@ -81,7 +81,7 @@ import OperationDashboard from './pages/operations/OperationDashboard';
 import ApplicationManagement from './pages/operations/ApplicationManagement';
 import ApplicationDetails from './pages/operations/ApplicationDetails';
 import AssignedApplications from './pages/operations/AssignedApplications';
-import CustomerManagement from './pages/operations/CustomerManagement';
+import CustomerManagement from './pages/CustomerManagement';
 import CustomerDetails from './pages/operations/CustomerDetails';
 import DocumentManagement from './pages/operations/DocumentManagement';
 import ApplicationVerification from './pages/operations/ApplicationVerification';
@@ -298,6 +298,11 @@ function App() {
           <Route path="users/import" element={<BulkImport />} />
           <Route path="users/:id/reset-password" element={<ResetPassword />} />
           <Route path="users/:id/activity" element={<UserActivityLog />} />
+          <Route path="user-profile/:id" element={<UserProfile />} />
+
+          {/* Dedicated Customer Management Routes */}
+          <Route path="customers" element={<CustomerManagement />} />
+          <Route path="customers/:id" element={<UserProfile />} />
 
           {/* Employee Management Routes */}
           <Route path="employees" element={<ManageEmployees />} />

@@ -85,6 +85,7 @@ const LoginPage = () => {
           localStorage.setItem('userRole', role === 'Super Admin' ? 'Super Admin' : actualRole);
           localStorage.setItem('userEmail', userEmail);
           localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.admin || data.user || data.employee || { _id: data._id, name: data.name, email: userEmail, role: actualRole }));
           
           // Store permissions from backend
           const roleKey = actualRole.toLowerCase().replace(/ /g, '_');
@@ -127,10 +128,14 @@ const LoginPage = () => {
       
       if (response.ok) {
         const actualRole = data.role || data.employee?.role || effectiveRole;
+        const actualDesignation = data.employee?.designation || data.designation || '';
         const userEmail = data.email || data.employee?.email || email;
 
         const normalizeRole = (r) => {
           const s = (r || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (s === 'hrhead' || s === 'hr_head') return 'hrhead';
+          if (s === 'hrmanager' || s === 'hr_manager') return 'hrmanager';
+          if (s === 'hrexecutive' || s === 'hr_executive' || s === 'hrexec') return 'hrexecutive';
           if (s === 'hr' || s === 'hradmin') return 'hradmin';
           if (s === 'telecaller' || s === 'telecallersoperator' || s === 'telecallers' || s === 'telecalleroperator' || s === 'seniortelecaller') return 'telecaller';
           if (s === 'agent' || s === 'agentoperator' || s === 'agentmanager' || s === 'agentexec') return 'agent';
@@ -144,9 +149,16 @@ const LoginPage = () => {
         };
 
         const backendNorm = normalizeRole(actualRole);
+        const desigNorm = normalizeRole(actualDesignation);
         const uiNorm = normalizeRole(effectiveRole);
 
-        if (backendNorm !== uiNorm && !backendNorm.includes(uiNorm) && !uiNorm.includes(backendNorm)) {
+        // Allow match if role or designation matches, or if generalized HR Admin is chosen for an HR staff member
+        const isHRMatch = ['hradmin', 'hrhead', 'hrmanager', 'hrexecutive'].includes(uiNorm) && 
+                          (['hradmin', 'hrhead', 'hrmanager', 'hrexecutive'].includes(backendNorm) || ['hrhead', 'hrmanager', 'hrexecutive'].includes(desigNorm));
+
+        const isExactMatch = backendNorm === uiNorm || desigNorm === uiNorm || backendNorm.includes(uiNorm) || uiNorm.includes(backendNorm);
+
+        if (!isHRMatch && !isExactMatch) {
           toast.error(`Invalid role selected. This account is assigned as ${actualRole || 'another role'}.`);
           setIsLoading(false);
           return;
@@ -156,24 +168,35 @@ const LoginPage = () => {
         localStorage.setItem('userRole', effectiveRole);
         localStorage.setItem('userEmail', userEmail);
         localStorage.setItem('token', data.token);
+        if (data.employee || data.user) {
+          localStorage.setItem('user', JSON.stringify(data.employee || data.user));
+        } else {
+          localStorage.setItem('user', JSON.stringify({ _id: data._id, name: data.name, email: userEmail, role: effectiveRole, empId: data.empId }));
+        }
         
-        // Store permissions from backend
-        const uiRoleStr = effectiveRole.toLowerCase().replace(/ /g, '');
-        storePermissions(data.permissions || data.employee?.permissions || ROLE_PERMISSIONS[uiRoleStr] || []);
+        // Store permissions from backend (or fallback to defaults if empty)
+        const uiRoleStr = effectiveRole.toLowerCase().replace(/ /g, '_');
+        const cleanRoleStr = effectiveRole.toLowerCase().replace(/[^a-z0-9]/g, '');
+        const backendPerms = (Array.isArray(data.permissions) && data.permissions.length > 0)
+          ? data.permissions
+          : (Array.isArray(data.employee?.permissions) && data.employee.permissions.length > 0)
+            ? data.employee.permissions
+            : (ROLE_PERMISSIONS[cleanRoleStr] || ROLE_PERMISSIONS[uiRoleStr] || []);
+        storePermissions(backendPerms);
         
         toast.success(`Login Successful! Welcome, ${effectiveRole}.`);
 
         // Route to different dashboards based on role
-        if (effectiveRole === 'Tele callers operator') {
+        const cleanEffective = effectiveRole.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (cleanEffective.includes('tele')) {
           navigate("/telecaller");
-        } else if (effectiveRole === 'Agent operator') {
+        } else if (cleanEffective.includes('agent')) {
           navigate("/agent");
-        } else if (effectiveRole === 'Accountant Admin') {
+        } else if (cleanEffective.includes('account')) {
           navigate("/accountant");
-        } else if (effectiveRole === 'HR Admin') {
-          navigate("/"); // Navigates to HRDashboard via RoleBasedDashboard
         } else {
-          navigate("/");
+          // HR Head, HR Manager, HR Executive, HR Admin, Operations, Admin
+          navigate("/"); 
         }
       } else {
         if (data.isLateBlocked) {
@@ -264,6 +287,9 @@ const LoginPage = () => {
   const roles = [
     'Super Admin',
     'Admin',
+    'HR Head',
+    'HR Manager',
+    'HR Executive',
     'HR Admin',
     'Operation Admin',
     'Sales Admin',

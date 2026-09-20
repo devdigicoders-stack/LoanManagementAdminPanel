@@ -1,172 +1,381 @@
-import { ChevronRight } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { ChevronRight, Save, User, Shield, MapPin, Building2, Lock, Phone, Mail, CheckCircle2, ArrowLeft, Info } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import toast from 'react-hot-toast';
 
 export default function AddUser() {
+  const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [managers, setManagers] = useState([]);
+
+  // Logged-in admin/user role context
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const storedRole = localStorage.getItem('userRole') || currentUser.role || 'Admin';
+  const roleLower = storedRole.toLowerCase();
+  const isMasterAdmin = ['super admin', 'superadmin', 'admin'].includes(roleLower);
+  const isHRHead = ['hr head', 'hr_head', 'hr admin', 'hradmin'].includes(roleLower) || (currentUser.designation || '').toLowerCase().includes('hr head');
+  const isHRManager = ['hr manager', 'hr_manager'].includes(roleLower) || (currentUser.designation || '').toLowerCase().includes('hr manager');
+
+  // Dynamic initial role based on creator
+  const defaultRole = isHRHead ? 'HR Manager' : (isHRManager ? 'HR Executive' : 'HR Head');
+
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    password: '',
+    confirmPassword: '',
+    role: defaultRole,
+    designation: defaultRole,
+    department: 'HR & Recruitment',
+    zone: isHRHead || isMasterAdmin ? 'ALL' : 'NORTH',
+    reportingManagerId: '',
+    reportsToHeadName: '',
+    status: 'Active',
+    remarks: ''
+  });
+
+  // Dynamic Role Options based on who is logged in
+  const ROLE_OPTIONS = (() => {
+    if (isHRHead) {
+      return [
+        { role: 'HR Manager', label: '👔 HR Manager (HR Team Leader)', dept: 'HR & Recruitment', zone: 'ALL' },
+        { role: 'HR Executive', label: '📋 HR Executive (Zone-Wise Recruiter)', dept: 'HR & Recruitment', zone: 'NORTH' }
+      ];
+    }
+    if (isHRManager) {
+      return [
+        { role: 'HR Executive', label: '📋 HR Executive (Zone-Wise Recruiter)', dept: 'HR & Recruitment', zone: 'NORTH' }
+      ];
+    }
+    // SuperAdmin / Admin options
+    return [
+      { role: 'HR Head', label: '👑 HR Head (Central / Pan-India HR Authority)', dept: 'HR & Recruitment', zone: 'ALL' },
+      { role: 'HR Manager', label: '👔 HR Manager (HR Team Manager)', dept: 'HR & Recruitment', zone: 'ALL' },
+      { role: 'HR Executive', label: '📋 HR Executive (Zone-Wise Recruiter)', dept: 'HR & Recruitment', zone: 'NORTH' },
+      { role: 'Operations Head', label: '👑 Operations Head (LOS Lead)', dept: 'Operations', zone: 'ALL' },
+      { role: 'Sales Head', label: '👑 Sales Head (Loan Lead)', dept: 'Sales & Loans', zone: 'ALL' },
+      { role: 'Credit Head', label: '👑 Credit Head (Underwriting Lead)', dept: 'Credit & Underwriting', zone: 'ALL' },
+      { role: 'Accounts Head', label: '👑 Accounts Head (Finance Lead)', dept: 'Accounts & Finance', zone: 'ALL' },
+      { role: 'admin', label: '🛡️ System Admin (Admin Access)', dept: 'Administration', zone: 'ALL' }
+    ];
+  })();
+
+  useEffect(() => {
+    fetchPotentialManagers();
+  }, [formData.zone, formData.department]);
+
+  const fetchPotentialManagers = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users?type=staff`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const list = Array.isArray(data) ? data : (data.users || []);
+        const eligible = list.filter(u => 
+          u.isDepartmentHead || 
+          (u.role || '').toLowerCase().includes('head') || 
+          (u.role || '').toLowerCase().includes('manager') ||
+          (u.role || '').toLowerCase().includes('admin')
+        );
+        setManagers(eligible);
+      }
+    } catch (err) {
+      console.error('Error fetching managers:', err);
+    }
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    if (name === 'role') {
+      const match = ROLE_OPTIONS.find(r => r.role === value);
+      setFormData(prev => ({
+        ...prev,
+        role: value,
+        designation: value,
+        department: match ? match.dept : prev.department,
+        zone: value === 'HR Executive' ? 'NORTH' : (match ? match.zone : 'ALL')
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email || !formData.phone || !formData.password) {
+      toast.error('Please fill all required fields (*)');
+      return;
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: formData.phone,
+          password: formData.password,
+          role: formData.role,
+          subRole: formData.designation,
+          designation: formData.designation,
+          department: formData.department,
+          zone: formData.zone,
+          reportingManagerId: formData.reportingManagerId || null,
+          reportsToHeadName: formData.reportsToHeadName || '',
+          status: formData.status
+        })
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(data.message || `${formData.name} created successfully!`);
+        navigate('/users');
+      } else {
+        toast.error(data.message || 'Failed to create user');
+      }
+    } catch (err) {
+      toast.error('Network error creating user');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <div className="w-full max-w-6xl mx-auto">
-      
-      {/* Header & Breadcrumbs */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+    <div className="w-full max-w-5xl mx-auto pb-14 space-y-6">
+      {/* Header & Back Navigation */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">Add New User</h1>
-          <div className="flex items-center text-[12px] font-medium text-slate-500">
-            <Link to="/users" className="hover:text-[#489b0d] transition-colors">User Management</Link>
-            <ChevronRight size={14} className="mx-1" />
-            <Link to="/users" className="hover:text-[#489b0d] transition-colors">Manage Users</Link>
-            <ChevronRight size={14} className="mx-1" />
-            <span className="text-slate-800">Add New User</span>
-          </div>
+          <button 
+            onClick={() => navigate('/users')}
+            className="inline-flex items-center gap-1.5 text-[12px] font-bold text-slate-500 hover:text-[#489b0d] transition-colors mb-2 cursor-pointer"
+          >
+            <ArrowLeft size={14} /> Back to Team & Staff Directory
+          </button>
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight">Add Staff, Department Head & Admin</h1>
+          <p className="text-[13px] text-slate-500 font-medium">Create and assign internal team members, zonal heads, department leads, and system administrators.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    
+
+      <form onSubmit={handleSubmit} className="space-y-6">
         
-        <div className="space-y-6">
-          {/* Personal Information */}
-          <div className="bg-white rounded-lg border border-slate-100 shadow-sm p-6">
-            <h2 className="text-[15px] font-bold text-slate-800 mb-6">Personal Information</h2>
-            
-            <div className="space-y-5">
-              <div>
-                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Full Name <span className="text-red-500">*</span></label>
-                <input type="text" placeholder="Enter full name" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
-              </div>
-              
-              <div>
-                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Email Address <span className="text-red-500">*</span></label>
-                <input type="email" placeholder="Enter email address" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
-              </div>
-              
-              <div>
-                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Phone Number <span className="text-red-500">*</span></label>
-                <input type="text" placeholder="Enter phone number" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
-              </div>
+        {/* Step 1: Role, Department & Zone */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="border-b border-slate-100 pb-3 flex items-center gap-2">
+            <Shield size={18} className="text-[#489b0d]" />
+            <h2 className="text-[15px] font-bold text-slate-800">1. Role, Department & Zone Setup</h2>
+          </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Date of Birth</label>
-                  <input type="date" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
-                </div>
-                <div>
-                  <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Gender</label>
-                  <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all appearance-none outline-none">
-                    <option value="">Select gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div>
+              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                Select Role / Designation <span className="text-red-500">*</span>
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] cursor-pointer"
+              >
+                {ROLE_OPTIONS.map((r) => (
+                  <option key={r.role} value={r.role}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-slate-400 mt-1">Role assigned to this administrative user</p>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                Department
+              </label>
+              <div className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-[13px] font-bold text-slate-700">
+                {formData.department}
               </div>
+              <p className="text-[11px] text-slate-400 mt-1">Auto mapped according to selected role</p>
             </div>
           </div>
 
-          {/* Role & Status */}
-          <div className="bg-white rounded-lg border border-slate-100 shadow-sm p-6">
-            <h2 className="text-[15px] font-bold text-slate-800 mb-6">Role & Status</h2>
-            
-            <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Role <span className="text-red-500">*</span></label>
-                  <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all appearance-none outline-none">
-                    <option value="">Select role</option>
-                    {localStorage.getItem('userRole') === 'Super Admin' && (
-                      <option value="Super Admin">Super Admin</option>
-                    )}
-                    <option value="Admin">Admin</option>
-                    <option value="Employee">Employee</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Status <span className="text-red-500">*</span></label>
-                  <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all appearance-none outline-none">
-                    <option value="Active">Active</option>
-                    <option value="Inactive">Inactive</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <div>
-                  <h4 className="text-[13px] font-bold text-slate-800">Send Welcome Email</h4>
-                  <p className="text-[11px] font-medium text-slate-500">User will receive login credentials via email</p>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" className="sr-only peer" defaultChecked />
-                  <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#489b0d]"></div>
+          {/* Conditional Zone & Reporting Manager for HR Executive / Team Members */}
+          {formData.role === 'HR Executive' && (
+            <div className="pt-3 border-t border-slate-100 animate-in fade-in duration-300">
+              <div className="max-w-md">
+                <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                  Assign Operating Zone <span className="text-red-500">*</span>
                 </label>
+                <div className="relative">
+                  <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                  <select
+                    name="zone"
+                    value={formData.zone}
+                    onChange={handleChange}
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] cursor-pointer"
+                  >
+                    <option value="NORTH">NORTH Zone</option>
+                    <option value="SOUTH">SOUTH Zone</option>
+                    <option value="EAST">EAST Zone</option>
+                    <option value="WEST">WEST Zone</option>
+                    <option value="CENTRAL">CENTRAL Zone</option>
+                  </select>
+                </div>
+                <p className="text-[11px] text-slate-400 mt-1">Applicants from this zone will route to this Executive</p>
               </div>
+            </div>
+          )}
+
+        </div>
+
+        {/* Step 2: Personal & Login Credentials */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="border-b border-slate-100 pb-3 flex items-center gap-2">
+            <User size={18} className="text-[#489b0d]" />
+            <h2 className="text-[15px] font-bold text-slate-800">2. Personal & Login Details</h2>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div>
+              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                Full Name <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <User size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  name="name"
+                  placeholder="e.g. Rahul Sharma"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                Official Email Address (Login ID) <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="e.g. rahul.ops@company.com"
+                  value={formData.email}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                Mobile / Phone Number <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Phone size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="tel"
+                  name="phone"
+                  placeholder="e.g. 9876543210"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d]"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 pt-2">
+            <div>
+              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                Login Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Minimum 6 characters"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                Confirm Password <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="password"
+                  name="confirmPassword"
+                  placeholder="Re-enter password"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d]"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[12px] font-bold text-slate-700 mb-1">
+                Account Status
+              </label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] cursor-pointer"
+              >
+                <option value="Active">Active (Immediate Login Access)</option>
+                <option value="Inactive">Inactive (Suspended / Disabled)</option>
+              </select>
             </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          {/* Account Information */}
-          <div className="bg-white rounded-lg border border-slate-100 shadow-sm p-6">
-            <h2 className="text-[15px] font-bold text-slate-800 mb-6">Account Information</h2>
-            
-            <div className="space-y-5">
-              <div>
-                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Username <span className="text-red-500">*</span></label>
-                <input type="text" placeholder="Enter username" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
-              </div>
-              
-              <div>
-                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Password <span className="text-red-500">*</span></label>
-                <input type="password" placeholder="Enter password" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
-              </div>
-              
-              <div>
-                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Confirm Password <span className="text-red-500">*</span></label>
-                <input type="password" placeholder="Confirm password" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all" />
-              </div>
-            </div>
-          </div>
-
-          {/* Additional Information */}
-          <div className="bg-white rounded-lg border border-slate-100 shadow-sm p-6">
-            <h2 className="text-[15px] font-bold text-slate-800 mb-6">Additional Information</h2>
-            
-            <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Department</label>
-                  <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all appearance-none outline-none">
-                    <option value="">Select department</option>
-                    <option value="IT">IT</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Sales">Sales</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Reporting Manager</label>
-                  <select className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all appearance-none outline-none">
-                    <option value="">Select manager (optional)</option>
-                    <option value="1">Ravi Kumar</option>
-                    <option value="2">Priya Sharma</option>
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">Remarks</label>
-                <textarea rows="3" placeholder="Enter any remarks (optional)" className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-[13px] text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all resize-none"></textarea>
-              </div>
-            </div>
-          </div>
-
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-3 pt-2">
+          <button
+            type="button"
+            onClick={() => navigate('/users')}
+            className="px-6 py-2.5 bg-white border border-slate-200 text-slate-600 rounded-lg font-bold text-[13px] hover:bg-slate-50 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="flex items-center gap-2 px-7 py-2.5 bg-[#489b0d] hover:bg-[#3e850b] text-white rounded-lg font-bold text-[13px] shadow-sm transition-all disabled:opacity-50 cursor-pointer"
+          >
+            <Save size={16} /> {isSubmitting ? 'Creating User...' : 'Create Team Member'}
+          </button>
         </div>
-      </div>
 
-      <div className="mt-8 flex items-center justify-end gap-4">
-        <Link to="/users" className="px-6 py-2.5 border border-slate-200 text-slate-600 rounded-md text-[13px] font-bold hover:bg-slate-50 transition-colors">
-          Cancel
-        </Link>
-        <button className="px-6 py-2.5 bg-[#489b0d] text-white rounded-md text-[13px] font-bold hover:bg-[#3e850b] transition-colors shadow-sm">
-          Save User
-        </button>
-      </div>
-
+      </form>
     </div>
   );
 }

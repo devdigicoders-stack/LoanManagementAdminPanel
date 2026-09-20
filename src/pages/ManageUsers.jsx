@@ -10,208 +10,320 @@ import {
   UserX,
   Filter,
   Download,
-  MoreVertical,
-  AlertCircle,
-   Mail,
+  Mail,
   Phone,
-  CreditCard,
   Calendar,
   MapPin,
   User,
   FileText,
-  Bell,
   Briefcase,
   TrendingUp,
-  TrendingDown,
   Eye,
   Edit,
   Ban,
   Unlock,
   Clock,
-  X,
   Search,
   Trash2,
+  UserPlus,
+  Building2,
+  Layers,
+  Crown,
+  CheckCircle2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-
-// --- Mock Data ---
-export const mockUsers = [];
 
 export default function ManageUsers() {
   const navigate = useNavigate();
   const [users, setUsers] = useState([]);
-  
-  // Fetch users from API
-  useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        const token = localStorage.getItem('token');
-        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+  const [isLoading, setIsLoading] = useState(true);
+
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const storedRole = localStorage.getItem('userRole') || currentUser.role || 'Admin';
+  const roleLower = storedRole.toLowerCase();
+  const cleanRole = roleLower.replace(/[^a-z0-9]/g, '');
+  const isMasterAdmin = ['super admin', 'superadmin', 'admin', 'administrator'].includes(roleLower) || ['superadmin', 'admin'].includes(cleanRole);
+  const isHRHead = ['hr head', 'hr_head', 'hr admin', 'hradmin', 'hr'].includes(roleLower) || 
+                   ['hrhead', 'hradmin', 'hr'].includes(cleanRole) || 
+                   (currentUser.designation || '').toLowerCase().includes('hr head');
+  const isHRManager = ['hr manager', 'hr_manager', 'hrmanager'].includes(roleLower) || 
+                     ['hrmanager'].includes(cleanRole) || 
+                     (currentUser.designation || '').toLowerCase().includes('hr manager');
+
+  // Fetch Team & Staff from API
+  const fetchStaff = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users?type=staff`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const list = Array.isArray(data) ? data : (data.users || []);
+        // Filter out superadmins and if HR Head, filter out self / HR Head roles
+        const staffOnly = list.filter(u => {
+          const r = (u.role || '').toLowerCase();
+          const d = (u.designation || '').toLowerCase();
+          if (['superadmin', 'super admin', 'Super Admin'].includes(u.role)) return false;
+          if (isHRHead && !isMasterAdmin) {
+            if (r.includes('hr head') || d.includes('hr head') || r === 'admin') return false;
+          }
+          if (isHRManager && !isMasterAdmin) {
+            if (r.includes('hr head') || d.includes('hr head') || r.includes('hr manager') || r === 'admin') return false;
+          }
+          return true;
         });
-        if (response.ok) {
-          const data = await response.json();
-          setUsers(data.map(u => ({...u, id: u.userId})));
-        } else if (response.status === 403) {
-          console.warn('No permission to view users');
-        }
-      } catch (error) {
-        console.error("Error fetching users:", error);
+
+        setUsers(staffOnly.map(u => ({
+          ...u,
+          _id: u._id,
+          id: u._id || u.empId || u.id,
+          empId: u.empId || (u.role === 'Admin' ? `ADM-${(u._id || '').slice(-6).toUpperCase()}` : (u.empId || `EMP-${(u._id || '').slice(-6).toUpperCase()}`))
+        })));
+      } else if (response.status === 403) {
+        console.warn('No permission to view staff');
       }
-    };
-    fetchUsers();
+    } catch (error) {
+      console.error("Error fetching staff:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStaff();
   }, []);
-  
+
   // Filters state
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("All Status");
-  const [kycFilter, setKycFilter] = useState("All KYC Status");
-  const [selectedListTab, setSelectedListTab] = useState("All Users"); // Main table tabs
-  
+  const [zoneFilter, setZoneFilter] = useState("All Zones");
+  const [deptFilter, setDeptFilter] = useState("All Departments");
+  const [selectedListTab, setSelectedListTab] = useState(
+    isHRManager ? "All Executives" : (isHRHead ? "All Team" : "All Staff")
+  );
+
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 5;
+  const itemsPerPage = 8;
 
   // Filter Logic
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
-      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            user.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                            user.phone.includes(searchTerm);
+      const name = user.name || '';
+      const email = user.email || '';
+      const id = user.empId || user.id || '';
+      const phone = user.phone || user.mobile || '';
+      const role = user.role || '';
+      const designation = user.designation || '';
+
+      const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        phone.includes(searchTerm) ||
+        role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        designation.toLowerCase().includes(searchTerm.toLowerCase());
+
       const matchesStatus = statusFilter === 'All Status' || user.status === statusFilter;
-      const matchesKyc = kycFilter === 'All KYC Status' || user.kycStatus === kycFilter;
-      const matchesTab = selectedListTab === "All Users" ||
-                         (selectedListTab === "Active" && user.status === "Active") ||
-                         (selectedListTab === "Inactive" && user.status === "Inactive") ||
-                         (selectedListTab === "KYC Pending" && user.kycStatus === "Pending") ||
-                         (selectedListTab === "KYC Verified" && user.kycStatus === "Verified") ||
-                         (selectedListTab === "Blocked" && user.status === "Blocked");
-      
-      return matchesSearch && matchesStatus && matchesKyc && matchesTab;
+      const matchesZone = zoneFilter === 'All Zones' || (user.zone || 'NORTH') === zoneFilter;
+      const matchesDept = deptFilter === 'All Departments' || (user.department || 'Operations') === deptFilter;
+
+      const isMgr = role.toLowerCase().includes('hr manager') || designation.toLowerCase().includes('hr manager');
+      const isExec = role.toLowerCase().includes('hr executive') || designation.toLowerCase().includes('hr executive');
+      const isHead = user.isDepartmentHead || role.toLowerCase().includes('head') || designation.toLowerCase().includes('head');
+      const isField = role.toLowerCase().includes('agent') || role.toLowerCase().includes('field') || role.toLowerCase().includes('officer');
+      const isOffice = role.toLowerCase().includes('telecaller') || role.toLowerCase().includes('ops') || role.toLowerCase().includes('operation') || role.toLowerCase().includes('account');
+
+      const matchesTab = 
+        selectedListTab === "All Staff" ||
+        selectedListTab === "All Team" ||
+        selectedListTab === "All Executives" ||
+        (selectedListTab === "HR Managers" && isMgr) ||
+        (selectedListTab === "HR Executives" && isExec) ||
+        (selectedListTab === "Department Heads" && isHead) ||
+        (selectedListTab === "Field Staff" && isField) ||
+        (selectedListTab === "Office Staff" && isOffice) ||
+        (selectedListTab === "Active" && user.status === "Active") ||
+        (selectedListTab === "Inactive" && user.status !== "Active");
+
+      return matchesSearch && matchesStatus && matchesZone && matchesDept && matchesTab;
     });
-  }, [users, searchTerm, statusFilter, kycFilter, selectedListTab]);
+  }, [users, searchTerm, statusFilter, zoneFilter, deptFilter, selectedListTab]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage) || 1;
   const currentItems = filteredUsers.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // Dynamic KPIs
+  // Dynamic KPIs for Staff
+  const totalStaffCount = users.length;
+  const hrManagersCount = users.filter(u => (u.role || '').toLowerCase().includes('hr manager') || (u.designation || '').toLowerCase().includes('hr manager')).length;
+  const hrExecutivesCount = users.filter(u => (u.role || '').toLowerCase().includes('hr executive') || (u.designation || '').toLowerCase().includes('hr executive')).length;
+  const headsCount = users.filter(u => u.isDepartmentHead || (u.role || '').toLowerCase().includes('head') || (u.designation || '').toLowerCase().includes('head')).length;
   const activeCount = users.filter(u => u.status === 'Active').length;
-  const inactiveCount = users.filter(u => u.status === 'Inactive').length;
-  const kycPendingCount = users.filter(u => u.kycStatus === 'Pending').length;
-  const kycVerifiedCount = users.filter(u => u.kycStatus === 'Verified').length;
-  const blockedCount = users.filter(u => u.status === 'Blocked').length;
+  const inactiveCount = users.filter(u => u.status !== 'Active').length;
 
-  const dynamicTopKpis = [
-    { label: "Total Users", value: users.length, change: "+12.5%", isUp: true, icon: Users, color: "text-[#489b0d]", bg: "bg-[#489b0d]/10" },
-    { label: "Active Users", value: activeCount, change: "+9.8%", isUp: true, icon: UserCheck, color: "text-orange-500", bg: "bg-orange-50" },
-    { label: "Inactive Users", value: inactiveCount, change: "-4.3%", isUp: false, icon: UserMinus, color: "text-red-500", bg: "bg-red-50" },
-    { label: "KYC Pending", value: kycPendingCount, change: "+8.2%", isUp: true, icon: ShieldAlert, color: "text-blue-500", bg: "bg-blue-50" },
-    { label: "KYC Verified", value: kycVerifiedCount, change: "+14.6%", isUp: true, icon: ShieldCheck, color: "text-[#489b0d]", bg: "bg-[#489b0d]/10" },
-    { label: "Blocked Users", value: blockedCount, change: "-2.1%", isUp: false, icon: UserX, color: "text-purple-500", bg: "bg-purple-50" },
-  ];
+  const dynamicTopKpis = isHRHead ? [
+    { label: "Total HR Team", value: totalStaffCount, icon: Users, color: "text-[#489b0d]", bg: "bg-[#489b0d]/10" },
+    { label: "HR Managers", value: hrManagersCount, icon: ShieldCheck, color: "text-indigo-600", bg: "bg-indigo-50" },
+    { label: "HR Executives", value: hrExecutivesCount, icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Active Members", value: activeCount, icon: CheckCircle2, color: "text-blue-600", bg: "bg-blue-50" },
+    { label: "Inactive / Blocked", value: inactiveCount, icon: UserX, color: "text-red-500", bg: "bg-red-50" },
+  ] : (isHRManager ? [
+    { label: "My HR Executives", value: hrExecutivesCount || totalStaffCount, icon: UserCheck, color: "text-[#489b0d]", bg: "bg-[#489b0d]/10" },
+    { label: "Active Executives", value: activeCount, icon: CheckCircle2, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Inactive / Blocked", value: inactiveCount, icon: UserX, color: "text-red-500", bg: "bg-red-50" },
+  ] : [
+    { label: "Total Team & Staff", value: totalStaffCount, icon: Users, color: "text-[#489b0d]", bg: "bg-[#489b0d]/10" },
+    { label: "Department Heads", value: headsCount, icon: Crown, color: "text-purple-600", bg: "bg-purple-50" },
+    { label: "Active Staff", value: activeCount, icon: UserCheck, color: "text-emerald-600", bg: "bg-emerald-50" },
+    { label: "Inactive / Blocked", value: inactiveCount, icon: UserX, color: "text-red-500", bg: "bg-red-50" },
+  ]);
 
   const handleDelete = async (e, id) => {
     e.stopPropagation();
     Swal.fire({
-      title: 'Are you sure?',
-      text: "You won't be able to revert this!",
+      title: 'Delete Staff Member?',
+      text: "Are you sure you want to delete this staff record?",
       icon: 'warning',
       showCancelButton: true,
       confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!'
+      cancelButtonColor: '#64748b',
+      confirmButtonText: 'Yes, Delete'
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
+          const token = localStorage.getItem('token');
           const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${id}`, {
-            method: 'DELETE'
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
           });
+          const data = await response.json();
           if (response.ok) {
-            const updated = users.filter(u => u.id !== id);
+            const updated = users.filter(u => u.id !== id && u._id !== id);
             setUsers(updated);
-            const newTotalPages = Math.ceil(updated.length / itemsPerPage) || 1;
-            if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
-            Swal.fire('Deleted!', 'User has been deleted.', 'success');
+            Swal.fire('Deleted!', data.message || 'Staff member has been removed.', 'success');
           } else {
-            Swal.fire('Error!', 'Failed to delete user.', 'error');
+            Swal.fire('Error!', data.message || 'Failed to delete record.', 'error');
           }
         } catch (error) {
-          Swal.fire('Error!', 'An error occurred.', 'error');
+          Swal.fire('Error!', error.message || 'An error occurred.', 'error');
         }
       }
     });
   };
 
-  const handleToggleBlock = async (e, id, currentStatus) => {
+  const handleToggleBlock = async (e, user) => {
     e.stopPropagation();
-    const newStatus = currentStatus === "Blocked" ? "Active" : "Blocked";
-    const confirmMsg = currentStatus === "Blocked" ? "Are you sure you want to unblock this user?" : "Are you sure you want to block this user?";
+    const targetId = user._id || user.id;
+    const isCurrentlyActive = user.status === "Active";
+    const newStatus = isCurrentlyActive ? "Inactive" : "Active";
+    const confirmMsg = isCurrentlyActive 
+      ? `Are you sure you want to deactivate ${user.name}?` 
+      : `Are you sure you want to activate ${user.name}?`;
+
     Swal.fire({
-      title: 'Confirmation',
+      title: 'Status Update',
       text: confirmMsg,
       icon: 'question',
       showCancelButton: true,
-      confirmButtonColor: '#489b0d',
-      cancelButtonColor: '#d33',
-      confirmButtonText: 'Yes, proceed!'
+      confirmButtonColor: isCurrentlyActive ? '#d33' : '#489b0d',
+      cancelButtonColor: '#64748b',
+      confirmButtonText: isCurrentlyActive ? 'Yes, Deactivate' : 'Yes, Activate'
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${id}/status`, {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${targetId}/status`, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ status: newStatus })
           });
-          if (response.ok) {
-            setUsers(prev => prev.map(u => u.id === id ? { ...u, status: newStatus } : u));
-            Swal.fire('Updated!', `User status changed to ${newStatus}.`, 'success');
+          const data = await response.json();
+          if (response.ok && data.success !== false) {
+            setUsers(prev => prev.map(u => (u.id === targetId || u._id === targetId || u.email === user.email) ? { ...u, status: newStatus } : u));
+            Swal.fire('Updated!', data.message || `Status changed to ${newStatus}.`, 'success');
           } else {
-            Swal.fire('Error!', 'Failed to update status.', 'error');
+            Swal.fire('Error!', data.message || 'Failed to update status.', 'error');
           }
         } catch (error) {
-          Swal.fire('Error!', 'An error occurred.', 'error');
+          Swal.fire('Error!', error.message || 'An error occurred.', 'error');
         }
       }
     });
   };
 
+  // Render Dynamic Avatar Helper (NO hardcoded placeholder URLs!)
+  const renderAvatar = (user) => {
+    if (user?.avatar && typeof user.avatar === 'string' && (user.avatar.startsWith('http') || user.avatar.startsWith('data:'))) {
+      return (
+        <img
+          src={user.avatar}
+          alt={user.name}
+          className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+        />
+      );
+    }
+    const initials = (user?.name || 'S').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+    const bgColors = [
+      'bg-blue-600',
+      'bg-emerald-600',
+      'bg-purple-600',
+      'bg-amber-600',
+      'bg-rose-600',
+      'bg-indigo-600',
+      'bg-teal-600'
+    ];
+    const colorIndex = (user?.name || 'A').charCodeAt(0) % bgColors.length;
+
+    return (
+      <div className={`w-10 h-10 rounded-full ${bgColors[colorIndex]} text-white flex items-center justify-center font-bold text-[13px] shadow-sm shrink-0 uppercase tracking-tight`}>
+        {initials}
+      </div>
+    );
+  };
+
   // Reset page when filters change
-  useMemo(() => { setCurrentPage(1); }, [searchTerm, statusFilter, kycFilter, selectedListTab]);
+  useMemo(() => { setCurrentPage(1); }, [searchTerm, statusFilter, zoneFilter, deptFilter, selectedListTab]);
 
   return (
-    <div className="w-full space-y-6 pb-10">
+    <div className="w-full space-y-6 pb-12">
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800 mb-1">
-            User Management
+          <h1 className="text-2xl font-black text-slate-800 tracking-tight mb-1">
+            {isHRHead ? 'HR Team & Staff Management' : (isHRManager ? 'My HR Executives & Team' : 'Team & Staff Management')}
           </h1>
           <div className="flex items-center text-[12px] font-medium text-slate-500">
             <Link to="/" className="hover:text-[#489b0d] transition-colors">
               Dashboard
             </Link>
             <ChevronRight size={14} className="mx-1" />
-            <span className="hover:text-[#489b0d] transition-colors cursor-pointer">
-              User Management
+            <span className="text-slate-800 font-bold">
+              {isHRHead ? 'HR Managers & Executives Directory' : (isHRManager ? 'My Assigned HR Executives' : 'Team & Staff Directory')}
             </span>
-            <ChevronRight size={14} className="mx-1" />
-            <span className="text-[#489b0d] font-bold">Manage Users</span>
           </div>
         </div>
-        <div className="relative w-full md:w-80">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
-          <input 
-            type="text" 
-            placeholder="Search users, email, phone..." 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-16 py-2.5 bg-white border border-slate-200 rounded-md text-[13px] font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all"
-          />
-          <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5 opacity-80">
-            <span className="text-[10px] font-bold text-slate-400">Ctrl + K</span>
+        <div className="flex items-center gap-3 w-full md:w-auto">
+          <div className="relative flex-1 md:w-72">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+            <input
+              type="text"
+              placeholder="Search by name, ID, phone, role..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-[13px] font-medium text-slate-700 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] transition-all"
+            />
           </div>
+          <button
+            onClick={() => navigate('/users/add')}
+            className="flex items-center gap-2 bg-[#489b0d] hover:bg-[#3e850b] text-white px-4 py-2.5 rounded-lg font-bold text-[13px] shadow-sm transition-all cursor-pointer shrink-0"
+          >
+            <UserPlus size={16} /> {isHRHead ? '+ Add HR Manager / Exec' : (isHRManager ? '+ Add HR Executive' : '+ Add Staff / Head / Admin')}
+          </button>
         </div>
       </div>
 
@@ -220,7 +332,7 @@ export default function ManageUsers() {
         {dynamicTopKpis.map((kpi, idx) => (
           <div
             key={idx}
-            className="bg-white rounded-md border border-slate-100 p-4 shadow-sm flex flex-col justify-between min-h-[110px] hover:shadow-md transition-shadow cursor-pointer"
+            className="bg-white rounded-xl border border-slate-200/70 p-4 shadow-sm flex flex-col justify-between min-h-[105px] hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between mb-2">
               <p className="text-[12px] font-semibold text-slate-500 tracking-wide">
@@ -233,290 +345,269 @@ export default function ManageUsers() {
               </div>
             </div>
             <div>
-              <h3 className="text-2xl font-bold text-slate-800 leading-none mb-2">
+              <h3 className="text-2xl font-black text-slate-800 leading-none">
                 {kpi.value}
               </h3>
-              <p
-                className={`text-[11px] font-medium flex items-center gap-1 ${kpi.isUp ? "text-[#489b0d]" : "text-red-500"}`}
-              >
-                {kpi.isUp ? (
-                  <TrendingUp size={14} strokeWidth={2.5} />
-                ) : (
-                  <TrendingDown size={14} strokeWidth={2.5} />
-                )}
-                <span className="font-bold">{kpi.change}</span>
-                <span className="text-slate-400 whitespace-nowrap">
-                  vs last month
-                </span>
-              </p>
             </div>
           </div>
         ))}
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 gap-6">
-        {/* LEFT PANE: User Table */}
-        <div className="bg-white rounded-lg border border-slate-100 shadow-sm flex flex-col overflow-hidden">
-          {/* Tabs */}
-          <div className="flex items-center border-b border-slate-100 px-6 pt-4 gap-6 overflow-x-auto no-scrollbar">
-            {[
-              { id: "All Users", count: users.length },
-              { id: "Active", count: activeCount },
-              { id: "Inactive", count: inactiveCount },
-              { id: "KYC Pending", count: kycPendingCount },
-              { id: "KYC Verified", count: kycVerifiedCount },
-              { id: "Blocked", count: blockedCount },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setSelectedListTab(tab.id)}
-                className={`cursor-pointer pb-3 text-[12px] font-bold whitespace-nowrap border-b-2 transition-colors ${
-                  selectedListTab === tab.id
-                    ? "border-[#489b0d] text-[#489b0d]"
-                    : "border-transparent text-slate-500 hover:text-slate-700"
-                }`}
-              >
-                {tab.id} ({tab.count})
-              </button>
-            ))}
+      {/* Main Container */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        {/* Filter Tabs */}
+        <div className="flex border-b border-slate-200 overflow-x-auto no-scrollbar bg-slate-50/50">
+          {(isHRHead ? [
+            "All Team",
+            "HR Managers",
+            "HR Executives",
+            "Active",
+            "Inactive"
+          ] : (isHRManager ? [
+            "All Executives",
+            "Active",
+            "Inactive"
+          ] : [
+            "All Staff",
+            "Department Heads",
+            "Field Staff",
+            "Office Staff",
+            "Active",
+            "Inactive",
+          ])).map((tab) => (
+            <button
+              key={tab}
+              onClick={() => setSelectedListTab(tab)}
+              className={`px-5 py-3 text-[13px] font-bold whitespace-nowrap border-b-2 transition-colors cursor-pointer ${
+                selectedListTab === tab
+                  ? "border-[#489b0d] text-[#489b0d] bg-white"
+                  : "border-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-100/50"
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
+        </div>
+
+        {/* Filters Bar */}
+        <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/40">
+          <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
+            <select
+              value={zoneFilter}
+              onChange={(e) => setZoneFilter(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-slate-700 focus:outline-none focus:border-[#489b0d] min-w-[130px] shrink-0 cursor-pointer"
+            >
+              <option value="All Zones">🌐 All Zones</option>
+              <option value="NORTH">📍 North Zone</option>
+              <option value="SOUTH">📍 South Zone</option>
+              <option value="EAST">📍 East Zone</option>
+              <option value="WEST">📍 West Zone</option>
+              <option value="CENTRAL">📍 Central Zone</option>
+              <option value="ALL">📍 All India</option>
+            </select>
+
+            <select
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-slate-700 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0 cursor-pointer"
+            >
+              <option value="All Departments">🏢 All Departments</option>
+              <option value="Operations">Operations</option>
+              <option value="HR & Recruitment">HR & Recruitment</option>
+              <option value="Sales & Marketing">Sales & Loans</option>
+              <option value="Credit & Underwriting">Credit & Underwriting</option>
+              <option value="Accounts & Finance">Accounts & Finance</option>
+              <option value="Administration">Administration</option>
+            </select>
+
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[120px] shrink-0 cursor-pointer"
+            >
+              <option value="All Status">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Blocked">Blocked</option>
+            </select>
           </div>
 
-          {/* Filters & Actions */}
-          <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/50">
-            <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
-              <select value={kycFilter} onChange={(e) => setKycFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0 cursor-pointer">
-                <option value="All KYC Status">All KYC Status</option>
-                <option value="Verified">Verified</option>
-                <option value="Pending">Pending</option>
-                <option value="Blocked">Blocked</option>
-              </select>
-              <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0 cursor-pointer">
-                <option value="All Status">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Inactive">Inactive</option>
-                <option value="Blocked">Blocked</option>
-              </select>
-              <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-md text-[12px] font-medium text-slate-600 cursor-pointer shrink-0">
-                <Calendar size={14} className="text-slate-400 shrink-0" />
-                01 May 2025 - 18 May 2025
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3 w-full md:w-auto">
-              <button className="flex items-center justify-center gap-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-md text-[12px] font-bold hover:bg-slate-50 transition-colors shrink-0 flex-1 md:flex-none">
-                <Filter size={14} className="shrink-0" /> Filter
-              </button>
-              <button className="flex items-center justify-center gap-2 px-4 py-2 bg-[#489b0d] text-white rounded-md text-[12px] font-bold hover:bg-[#3e850b] transition-colors shadow-sm shrink-0 flex-1 md:flex-none">
-                <Download size={14} className="shrink-0" /> Export
-              </button>
-            </div>
+          <div className="flex items-center gap-3 w-full md:w-auto">
+            <span className="text-[12px] font-semibold text-slate-500">
+              Showing {currentItems.length} of {filteredUsers.length} members
+            </span>
           </div>
+        </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-100 bg-white">
-                  <th className="py-3 px-4 w-10">
-                    <input
-                      type="checkbox"
-                      className="rounded border-slate-300 text-[#489b0d] focus:ring-[#489b0d]"
-                    />
-                  </th>
-                  <th className="py-3 px-4 text-[11px] font-bold text-slate-800 whitespace-nowrap">
-                    User
-                  </th>
-                  <th className="py-3 px-4 text-[11px] font-bold text-slate-800 whitespace-nowrap">
-                    Contact Details
-                  </th>
-                  <th className="py-3 px-4 text-[11px] font-bold text-slate-800 whitespace-nowrap">
-                    KYC Status
-                  </th>
-                  <th className="py-3 px-4 text-[11px] font-bold text-slate-800 whitespace-nowrap">
-                    Loans
-                  </th>
-                  <th className="py-3 px-4 text-[11px] font-bold text-slate-800 whitespace-nowrap">
-                    Total Loan Amount
-                  </th>
-                  <th className="py-3 px-4 text-[11px] font-bold text-slate-800 whitespace-nowrap">
-                    Status
-                  </th>
-                  <th className="py-3 px-4 text-[11px] font-bold text-slate-800 text-center whitespace-nowrap">
-                    Actions
-                  </th>
+        {/* Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50/70 text-[11px] font-black text-slate-600 uppercase tracking-wider">
+                <th className="py-3.5 px-4">Staff Member</th>
+                <th className="py-3.5 px-4">Role & Designation</th>
+                <th className="py-3.5 px-4">Department</th>
+                <th className="py-3.5 px-4">Assigned Zone</th>
+                <th className="py-3.5 px-4">Reports To</th>
+                <th className="py-3.5 px-4">Status</th>
+                <th className="py-3.5 px-4 text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {isLoading ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-500 font-semibold text-[13px]">
+                    Loading team & staff records...
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {currentItems.length > 0 ? currentItems.map((user) => (
+              ) : currentItems.length === 0 ? (
+                <tr>
+                  <td colSpan="7" className="py-12 text-center text-slate-400 font-medium text-[13px]">
+                    No team or staff members found.
+                  </td>
+                </tr>
+              ) : (
+                currentItems.map((user) => (
                   <tr
                     key={user.id}
                     onClick={() => navigate(`/user-profile/${user.id}`)}
-                    className="cursor-pointer transition-colors hover:bg-slate-50 border-l-2 border-l-transparent"
+                    className="cursor-pointer transition-colors hover:bg-slate-50/80 group"
                   >
-                    <td
-                      className="py-3 px-4"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <input
-                        type="checkbox"
-                        className="rounded border-slate-300 text-[#489b0d] focus:ring-[#489b0d]"
-                      />
-                    </td>
-                    <td className="py-3 px-4">
+                    {/* Staff Member */}
+                    <td className="py-3.5 px-4">
                       <div className="flex items-center gap-3">
-                        <img
-                          src={user.avatar}
-                          alt={user.name}
-                          className="w-9 h-9 rounded-full object-cover border border-slate-100"
-                        />
+                        {renderAvatar(user)}
                         <div>
-                          <p className="text-[13px] font-bold text-slate-800 leading-none mb-1 whitespace-nowrap">
-                            {user.name}
+                          <div className="flex items-center gap-1.5">
+                            <p className="text-[13px] font-bold text-slate-800 group-hover:text-[#489b0d] transition-colors leading-tight">
+                              {user.name}
+                            </p>
+                            {user.isDepartmentHead && (
+                              <Crown size={12} className="text-amber-500 fill-amber-500 shrink-0" title="Department Head" />
+                            )}
+                          </div>
+                          <p className="text-[11px] font-semibold text-slate-400 mt-0.5">
+                            {user.empId || user.id} • {user.phone || user.mobile || 'No Phone'}
                           </p>
-                          <p className="text-[11px] font-medium text-slate-500 leading-none whitespace-nowrap">
-                            {user.id}
-                          </p>
+                          <p className="text-[11px] text-slate-500">{user.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="py-3 px-4">
-                      <p className="text-[12px] font-semibold text-slate-700 leading-none mb-1 whitespace-nowrap">
-                        {user.email}
+
+                    {/* Role & Designation */}
+                    <td className="py-3.5 px-4">
+                      <p className="text-[12px] font-bold text-slate-800">
+                        {user.designation || user.role}
                       </p>
-                      <p className="text-[11px] font-medium text-slate-500 leading-none whitespace-nowrap">
-                        {user.phone}
-                      </p>
+                      <span className="inline-block text-[10px] font-semibold px-2 py-0.5 rounded bg-slate-100 text-slate-600 mt-0.5">
+                        {user.role}
+                      </span>
                     </td>
-                    <td className="py-3 px-4">
-                      {user.kycStatus === "Verified" && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#489b0d] bg-[#489b0d]/10 px-2 py-0.5 rounded-md">
-                          <ShieldCheck size={12} /> Verified
-                        </span>
-                      )}
-                      {user.kycStatus === "Pending" && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md">
-                          <Clock size={12} /> Pending
-                        </span>
-                      )}
-                      {user.kycStatus === "Blocked" && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-100 px-2 py-0.5 rounded-md">
-                          <Ban size={12} /> Blocked
-                        </span>
-                      )}
+
+                    {/* Department */}
+                    <td className="py-3.5 px-4">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-md bg-blue-50 text-blue-700 border border-blue-100">
+                        <Building2 size={12} /> {user.department || 'Operations'}
+                      </span>
                     </td>
-                    <td className="py-3 px-4">
-                      <p className="text-[11px] font-bold text-slate-700 leading-none mb-1 whitespace-nowrap">
-                        <span className="text-slate-800">
-                          {user.activeLoans}
-                        </span>{" "}
-                        Active
-                      </p>
-                      <p className="text-[11px] font-medium text-slate-500 leading-none whitespace-nowrap">
-                        <span className="text-slate-600">
-                          {user.closedLoans}
-                        </span>{" "}
-                        Closed
+
+                    {/* Assigned Zone */}
+                    <td className="py-3.5 px-4">
+                      <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded bg-slate-100 text-slate-700 border border-slate-200">
+                        <MapPin size={11} className="text-[#489b0d]" /> {user.zone || 'NORTH'}
+                      </span>
+                    </td>
+
+                    {/* Reports To */}
+                    <td className="py-3.5 px-4">
+                      <p className="text-[12px] font-semibold text-slate-600">
+                        {user.reportsTo || user.reportsToHeadName || 'Zonal Head'}
                       </p>
                     </td>
-                    <td className="py-3 px-4 text-[13px] font-bold text-slate-800 whitespace-nowrap">
-                      {user.totalLoanAmount}
-                    </td>
-                    <td className="py-3 px-4">
-                      {user.status === "Active" && (
-                        <span className="text-[11px] font-bold text-[#489b0d]">
-                          Active
+
+                    {/* Status */}
+                    <td className="py-3.5 px-4">
+                      {user.status === "Active" ? (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                          <CheckCircle2 size={11} /> Active
                         </span>
-                      )}
-                      {user.status === "Inactive" && (
-                        <span className="text-[11px] font-bold text-orange-500">
-                          Inactive
-                        </span>
-                      )}
-                      {user.status === "Blocked" && (
-                        <span className="text-[11px] font-bold text-red-500">
-                          Blocked
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-[11px] font-bold text-red-600 bg-red-50 border border-red-200 px-2.5 py-0.5 rounded-full">
+                          <Ban size={11} /> {user.status || 'Inactive'}
                         </span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-center">
+
+                    {/* Actions */}
+                    <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-2">
                         <button
-                          onClick={(e) => handleToggleBlock(e, user.id, user.status)}
-                          className={`p-1.5 rounded-md transition-colors ${
-                            user.status === "Blocked" 
-                              ? "text-orange-500 hover:text-orange-600 hover:bg-orange-50" 
-                              : "text-slate-400 hover:text-red-600 hover:bg-red-50"
-                          }`}
-                          title={user.status === "Blocked" ? "Unblock User" : "Block User"}
+                          onClick={() => navigate(`/employees/${user._id || user.id}`)}
+                          className="p-1.5 text-slate-500 hover:text-[#489b0d] hover:bg-slate-100 rounded-md transition-colors"
+                          title="View Full Profile & Activity"
                         >
-                          {user.status === "Blocked" ? <Unlock size={16} /> : <Ban size={16} />}
+                          <Eye size={15} />
                         </button>
-                        <Link 
-                          to={`/user-profile/${user.id}`} 
-                          className="p-1.5 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
-                          onClick={(e) => e.stopPropagation()}
-                          title="View Profile"
-                        >
-                          <Eye size={16} />
-                        </Link>
                         <button
-                          onClick={(e) => handleDelete(e, user.id)}
-                          className="p-1.5 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
-                          title="Delete User"
+                          onClick={(e) => handleToggleBlock(e, user)}
+                          className={`p-1.5 rounded-md transition-colors ${
+                            (user.status === "Blocked" || user.status === "Inactive")
+                              ? "text-emerald-600 hover:bg-emerald-50"
+                              : "text-amber-600 hover:bg-amber-50"
+                          }`}
+                          title={user.status === "Active" ? "Deactivate Staff" : "Activate Staff"}
                         >
-                          <Trash2 size={16} />
+                          {(user.status === "Blocked" || user.status === "Inactive") ? <Unlock size={15} /> : <Ban size={15} />}
+                        </button>
+                        <button
+                          onClick={(e) => handleDelete(e, user._id || user.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-colors"
+                          title="Delete Staff"
+                        >
+                          <Trash2 size={15} />
                         </button>
                       </div>
                     </td>
                   </tr>
-                )) : (
-                  <tr>
-                    <td colSpan="8" className="py-8 text-center text-slate-500 text-sm">
-                      No users found matching your filters.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination Bar */}
+        <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-[13px] text-slate-500 font-medium">
+          <div>
+            Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} entries
           </div>
-
-          {/* Pagination */}
-          <div className="p-4 border-t border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 mt-auto bg-white">
-            <p className="text-[12px] font-medium text-slate-500 text-center md:text-left w-full md:w-auto">
-              Showing {filteredUsers.length === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredUsers.length)} of {filteredUsers.length} entries
-            </p>
-            <div className="flex flex-wrap items-center justify-center md:justify-end gap-1.5 w-full md:w-auto">
-              <button 
-                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                disabled={currentPage === 1}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-[12px]"
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }).map((_, i) => (
+              <button
+                key={i}
+                onClick={() => setCurrentPage(i + 1)}
+                className={`w-8 h-8 rounded-lg font-bold text-[12px] transition-colors ${
+                  currentPage === i + 1
+                    ? "bg-[#489b0d] text-white"
+                    : "border border-slate-200 text-slate-600 hover:bg-slate-50"
+                }`}
               >
-                <ChevronRight size={14} className="rotate-180" />
+                {i + 1}
               </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                <button 
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`w-8 h-8 flex items-center justify-center rounded-lg font-medium text-[13px] transition-colors ${
-                    currentPage === page 
-                      ? 'bg-[#489b0d] text-white shadow-sm' 
-                      : 'border border-slate-200 text-slate-600 hover:bg-slate-50'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
-
-              <button 
-                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                disabled={currentPage === totalPages}
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-slate-200 text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors disabled:opacity-50"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
+            ))}
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-[12px]"
+            >
+              Next
+            </button>
           </div>
         </div>
       </div>

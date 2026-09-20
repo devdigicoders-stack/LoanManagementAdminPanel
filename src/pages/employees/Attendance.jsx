@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Filter, Calendar, CheckCircle2, XCircle, Clock, UserCheck, Edit, Download } from 'lucide-react';
+import { Search, Filter, Calendar, CheckCircle2, XCircle, Clock, UserCheck, Edit, Download, Lock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 
@@ -8,6 +8,21 @@ export default function Attendance() {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [attendanceData, setAttendanceData] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Role details
+  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const storedRole = localStorage.getItem('userRole') || currentUser.role || 'Admin';
+  const roleLower = storedRole.toLowerCase();
+  const cleanRole = roleLower.replace(/[^a-z0-9]/g, '');
+  const isMasterAdmin = ['super admin', 'superadmin', 'admin', 'administrator'].includes(roleLower) || ['superadmin', 'admin'].includes(cleanRole);
+  const isHRHead = ['hr head', 'hr_head', 'hr admin', 'hradmin', 'hr'].includes(roleLower) || 
+                   ['hrhead', 'hradmin', 'hr'].includes(cleanRole) || 
+                   (currentUser.designation || '').toLowerCase().includes('hr head');
+  const isHRManager = ['hr manager', 'hr_manager', 'hrmanager'].includes(roleLower) || 
+                     ['hrmanager'].includes(cleanRole) || 
+                     (currentUser.designation || '').toLowerCase().includes('hr manager');
+  const isHRExecutive = !isMasterAdmin && !isHRHead && !isHRManager;
+  const canManage = isMasterAdmin || isHRHead || isHRManager;
 
   const fetchAttendance = async () => {
     try {
@@ -20,7 +35,7 @@ export default function Attendance() {
       });
       if (response.ok) {
         const data = await response.json();
-        setAttendanceData(data);
+        setAttendanceData(Array.isArray(data) ? data : []);
       } else {
         toast.error('Failed to fetch attendance');
       }
@@ -194,8 +209,24 @@ export default function Attendance() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-brand-text)] mb-1">Attendance Management</h1>
-          <p className="text-[13px] text-[var(--color-brand-text-secondary)] font-medium">Track and manage employee daily attendance and working hours</p>
+          <h1 className="text-2xl font-bold text-[var(--color-brand-text)] mb-1">
+            {isHRHead 
+              ? 'HR Team Attendance Management' 
+              : (isHRManager 
+                ? 'My HR Executives Attendance' 
+                : (isHRExecutive 
+                  ? 'My Daily Attendance Log' 
+                  : 'Attendance Management'))}
+          </h1>
+          <p className="text-[13px] text-[var(--color-brand-text-secondary)] font-medium">
+            {isHRHead 
+              ? 'Track and manage daily attendance & punch logs for HR Managers and HR Executives' 
+              : (isHRManager 
+                ? 'Track and manage daily attendance & punch logs for your assigned HR Executives' 
+                : (isHRExecutive 
+                  ? 'View your personal daily check-in, check-out and status records (Read-Only)' 
+                  : 'Track and manage employee daily attendance and working hours'))}
+          </p>
         </div>
         <div className="flex gap-2">
           <button className="flex items-center gap-2 bg-white border border-[var(--color-brand-border)] hover:bg-[var(--color-brand-gray-light)] text-[var(--color-brand-text)] px-4 py-2.5 rounded-[10px] text-[13px] font-semibold transition-all shadow-sm">
@@ -281,7 +312,7 @@ export default function Attendance() {
                     <tr key={idx} className="hover:bg-[var(--color-brand-hover-bg)] transition-colors group">
                       <td className="py-4 px-6">
                         <p className="text-[14px] font-bold text-[var(--color-brand-text)]">{record.name}</p>
-                        <p className="text-[12px] text-[var(--color-brand-text-secondary)] mt-0.5">{record.empId}</p>
+                        <p className="text-[12px] text-[var(--color-brand-text-secondary)] mt-0.5">{record.empId} {record.role ? `• ${record.role}` : ''}</p>
                       </td>
                       <td className="py-4 px-6">
                         <p className="text-[13px] font-bold text-[var(--color-brand-text)]">{record.department || '-'}</p>
@@ -294,13 +325,19 @@ export default function Attendance() {
                       </td>
                       <td className="py-4 px-6">
                         <div className="flex items-center justify-end">
-                          <button 
-                            onClick={() => handleEdit(record)}
-                            className="p-1.5 text-[var(--color-brand-text-secondary)] hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors"
-                            title="Edit Attendance"
-                          >
-                            <Edit size={16} />
-                          </button>
+                          {canManage && record.canEdit !== false ? (
+                            <button 
+                              onClick={() => handleEdit(record)}
+                              className="p-1.5 text-[var(--color-brand-text-secondary)] hover:text-amber-600 hover:bg-amber-50 rounded-md transition-colors cursor-pointer"
+                              title="Edit Attendance"
+                            >
+                              <Edit size={16} />
+                            </button>
+                          ) : (
+                            <span className="text-[11px] font-bold text-slate-400 bg-slate-100 px-2.5 py-1 rounded-full flex items-center gap-1">
+                              <Lock size={12} /> Read-only
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -310,7 +347,7 @@ export default function Attendance() {
               
               {filteredData.length === 0 && (
                 <div className="p-10 text-center">
-                  <p className="text-[14px] font-bold text-[var(--color-brand-text)]">No records found</p>
+                  <p className="text-[14px] font-bold text-[var(--color-brand-text)]">No attendance records found</p>
                 </div>
               )}
             </>
