@@ -243,13 +243,13 @@ export const hasPermission = (permission) => {
     const stored = localStorage.getItem('permissions');
     if (stored !== null && stored !== undefined) {
       const perms = JSON.parse(stored);
-      if (Array.isArray(perms) && perms.length > 0) {
+      if (Array.isArray(perms)) {
         if (perms.includes(permission)) return true;
 
         const matchingAliases = PERMISSION_ALIASES[permission] || [];
         if (matchingAliases.some(alias => perms.includes(alias))) return true;
 
-        // If explicit custom perms were defined and checked, return false
+        // Strictly respect configured permissions list
         return false;
       }
     }

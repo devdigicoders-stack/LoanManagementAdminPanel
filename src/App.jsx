@@ -8,6 +8,7 @@ import AddUser from "./pages/AddUser";
 import EditUser from "./pages/EditUser";
 import UserDetails from "./pages/UserDetails";
 import RolePermissions from "./pages/RolePermissions";
+import HRPermissions from "./pages/HRPermissions";
 import BulkImport from "./pages/BulkImport";
 import ResetPassword from "./pages/ResetPassword";
 import UserActivityLog from "./pages/UserActivityLog";
@@ -295,6 +296,8 @@ function App() {
           <Route path="users/:id" element={<UserDetails />} />
           <Route path="users/:id/edit" element={<EditUser />} />
           <Route path="users/roles" element={<RolePermissions />} />
+          <Route path="users/hr-permissions" element={<HRPermissions />} />
+          <Route path="hr/permissions" element={<HRPermissions />} />
           <Route path="users/import" element={<BulkImport />} />
           <Route path="users/:id/reset-password" element={<ResetPassword />} />
           <Route path="users/:id/activity" element={<UserActivityLog />} />

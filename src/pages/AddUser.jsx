@@ -1,7 +1,8 @@
-import { ChevronRight, Save, User, Shield, MapPin, Building2, Lock, Phone, Mail, CheckCircle2, ArrowLeft, Info } from 'lucide-react';
+import { ChevronRight, Save, User, Shield, MapPin, Building2, Lock, Phone, Mail, CheckCircle2, ArrowLeft, Info, ShieldCheck } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
+import SearchableSelect from '../components/common/SearchableSelect';
 
 export default function AddUser() {
   const navigate = useNavigate();
@@ -87,6 +88,44 @@ export default function AddUser() {
     }
   };
 
+  const HR_MODULE_PERMISSIONS = [
+    { name: 'Recruitment', label: 'Recruitment & Job Openings', desc: 'Create/manage job postings & candidate hiring pipeline' },
+    { name: 'Onboarding', label: 'Digital Onboarding', desc: 'Manage shortlisted candidate documents & verification' },
+    { name: 'Attendance', label: 'Attendance Desk', desc: 'View staff check-ins, logs & biometric status' },
+    { name: 'Leave Management', label: 'Leave Approvals', desc: 'Approve or reject leave requests' },
+    { name: 'Payroll & Salary', label: 'Payroll & Compensation', desc: 'Access staff salary slips, structures & payroll generation' },
+    { name: 'Manage Employees', label: 'Employee Directory', desc: 'View staff profiles, contact info and departments' },
+    { name: 'Team & Staff', label: 'Manage Sub-Team', desc: 'Create & manage assigned subordinates' },
+    { name: 'Reports & Analytics', label: 'HR Analytics & Reports', desc: 'Access HR reports, headcount, and hiring analytics' },
+    { name: 'Notifications', label: 'Company Announcements', desc: 'Post and view company-wide notifications' },
+  ];
+
+  const getDefaultPermissionsForRole = (r) => {
+    if (r === 'HR Manager') {
+      return ['Recruitment', 'Onboarding', 'Attendance', 'Leave Management', 'Manage Employees', 'Team & Staff', 'Reports & Analytics', 'Notifications'];
+    }
+    if (r === 'HR Executive') {
+      return ['Recruitment', 'Onboarding', 'Attendance', 'Leave Management', 'Notifications'];
+    }
+    return ['Recruitment', 'Onboarding', 'Attendance', 'Leave Management', 'Payroll & Salary', 'Manage Employees', 'Team & Staff', 'Reports & Analytics', 'Notifications'];
+  };
+
+  const [selectedPermissions, setSelectedPermissions] = useState(getDefaultPermissionsForRole(defaultRole));
+
+  const togglePermission = (permName) => {
+    setSelectedPermissions(prev => 
+      prev.includes(permName) ? prev.filter(p => p !== permName) : [...prev, permName]
+    );
+  };
+
+  const toggleAllPermissions = () => {
+    if (selectedPermissions.length === HR_MODULE_PERMISSIONS.length) {
+      setSelectedPermissions([]);
+    } else {
+      setSelectedPermissions(HR_MODULE_PERMISSIONS.map(p => p.name));
+    }
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'role') {
@@ -98,6 +137,7 @@ export default function AddUser() {
         department: match ? match.dept : prev.department,
         zone: value === 'HR Executive' ? 'NORTH' : (match ? match.zone : 'ALL')
       }));
+      setSelectedPermissions(getDefaultPermissionsForRole(value));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }
@@ -133,6 +173,7 @@ export default function AddUser() {
           designation: formData.designation,
           department: formData.department,
           zone: formData.zone,
+          permissions: selectedPermissions,
           reportingManagerId: formData.reportingManagerId || null,
           reportsToHeadName: formData.reportsToHeadName || '',
           status: formData.status
@@ -169,8 +210,6 @@ export default function AddUser() {
         </div>
       </div>
 
-    
-
       <form onSubmit={handleSubmit} className="space-y-6">
         
         {/* Step 1: Role, Department & Zone */}
@@ -182,21 +221,15 @@ export default function AddUser() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <div>
-              <label className="block text-[12px] font-bold text-slate-700 mb-1">
-                Select Role / Designation <span className="text-red-500">*</span>
-              </label>
-              <select
+              <SearchableSelect
+                label="Select Role / Designation"
+                required
                 name="role"
                 value={formData.role}
                 onChange={handleChange}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] cursor-pointer"
-              >
-                {ROLE_OPTIONS.map((r) => (
-                  <option key={r.role} value={r.role}>
-                    {r.label}
-                  </option>
-                ))}
-              </select>
+                options={ROLE_OPTIONS.map(r => ({ value: r.role, label: r.label, sublabel: r.dept }))}
+                placeholder="Choose role..."
+              />
               <p className="text-[11px] text-slate-400 mt-1">Role assigned to this administrative user</p>
             </div>
 
@@ -215,24 +248,21 @@ export default function AddUser() {
           {formData.role === 'HR Executive' && (
             <div className="pt-3 border-t border-slate-100 animate-in fade-in duration-300">
               <div className="max-w-md">
-                <label className="block text-[12px] font-bold text-slate-700 mb-1">
-                  Assign Operating Zone <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <MapPin size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <select
-                    name="zone"
-                    value={formData.zone}
-                    onChange={handleChange}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] cursor-pointer"
-                  >
-                    <option value="NORTH">NORTH Zone</option>
-                    <option value="SOUTH">SOUTH Zone</option>
-                    <option value="EAST">EAST Zone</option>
-                    <option value="WEST">WEST Zone</option>
-                    <option value="CENTRAL">CENTRAL Zone</option>
-                  </select>
-                </div>
+                <SearchableSelect
+                  label="Assign Operating Zone"
+                  required
+                  name="zone"
+                  value={formData.zone}
+                  onChange={handleChange}
+                  options={[
+                    { value: 'NORTH', label: 'NORTH Zone (Delhi, UP, Punjab, Haryana, J&K)' },
+                    { value: 'SOUTH', label: 'SOUTH Zone (Karnataka, Tamil Nadu, Kerala, AP, Telangana)' },
+                    { value: 'EAST', label: 'EAST Zone (WB, Bihar, Odisha, Jharkhand, Assam)' },
+                    { value: 'WEST', label: 'WEST Zone (Maharashtra, Gujarat, Rajasthan, Goa)' },
+                    { value: 'CENTRAL', label: 'CENTRAL Zone (MP, Chhattisgarh)' }
+                  ]}
+                  placeholder="Select operating zone..."
+                />
                 <p className="text-[11px] text-slate-400 mt-1">Applicants from this zone will route to this Executive</p>
               </div>
             </div>
@@ -240,11 +270,63 @@ export default function AddUser() {
 
         </div>
 
-        {/* Step 2: Personal & Login Credentials */}
+        {/* Step 2: Granular Access Permissions */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
+          <div className="border-b border-slate-100 pb-3 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={18} className="text-[#489b0d]" />
+              <div>
+                <h2 className="text-[15px] font-bold text-slate-800">2. Dashboard & Module Access Permissions</h2>
+                <p className="text-[11px] text-slate-400">Select which tools and modules this staff member can access upon logging in</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={toggleAllPermissions}
+              className="text-[12px] font-bold text-[#489b0d] hover:underline cursor-pointer"
+            >
+              {selectedPermissions.length === HR_MODULE_PERMISSIONS.length ? 'Deselect All' : 'Select All'}
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+            {HR_MODULE_PERMISSIONS.map((perm) => {
+              const isChecked = selectedPermissions.includes(perm.name);
+              return (
+                <div
+                  key={perm.name}
+                  onClick={() => togglePermission(perm.name)}
+                  className={`p-3.5 rounded-xl border cursor-pointer transition-all flex items-start gap-3 select-none ${
+                    isChecked
+                      ? 'bg-[#489b0d]/5 border-[#489b0d] shadow-xs'
+                      : 'bg-slate-50/60 border-slate-200 hover:bg-white hover:border-slate-300'
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    onChange={() => {}}
+                    className="mt-1 w-4 h-4 rounded text-[#489b0d] focus:ring-[#489b0d] cursor-pointer accent-[#489b0d]"
+                  />
+                  <div>
+                    <h4 className={`text-xs font-bold leading-tight ${isChecked ? 'text-slate-900' : 'text-slate-700'}`}>
+                      {perm.label}
+                    </h4>
+                    <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                      {perm.desc}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Step 3: Personal & Login Credentials */}
         <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-5">
           <div className="border-b border-slate-100 pb-3 flex items-center gap-2">
             <User size={18} className="text-[#489b0d]" />
-            <h2 className="text-[15px] font-bold text-slate-800">2. Personal & Login Details</h2>
+            <h2 className="text-[15px] font-bold text-slate-800">3. Personal & Login Details</h2>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

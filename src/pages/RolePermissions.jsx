@@ -10,6 +10,7 @@ import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { ROLE_SIDEBAR_PAGES } from '../utils/permissions';
+import SearchableSelect from '../components/common/SearchableSelect';
 
 // Role definitions with department leadership metadata
 const DEPARTMENT_HEAD_ROLES = [
@@ -558,35 +559,20 @@ export default function RolePermissions() {
                   </div>
 
                   {employeesInCurrentRole.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-                      <div className="sm:col-span-8">
-                        <select
-                          value={selectedEmployeeId}
-                          onChange={(e) => handleSelectEmployee(e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-bold text-slate-700 focus:outline-none focus:border-[#489b0d] focus:ring-2 focus:ring-[#489b0d]/20 transition-all cursor-pointer"
-                        >
-                          <option value="all">
-                            ✦ All Staff with this Head Role ({employeesInCurrentRole.length} Staff)
-                          </option>
-                          {filteredEmployeesInRole.map((emp) => (
-                            <option key={emp._id} value={emp._id}>
-                              {emp.name} {emp.empId ? `[${emp.empId}]` : ''} &mdash; ({emp.email})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Dropdown search filter */}
-                      <div className="sm:col-span-4 relative">
-                        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                        <input
-                          type="text"
-                          placeholder="Filter staff by name..."
-                          value={empSearchTerm}
-                          onChange={(e) => setEmpSearchTerm(e.target.value)}
-                          className="w-full pl-8 pr-3 py-2.5 bg-white border border-slate-200 rounded-lg text-[12px] font-medium text-slate-700 focus:outline-none focus:border-[#489b0d] transition-all"
-                        />
-                      </div>
+                    <div>
+                      <SearchableSelect
+                        value={selectedEmployeeId}
+                        onChange={(e) => handleSelectEmployee(e.target.value)}
+                        options={[
+                          { value: 'all', label: `✦ All Staff with this Head Role`, sublabel: `${employeesInCurrentRole.length} Staff` },
+                          ...employeesInCurrentRole.map(emp => ({
+                            value: emp._id,
+                            label: `${emp.name} ${emp.empId ? `[${emp.empId}]` : ''}`,
+                            sublabel: emp.email
+                          }))
+                        ]}
+                        placeholder="Search staff by name, email, or employee ID..."
+                      />
                     </div>
                   ) : (
                     <div className="flex items-center gap-2.5 py-1 text-slate-500">

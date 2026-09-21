@@ -1258,57 +1258,6 @@ export default function EditEmployee() {
                       </div>
                     </div>
                   </div>
-
-                  {/* Personal & Emergency References */}
-                  <div className="pt-2">
-                    <h4 className="text-[14px] font-bold text-slate-800 mb-3 flex items-center gap-2">
-                      <User size={16} className="text-[#489b0d]" /> Emergency & Professional References
-                    </h4>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      {/* Reference 1 */}
-                      <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-3">
-                        <span className="text-[12px] font-bold text-[#489b0d] bg-[#489b0d]/10 px-2.5 py-1 rounded">Primary Reference 1</span>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">Full Name</label>
-                          <input type="text" name="ref1Name" value={formData.ref1Name} onChange={handleChange} placeholder="Reference Name" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-[13px]" />
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">Relationship</label>
-                          <input type="text" name="ref1Rel" value={formData.ref1Rel} onChange={handleChange} placeholder="e.g. Brother / Friend / Colleague" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-[13px]" />
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">Contact Phone</label>
-                          <input type="tel" name="ref1Mobile" value={formData.ref1Mobile} onChange={handleChange} placeholder="Mobile Number" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-[13px]" />
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">Address / Location</label>
-                          <input type="text" name="ref1Address" value={formData.ref1Address} onChange={handleChange} placeholder="City or Address" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-[13px]" />
-                        </div>
-                      </div>
-
-                      {/* Reference 2 */}
-                      <div className="bg-white p-5 rounded-xl border border-slate-200 space-y-3">
-                        <span className="text-[12px] font-bold text-[#489b0d] bg-[#489b0d]/10 px-2.5 py-1 rounded">Secondary Reference 2</span>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">Full Name</label>
-                          <input type="text" name="ref2Name" value={formData.ref2Name} onChange={handleChange} placeholder="Reference Name" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-[13px]" />
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">Relationship</label>
-                          <input type="text" name="ref2Rel" value={formData.ref2Rel} onChange={handleChange} placeholder="e.g. Uncle / Ex-Manager" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-[13px]" />
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">Contact Phone</label>
-                          <input type="tel" name="ref2Mobile" value={formData.ref2Mobile} onChange={handleChange} placeholder="Mobile Number" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-[13px]" />
-                        </div>
-                        <div>
-                          <label className="block text-[12px] font-bold text-slate-700 mb-1">Address / Location</label>
-                          <input type="text" name="ref2Address" value={formData.ref2Address} onChange={handleChange} placeholder="City or Address" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-md text-[13px]" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
                 </div>
               )}
 

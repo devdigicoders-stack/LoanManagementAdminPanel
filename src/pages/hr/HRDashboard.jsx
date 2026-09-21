@@ -69,11 +69,12 @@ export default function HRDashboard() {
   const [growthData, setGrowthData] = useState({ categories: [], total: [], newHires: [] });
   const [attendanceData, setAttendanceData] = useState({ categories: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], present: [0,0,0,0,0], absent: [0,0,0,0,0] });
   const [activities, setActivities] = useState([]);
+  const [selectedZoneFilter, setSelectedZoneFilter] = useState('ALL');
 
   useEffect(() => {
-    fetchDashboardData();
+    fetchDashboardData(selectedZoneFilter);
     fetchUnblockQueries();
-  }, []);
+  }, [selectedZoneFilter]);
 
   const fetchUnblockQueries = async () => {
     try {
@@ -90,10 +91,11 @@ export default function HRDashboard() {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (zoneParam = 'ALL') => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard/hr`, {
+      const url = `${import.meta.env.VITE_API_BASE_URL}/dashboard/hr${zoneParam !== 'ALL' ? `?zone=${zoneParam}` : ''}`;
+      const res = await fetch(url, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -246,6 +248,33 @@ export default function HRDashboard() {
             </button>
           </div>
         </div>
+
+        {/* Zone Filter Tabs for HR Head */}
+        {isHRHead && (
+          <div className="mt-6 pt-5 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <MapPin size={16} className="text-[#489b0d]" />
+              <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Operating Zone View:</span>
+            </div>
+            <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl">
+              {['ALL', 'NORTH', 'SOUTH', 'EAST', 'WEST', 'CENTRAL'].map((z) => (
+                <button
+                  key={z}
+                  type="button"
+                  onClick={() => setSelectedZoneFilter(z)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                    selectedZoneFilter === z
+                      ? 'bg-white text-slate-900 shadow-xs font-black'
+                      : 'text-slate-500 hover:text-slate-800'
+                  }`}
+                >
+                  {z === 'ALL' ? '🌐 All India (Pan-India)' : `${z} Zone`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
 
       {/* Pending Login Unblock Queries Alert Banner (For HR Head) */}

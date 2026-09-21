@@ -172,29 +172,41 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     // ── HR ROLES (HR Head, HR Manager, HR Executive, HR Admin) ─────────
     if (isHrHead || isHrManager || isHrExecutive || isHrAdmin) {
       const hrWorkflowItems = [
-        ...(isHrHead || isHrManager || isHrAdmin || hasPermission('Manage Employees')
+        ...(hasPermission('Manage Employees')
           ? [{ name: "Employee Directory", icon: Users, path: "/employees" }] : []),
-        ...(isHrHead || isHrAdmin || hasPermission('Departments')
+        ...(hasPermission('Departments')
           ? [{ name: "Departments", icon: Building2, path: "/employees/departments" }] : []),
-        { name: "Recruitment & Jobs", icon: Users, path: "/hr/recruitment" },
-        { name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" },
-        { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
-        ...(isHrExecutive ? [
-          { name: "My Leaves", icon: CalendarRange, path: "/employees/leave-management" }
-        ] : [
-          { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
-          { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" }
-        ]),
-        ...(isHrHead || isHrAdmin || hasPermission('Payroll & Salary')
+        ...(hasPermission('Recruitment')
+          ? [{ name: "Recruitment & Jobs", icon: Users, path: "/hr/recruitment" }] : []),
+        ...(hasPermission('Onboarding')
+          ? [{ name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" }] : []),
+        ...(hasPermission('Attendance')
+          ? [{ name: "Attendance", icon: ListChecks, path: "/employees/attendance" }] : []),
+        ...(hasPermission('Leave Management')
+          ? [
+              ...(isHrExecutive ? [
+                { name: "My Leaves", icon: CalendarRange, path: "/employees/leave-management" }
+              ] : [
+                { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
+                { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" }
+              ])
+            ] : []),
+        ...(hasPermission('Payroll & Salary')
           ? [{ name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" }] : []),
       ];
 
       const hrManagementItems = [
-        ...(isHrHead || isHrManager || isHrAdmin || hasPermission('Manage Users')
+        ...(hasPermission('Team & Staff') || hasPermission('Manage Users')
           ? [{ name: "Team & Staff", icon: UserCheck, path: "/users" }] : []),
-        ...(isHrHead || isHrAdmin || hasPermission('Reports & Analytics')
+        ...(hasPermission('Permission Management') || hasPermission('Role & Permission Management')
+          ? [
+              { name: "HR Permissions", icon: ShieldCheck, path: "/users/hr-permissions" },
+              { name: "Roles & Permissions", icon: Lock, path: "/users/roles" }
+            ] : []),
+        ...(hasPermission('Reports & Analytics')
           ? [{ name: "HR Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
-        { name: "Announcements", icon: Bell, path: "/notifications" },
+        ...(hasPermission('Notifications')
+          ? [{ name: "Announcements", icon: Bell, path: "/notifications" }] : []),
       ];
 
       return [
@@ -202,8 +214,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           title: "",
           items: [{ name: "HR Dashboard", icon: LayoutDashboard, path: "/" }],
         },
-        { title: "HR WORKFLOWS", items: hrWorkflowItems },
-        { title: "MANAGEMENT & TEAM", items: hrManagementItems },
+        ...(hrWorkflowItems.length > 0 ? [{ title: "HR WORKFLOWS", items: hrWorkflowItems }] : []),
+        ...(hrManagementItems.length > 0 ? [{ title: "MANAGEMENT & TEAM", items: hrManagementItems }] : []),
         {
           title: "ACCOUNT",
           items: [
@@ -329,7 +341,10 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
     const adminItems = [
       ...(items.manageUsers ? [{ name: "Team & Staff", icon: UserCheck, path: "/users" }] : []),
-      ...(items.rolePermissions ? [{ name: "Roles & Permissions", icon: Lock, path: "/users/roles" }] : []),
+      ...(items.rolePermissions ? [
+        { name: "HR Permissions", icon: ShieldCheck, path: "/users/hr-permissions" },
+        { name: "Roles & Permissions", icon: Lock, path: "/users/roles" }
+      ] : []),
       ...(items.reports ? [{ name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
       ...(items.manageComplaints ? [{ name: "Complaints", icon: MessageSquare, path: "/complaints" }] : []),
       ...(items.notifications ? [{ name: "Announcements", icon: Bell, path: "/notifications" }] : []),

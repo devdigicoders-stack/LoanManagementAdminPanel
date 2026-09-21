@@ -32,6 +32,7 @@ import {
   CheckCircle2
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import SearchableSelect from "../components/common/SearchableSelect";
 
 export default function ManageUsers() {
   const navigate = useNavigate();
@@ -319,6 +320,12 @@ export default function ManageUsers() {
             />
           </div>
           <button
+            onClick={() => navigate('/users/hr-permissions')}
+            className="flex items-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-3.5 py-2.5 rounded-lg font-bold text-[13px] shadow-2xs transition-all cursor-pointer shrink-0"
+          >
+            <ShieldCheck size={16} className="text-[#489b0d]" /> HR Permissions
+          </button>
+          <button
             onClick={() => navigate('/users/add')}
             className="flex items-center gap-2 bg-[#489b0d] hover:bg-[#3e850b] text-white px-4 py-2.5 rounded-lg font-bold text-[13px] shadow-sm transition-all cursor-pointer shrink-0"
           >
@@ -390,46 +397,58 @@ export default function ManageUsers() {
         </div>
 
         {/* Filters Bar */}
-        <div className="p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/40">
-          <div className="flex items-center gap-3 w-full md:w-auto overflow-x-auto no-scrollbar pb-1 md:pb-0">
-            <select
-              value={zoneFilter}
-              onChange={(e) => setZoneFilter(e.target.value)}
-              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-slate-700 focus:outline-none focus:border-[#489b0d] min-w-[130px] shrink-0 cursor-pointer"
-            >
-              <option value="All Zones">🌐 All Zones</option>
-              <option value="NORTH">📍 North Zone</option>
-              <option value="SOUTH">📍 South Zone</option>
-              <option value="EAST">📍 East Zone</option>
-              <option value="WEST">📍 West Zone</option>
-              <option value="CENTRAL">📍 Central Zone</option>
-              <option value="ALL">📍 All India</option>
-            </select>
+        <div className="p-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 border-b border-slate-100 bg-slate-50/40">
+          <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+            <div className="w-44">
+              <SearchableSelect
+                value={zoneFilter}
+                onChange={(e) => setZoneFilter(e.target.value)}
+                options={[
+                  { value: 'All Zones', label: '🌐 All Zones' },
+                  { value: 'NORTH', label: '📍 North Zone' },
+                  { value: 'SOUTH', label: '📍 South Zone' },
+                  { value: 'EAST', label: '📍 East Zone' },
+                  { value: 'WEST', label: '📍 West Zone' },
+                  { value: 'CENTRAL', label: '📍 Central Zone' },
+                  { value: 'ALL', label: '📍 All India' }
+                ]}
+                placeholder="Filter zone..."
+                buttonClassName="py-2 text-[12px] font-bold"
+              />
+            </div>
 
-            <select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-bold text-slate-700 focus:outline-none focus:border-[#489b0d] min-w-[140px] shrink-0 cursor-pointer"
-            >
-              <option value="All Departments">🏢 All Departments</option>
-              <option value="Operations">Operations</option>
-              <option value="HR & Recruitment">HR & Recruitment</option>
-              <option value="Sales & Marketing">Sales & Loans</option>
-              <option value="Credit & Underwriting">Credit & Underwriting</option>
-              <option value="Accounts & Finance">Accounts & Finance</option>
-              <option value="Administration">Administration</option>
-            </select>
+            <div className="w-52">
+              <SearchableSelect
+                value={deptFilter}
+                onChange={(e) => setDeptFilter(e.target.value)}
+                options={[
+                  { value: 'All Departments', label: '🏢 All Departments' },
+                  { value: 'Operations', label: 'Operations' },
+                  { value: 'HR & Recruitment', label: 'HR & Recruitment' },
+                  { value: 'Sales & Marketing', label: 'Sales & Loans' },
+                  { value: 'Credit & Underwriting', label: 'Credit & Underwriting' },
+                  { value: 'Accounts & Finance', label: 'Accounts & Finance' },
+                  { value: 'Administration', label: 'Administration' }
+                ]}
+                placeholder="Filter department..."
+                buttonClassName="py-2 text-[12px] font-bold"
+              />
+            </div>
 
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 bg-white border border-slate-200 rounded-lg text-[12px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d] min-w-[120px] shrink-0 cursor-pointer"
-            >
-              <option value="All Status">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Blocked">Blocked</option>
-            </select>
+            <div className="w-36">
+              <SearchableSelect
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                options={[
+                  { value: 'All Status', label: 'All Status' },
+                  { value: 'Active', label: 'Active' },
+                  { value: 'Inactive', label: 'Inactive' },
+                  { value: 'Blocked', label: 'Blocked' }
+                ]}
+                placeholder="Filter status..."
+                buttonClassName="py-2 text-[12px] font-medium"
+              />
+            </div>
           </div>
 
           <div className="flex items-center gap-3 w-full md:w-auto">

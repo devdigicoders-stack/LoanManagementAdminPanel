@@ -3,6 +3,7 @@ import { Mail, Lock, Eye, EyeOff, ShieldCheck, User, Users, BarChart3, FileCheck
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { storePermissions, ROLE_PERMISSIONS, clearPermissions } from '../utils/permissions';
+import SearchableSelect from '../components/common/SearchableSelect';
 
 const LoginPage = () => {
   const [showPassword, setShowPassword] = useState(false);
@@ -406,33 +407,27 @@ const LoginPage = () => {
               
               {/* Role Selection */}
               <div className="space-y-1.5">
-                <label className="text-[13px] font-semibold text-[var(--color-brand-text)]">Select Role</label>
-                <div className="relative">
-                  <select 
-                    value={role} 
-                    onChange={(e) => setRole(e.target.value)}
-                    className="w-full bg-white border border-[var(--color-brand-border)] rounded-[10px] py-3 px-4 pr-10 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)] focus:ring-1 focus:ring-[var(--color-brand-blue-dark)] appearance-none cursor-pointer"
-                  >
-                    {roles.map(r => <option key={r} value={r}>{r}</option>)}
-                  </select>
-                  <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-brand-text-secondary)] pointer-events-none" size={16} />
-                </div>
+                <SearchableSelect
+                  label="Select Role"
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  options={roles}
+                  placeholder="Choose your role..."
+                  buttonClassName="py-3 rounded-[10px]"
+                />
               </div>
 
               {/* Sub-Role for Sales Admin */}
               {role === 'Sales Admin' && (
                 <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2 duration-300">
-                  <label className="text-[13px] font-semibold text-[var(--color-brand-text)]">Select Sub-Role</label>
-                  <div className="relative">
-                    <select 
-                      value={subRole} 
-                      onChange={(e) => setSubRole(e.target.value)}
-                      className="w-full bg-[var(--color-brand-cream)]/30 border border-[var(--color-brand-border)] rounded-[10px] py-3 px-4 pr-10 text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[var(--color-brand-blue-dark)] focus:ring-1 focus:ring-[var(--color-brand-blue-dark)] appearance-none cursor-pointer"
-                    >
-                      {salesSubRoles.map(sr => <option key={sr} value={sr}>{sr}</option>)}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-brand-text-secondary)] pointer-events-none" size={16} />
-                  </div>
+                  <SearchableSelect
+                    label="Select Sub-Role"
+                    value={subRole}
+                    onChange={(e) => setSubRole(e.target.value)}
+                    options={salesSubRoles}
+                    placeholder="Choose sub-role..."
+                    buttonClassName="py-3 rounded-[10px]"
+                  />
                 </div>
               )}
 

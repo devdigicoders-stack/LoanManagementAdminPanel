@@ -37,8 +37,8 @@ export default function EmployeeDetails() {
             joinDate: new Date(data.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' }),
             email: data.email,
             phone: data.mobile || 'Not provided',
-            manager: 'System Admin',
-            location: data.city || 'Not specified',
+            manager: data.reportsToManagerName || data.reportsToHeadName || data.reportingManager || 'Management',
+            location: data.city || data.state || 'Not specified',
             raw: data // Keep raw data for extensive tabs
           });
         } else {
@@ -569,28 +569,6 @@ export default function EmployeeDetails() {
                     <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">City / District</span><span className="text-[13px] font-semibold">{employee.raw.district || employee.raw.city || 'N/A'}</span></div>
                     <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">State</span><span className="text-[13px] font-semibold">{employee.raw.state || 'N/A'}</span></div>
                     <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Pincode</span><span className="text-[13px] font-semibold">{employee.raw.pincode || 'N/A'}</span></div>
-                  </div>
-                </div>
-
-                {/* References */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="bg-[var(--color-brand-page-bg)] p-5 rounded-[14px] border border-[var(--color-brand-border)]">
-                    <h3 className="text-[14px] font-bold text-[var(--color-brand-text)] mb-4">Reference 1</h3>
-                    <div className="space-y-3">
-                      <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Name</span><span className="text-[13px] font-semibold">{employee.raw.ref1Name || 'N/A'}</span></div>
-                      <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Relation</span><span className="text-[13px] font-semibold">{employee.raw.ref1Rel || 'N/A'}</span></div>
-                      <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Mobile</span><span className="text-[13px] font-semibold">{employee.raw.ref1Mobile || 'N/A'}</span></div>
-                      <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Address</span><span className="text-[13px] font-semibold">{employee.raw.ref1Address || 'N/A'}</span></div>
-                    </div>
-                  </div>
-                  <div className="bg-[var(--color-brand-page-bg)] p-5 rounded-[14px] border border-[var(--color-brand-border)]">
-                    <h3 className="text-[14px] font-bold text-[var(--color-brand-text)] mb-4">Reference 2</h3>
-                    <div className="space-y-3">
-                      <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Name</span><span className="text-[13px] font-semibold">{employee.raw.ref2Name || 'N/A'}</span></div>
-                      <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Relation</span><span className="text-[13px] font-semibold">{employee.raw.ref2Rel || 'N/A'}</span></div>
-                      <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Mobile</span><span className="text-[13px] font-semibold">{employee.raw.ref2Mobile || 'N/A'}</span></div>
-                      <div className="flex flex-col"><span className="text-[12px] text-[var(--color-brand-text-secondary)]">Address</span><span className="text-[13px] font-semibold">{employee.raw.ref2Address || 'N/A'}</span></div>
-                    </div>
                   </div>
                 </div>
               </div>

@@ -552,11 +552,11 @@ export default function ManageEmployees() {
             )}
 
             <button 
-              onClick={() => navigate('/employees/add')}
-              className="flex items-center gap-2 bg-[#6b21a8] hover:bg-[#581c87] text-white px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors shadow-sm"
+              onClick={() => navigate('/hr/recruitment')}
+              className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-[13px] font-semibold transition-colors shadow-sm cursor-pointer"
             >
-              <UserPlus size={15} />
-              Add Employee
+              <UserCheck size={15} />
+              Recruitment & Hiring Pipeline
             </button>
           </div>
         </div>
