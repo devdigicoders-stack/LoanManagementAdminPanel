@@ -50,6 +50,9 @@ export default function ManageUsers() {
   const isHRManager = ['hr manager', 'hr_manager', 'hrmanager'].includes(roleLower) || 
                      ['hrmanager'].includes(cleanRole) || 
                      (currentUser.designation || '').toLowerCase().includes('hr manager');
+  const isHRExecutive = ['hr executive', 'hr_executive', 'hrexecutive'].includes(roleLower) || 
+                       ['hrexecutive', 'hrexec', 'executive'].includes(cleanRole) || 
+                       (currentUser.designation || '').toLowerCase().includes('hr executive');
 
   // Fetch Team & Staff from API
   const fetchStaff = async () => {
@@ -62,17 +65,38 @@ export default function ManageUsers() {
       if (response.ok) {
         const data = await response.json();
         const list = Array.isArray(data) ? data : (data.users || []);
-        // Filter out superadmins and if HR Head, filter out self / HR Head roles
+        
+        const myEmail = (currentUser.email || '').toLowerCase().trim();
+        const myId = String(currentUser._id || currentUser.id || '');
+
         const staffOnly = list.filter(u => {
           const r = (u.role || '').toLowerCase();
           const d = (u.designation || '').toLowerCase();
-          if (['superadmin', 'super admin', 'Super Admin'].includes(u.role)) return false;
+          const email = (u.email || '').toLowerCase().trim();
+          const uId = String(u._id || u.id || '');
+
+          // 1. Never show logged-in user themselves
+          if (email && email === myEmail) return false;
+          if (myId && uId && uId === myId) return false;
+
+          // 2. Hide Superadmin from all non-superadmin users
+          if (['superadmin', 'super admin', 'Super Admin'].includes(u.role) && !isMasterAdmin) return false;
+
+          // 3. HR Head: Exclude Admins and HR Heads (show HR Managers, HR Executives, and zone staff)
           if (isHRHead && !isMasterAdmin) {
-            if (r.includes('hr head') || d.includes('hr head') || r === 'admin') return false;
+            if (r.includes('hr head') || d.includes('hr head') || r === 'admin' || r === 'administrator') return false;
           }
+
+          // 4. HR Manager: Exclude Admins, HR Heads, and HR Managers (show HR Executives and zone employees)
           if (isHRManager && !isMasterAdmin) {
-            if (r.includes('hr head') || d.includes('hr head') || r.includes('hr manager') || r === 'admin') return false;
+            if (r.includes('hr head') || d.includes('hr head') || r.includes('hr manager') || d.includes('hr manager') || r === 'admin' || r === 'administrator') return false;
           }
+
+          // 5. HR Executive: Exclude Admins, HR Heads, HR Managers, and HR Executives (show subordinate staff only)
+          if (isHRExecutive && !isMasterAdmin) {
+            if (r.includes('hr head') || d.includes('hr head') || r.includes('manager') || d.includes('manager') || r.includes('executive') || d.includes('executive') || r === 'admin') return false;
+          }
+
           return true;
         });
 

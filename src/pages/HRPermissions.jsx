@@ -120,7 +120,21 @@ const ALL_HR_MODULE_PAGES = [
 
 export default function HRPermissions() {
   const navigate = useNavigate();
-  const [selectedRole, setSelectedRole] = useState('HR Manager');
+
+  const loggedInRole = (localStorage.getItem('userRole') || '').trim().toLowerCase();
+  const cleanLoggedInRole = loggedInRole.replace(/[^a-z0-9]/g, '');
+  const isHrManager = cleanLoggedInRole === 'hrmanager' || cleanLoggedInRole === 'hr_manager' || loggedInRole.includes('hr manager');
+  const isHrExecutive = cleanLoggedInRole === 'hrexecutive' || cleanLoggedInRole === 'hr_executive' || cleanLoggedInRole.includes('executive');
+
+  // HR Managers can only configure HR Executives
+  const availableRoleConfigs = useMemo(() => {
+    if (isHrManager) {
+      return HR_ROLE_CONFIGS.filter(r => r.role === 'HR Executive');
+    }
+    return HR_ROLE_CONFIGS;
+  }, [isHrManager]);
+
+  const [selectedRole, setSelectedRole] = useState(isHrManager ? 'HR Executive' : 'HR Manager');
   const [admins, setAdmins] = useState([]);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all'); // 'all' or specific employee _id
   const [currentPermissions, setCurrentPermissions] = useState([]);
@@ -130,8 +144,8 @@ export default function HRPermissions() {
   const API_URL = import.meta.env.VITE_API_BASE_URL;
 
   const currentRoleConfig = useMemo(() => {
-    return HR_ROLE_CONFIGS.find(r => r.role === selectedRole) || HR_ROLE_CONFIGS[0];
-  }, [selectedRole]);
+    return availableRoleConfigs.find(r => r.role === selectedRole) || availableRoleConfigs[0];
+  }, [selectedRole, availableRoleConfigs]);
 
   // Fetch all staff to filter HR Managers & HR Executives
   const fetchStaff = async () => {
@@ -286,6 +300,26 @@ export default function HRPermissions() {
     });
   };
 
+  if (isHrExecutive) {
+    return (
+      <div className="w-full flex items-center justify-center py-28 text-center">
+        <div className="bg-white p-8 rounded-2xl border border-slate-200 max-w-md shadow-sm">
+          <ShieldCheck size={40} className="mx-auto text-amber-500 mb-3" />
+          <h2 className="text-lg font-black text-slate-800">Access Restricted</h2>
+          <p className="text-xs text-slate-500 mt-2 font-medium">
+            HR Executives operate under the module permissions configured by the HR Head and HR Manager.
+          </p>
+          <button
+            onClick={() => navigate('/')}
+            className="mt-5 px-4 py-2 bg-[#489b0d] text-white text-xs font-bold rounded-xl cursor-pointer hover:bg-[#3d820b]"
+          >
+            Go to Dashboard
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full space-y-6 pb-14">
       {/* Header */}
@@ -303,17 +337,21 @@ export default function HRPermissions() {
             HR Role & Permission Controls
           </h1>
           <p className="text-[13px] text-slate-500 font-medium mt-1">
-            Define separate permissions and accessible dashboard modules for <strong>HR Manager</strong> vs <strong>HR Executive</strong>.
+            {isHrManager 
+              ? 'Configure permissions and dashboard access for HR Executives in your team.'
+              : 'Define separate permissions and accessible dashboard modules for HR Manager vs HR Executive.'}
           </p>
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            to="/users/roles"
-            className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg border border-slate-200 text-slate-600 bg-white font-bold text-[12px] hover:bg-slate-50 transition-colors shadow-xs"
-          >
-            <SlidersHorizontal size={14} /> All Department Roles
-          </Link>
+          {!isHrManager && (
+            <Link
+              to="/users/roles"
+              className="h-10 px-4 flex items-center justify-center gap-2 rounded-lg border border-slate-200 text-slate-600 bg-white font-bold text-[12px] hover:bg-slate-50 transition-colors shadow-xs"
+            >
+              <SlidersHorizontal size={14} /> All Department Roles
+            </Link>
+          )}
           <button
             type="button"
             onClick={fetchStaff}
@@ -347,7 +385,7 @@ export default function HRPermissions() {
               </div>
 
               <div className="space-y-3">
-                {HR_ROLE_CONFIGS.map((item) => {
+                {availableRoleConfigs.map((item) => {
                   const isSelected = selectedRole === item.role;
                   const count = admins.filter(a => {
                     const r = (a.role || '').toLowerCase();

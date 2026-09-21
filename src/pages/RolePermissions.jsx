@@ -99,6 +99,18 @@ const getRoleIcon = (role) => {
 };
 
 export default function RolePermissions() {
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || localStorage.getItem('admin') || '{}');
+    } catch {
+      return {};
+    }
+  })();
+
+  const rawRole = (currentUser.role || '').toLowerCase();
+  const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+  const isMasterAdmin = ['superadmin', 'admin', 'administrator'].includes(cleanRole);
+
   const [admins, setAdmins] = useState([]);
   const [selectedRole, setSelectedRole] = useState('HR Admin');
   const [selectedEmployeeId, setSelectedEmployeeId] = useState('all'); // 'all' or specific employee _id
@@ -112,8 +124,29 @@ export default function RolePermissions() {
   const API_URL = import.meta.env.VITE_API_BASE_URL || `${import.meta.env.VITE_API_BASE_URL}`;
 
   useEffect(() => {
-    fetchAdmins();
-  }, []);
+    if (isMasterAdmin) {
+      fetchAdmins();
+    }
+  }, [isMasterAdmin]);
+
+  if (!isMasterAdmin) {
+    return (
+      <div className="p-8 max-w-xl mx-auto text-center bg-white rounded-2xl border border-slate-200 shadow-sm mt-12">
+        <ShieldAlert size={48} className="mx-auto text-amber-500 mb-4" />
+        <h2 className="text-xl font-bold text-slate-800">Master Roles & Permissions Restricted</h2>
+        <p className="text-sm text-slate-500 mt-2 mb-6">
+          Global Role & Permission configuration across all company departments is exclusively managed by Super Admin / Admin. 
+          To configure permissions for HR team members, please use the HR Permissions module.
+        </p>
+        <Link 
+          to="/users/hr-permissions" 
+          className="inline-flex items-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-5 py-2.5 rounded-xl font-bold text-sm transition-all shadow-md"
+        >
+          <ShieldCheck size={16} /> Go to HR Permissions
+        </Link>
+      </div>
+    );
+  }
 
   const fetchAdmins = async () => {
     setIsLoading(true);

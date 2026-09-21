@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Highcharts from 'highcharts';
 import HighchartsReactImport from 'highcharts-react-official';
-import { Download, Filter, Calendar, Users, FileText, CheckCircle2, TrendingUp, Award, Clock, Zap } from 'lucide-react';
+import { Download, Filter, Calendar, Users, FileText, CheckCircle2, TrendingUp, Award, Clock, Zap, AlertCircle, MapPin, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const HighchartsReact = HighchartsReactImport.default || HighchartsReactImport;
@@ -14,8 +14,23 @@ const Card = ({ children, className = "" }) => (
 );
 
 export default function HRReports() {
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || localStorage.getItem('admin') || '{}');
+    } catch {
+      return {};
+    }
+  })();
+
+  const userRole = (currentUser.role || '').toLowerCase();
+  const cleanRole = userRole.replace(/[^a-z0-9]/g, '');
+  const isHrExecutive = cleanRole.includes('executive');
+  const isHrManager = cleanRole.includes('manager') && !cleanRole.includes('head');
+  const userZone = currentUser.zone || 'NORTH';
+
   const [reportType, setReportType] = useState('employee');
   const [department, setDepartment] = useState('All');
+  const [zone, setZone] = useState(isHrExecutive ? userZone : 'All');
   const [dateRange, setDateRange] = useState('This Month');
   const [reportData, setReportData] = useState(null);
   const [employees, setEmployees] = useState([]);
@@ -24,7 +39,7 @@ export default function HRReports() {
   useEffect(() => {
     fetchReportData();
     fetchEmployees();
-  }, [reportType]);
+  }, [reportType, department, zone]);
 
   const fetchEmployees = async () => {
     try {
@@ -41,7 +56,12 @@ export default function HRReports() {
     try {
       const token = localStorage.getItem('token');
       const endpoint = reportType === 'leave' ? 'leaves' : reportType;
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/reports/${endpoint}`, {
+      const params = new URLSearchParams();
+      if (department && department !== 'All') params.append('department', department);
+      if (zone && zone !== 'All') params.append('zone', zone);
+
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/reports/${endpoint}${queryString}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       if (res.ok) {
@@ -202,9 +222,13 @@ export default function HRReports() {
         <div className="relative z-10 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-3">
-              HR Reports & Analytics
+              {isHrExecutive ? "My Activity & Hiring Report" : "HR Reports & Analytics"}
             </h1>
-            <p className="text-[15px] text-slate-500 font-medium mt-2">Generate, view, and export beautiful insights across all HR modules</p>
+            <p className="text-[15px] text-slate-500 font-medium mt-2">
+              {isHrExecutive 
+                ? `Track candidate hiring, onboarding activity, and staff handled by you in ${userZone} zone`
+                : "Generate, view, and export insights across all HR modules and zones"}
+            </p>
           </div>
           <div className="flex gap-3">
             <button 
@@ -247,7 +271,31 @@ export default function HRReports() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3 pr-2 w-full md:w-auto pb-2 md:pb-0">
+        <div className="flex flex-wrap items-center gap-3 pr-2 w-full md:w-auto pb-2 md:pb-0">
+          {isHrExecutive ? (
+            <div className="flex items-center gap-2 px-3.5 py-2 rounded-[12px] bg-blue-50 border border-blue-200 text-blue-800 text-[13px] font-bold shadow-sm">
+              <MapPin size={15} className="text-blue-600" />
+              <span>Zone: {userZone}</span>
+              <span className="text-[10px] uppercase tracking-wider bg-blue-200/70 text-blue-900 px-1.5 py-0.5 rounded font-black">Assigned</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 px-4 py-2 rounded-[12px] bg-slate-50 border border-slate-200">
+              <MapPin size={16} className="text-slate-400" />
+              <select 
+                value={zone}
+                onChange={(e) => setZone(e.target.value)}
+                className="text-[13px] font-bold text-slate-700 focus:outline-none bg-transparent cursor-pointer"
+              >
+                <option value="All">All Zones</option>
+                <option value="NORTH">North Zone</option>
+                <option value="SOUTH">South Zone</option>
+                <option value="EAST">East Zone</option>
+                <option value="WEST">West Zone</option>
+                <option value="CENTRAL">Central Zone</option>
+              </select>
+            </div>
+          )}
+
           <div className="flex items-center gap-2 px-4 py-2 rounded-[12px] bg-slate-50 border border-slate-200">
             <Filter size={16} className="text-slate-400" />
             <select 
@@ -555,11 +603,4 @@ export default function HRReports() {
     </div>
   );
 }
-// Add this simple AlertCircle component that was missing
-const AlertCircle = ({ size, strokeWidth, className }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <circle cx="12" cy="12" r="10"></circle>
-    <line x1="12" y1="8" x2="12" y2="12"></line>
-    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-  </svg>
-);
+

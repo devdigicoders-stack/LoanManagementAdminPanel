@@ -1,33 +1,94 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   Bell, CheckCircle2, AlertCircle, Info, FileText, 
-  Calendar, Award, Trash2, Check, Send, Users
+  Calendar, Award, Trash2, Check, Send, Users, ShieldCheck, MapPin, RefreshCw
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 
-const initialNotifications = [];
-
 export default function HRNotifications() {
+  const currentUser = (() => {
+    try {
+      return JSON.parse(localStorage.getItem('user') || localStorage.getItem('admin') || '{}');
+    } catch {
+      return {};
+    }
+  })();
+
+  const userRole = (currentUser.role || '').toLowerCase();
+  const cleanRole = userRole.replace(/[^a-z0-9]/g, '');
+  const isMasterAdmin = ['superadmin', 'admin', 'administrator'].includes(cleanRole);
+  const isHrHead = cleanRole.includes('hrhead') || cleanRole.includes('hradmin') || cleanRole === 'hr';
+  const isHrExecutive = !isMasterAdmin && !isHrHead && cleanRole.includes('executive');
+  const isHrManager = !isMasterAdmin && !isHrHead && !isHrExecutive && cleanRole.includes('manager');
+  const userZone = currentUser.zone || 'NORTH';
+
   const [activeTab, setActiveTab] = useState("inbox"); // 'inbox', 'send'
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [notifications, setNotifications] = useState([]);
   const [filter, setFilter] = useState("all"); // 'all', 'unread'
+  const [isLoading, setIsLoading] = useState(false);
   
   // Send Form State
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [targetAudience, setTargetAudience] = useState("all");
+  const [targetAudience, setTargetAudience] = useState(
+    isHrExecutive 
+      ? `zone_applicants_${userZone}` 
+      : isHrManager 
+        ? `zone_all_${userZone}` 
+        : 'all'
+  );
   const [priority, setPriority] = useState("info");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
 
+  const fetchNotifications = async () => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const formatted = Array.isArray(data) ? data.map(item => ({
+          id: item._id || item.id,
+          title: item.title,
+          description: item.detail || item.message || item.description || '',
+          time: new Date(item.createdAt || Date.now()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          type: item.type || 'info',
+          icon: item.type === 'alert' ? <AlertCircle size={18} className="text-red-500" /> : item.type === 'success' ? <CheckCircle2 size={18} className="text-[#489b0d]" /> : <Info size={18} className="text-blue-500" />,
+          bg: item.type === 'alert' ? "bg-red-50" : item.type === 'success' ? "bg-[#489b0d]/10" : "bg-blue-50",
+          isRead: !!item.isRead,
+          targetAudience: item.targetAudience || 'All'
+        })) : [];
+        setNotifications(formatted);
+      }
+    } catch (e) {
+      console.error('Failed to fetch notifications:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
-  const markAllAsRead = () => {
+  const markAllAsRead = async () => {
     setNotifications(notifications.map(n => ({ ...n, isRead: true })));
     toast.success("All notifications marked as read.");
   };
 
-  const toggleReadStatus = (id) => {
+  const toggleReadStatus = async (id) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/${id}/read`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+    } catch (e) {}
     setNotifications(notifications.map(n => n.id === id ? { ...n, isRead: !n.isRead } : n));
   };
 
@@ -40,15 +101,22 @@ export default function HRNotifications() {
       confirmButtonColor: '#ef4444',
       cancelButtonColor: '#cbd5e1',
       confirmButtonText: 'Yes, delete it!'
-    }).then((result) => {
+    }).then(async (result) => {
       if (result.isConfirmed) {
+        try {
+          const token = localStorage.getItem('token');
+          await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications/${id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+        } catch (e) {}
         setNotifications(notifications.filter(n => n.id !== id));
         toast.success("Notification deleted");
       }
     });
   };
 
-  const handleSendNotification = (e) => {
+  const handleSendNotification = async (e) => {
     e.preventDefault();
     if (!title || !message) {
       toast.error("Please fill in both title and message");
@@ -56,13 +124,25 @@ export default function HRNotifications() {
     }
 
     setIsSubmitting(true);
-    
-    // Simulate sending
-    setTimeout(() => {
-      setIsSubmitting(false);
-      
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/notifications`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          title,
+          message,
+          type: priority,
+          targetAudience,
+          zone: userZone
+        })
+      });
+
       const newNotif = {
-        id: Date.now(),
+        id: Date.now().toString(),
         title: title,
         description: message,
         time: "Just now",
@@ -83,10 +163,13 @@ export default function HRNotifications() {
       
       setTitle("");
       setMessage("");
-      setTargetAudience("all");
       setPriority("info");
       setActiveTab("inbox");
-    }, 1000);
+    } catch (err) {
+      toast.error("Failed to broadcast notification");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredNotifications = filter === "unread" 
@@ -99,11 +182,38 @@ export default function HRNotifications() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-brand-text)] mb-1 flex items-center gap-2">
-            HR Notifications
-          </h1>
-          <p className="text-[13px] font-medium text-[var(--color-brand-text-secondary)]">Manage HR alerts, requests, and broadcast team messages</p>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-bold text-[var(--color-brand-text)] mb-1 flex items-center gap-2">
+              HR Notifications & Announcements
+            </h1>
+            {isHrExecutive ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                <MapPin size={12} /> Zone: {userZone} (Executive)
+              </span>
+            ) : isHrManager ? (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-purple-50 text-purple-700 border border-purple-200">
+                <MapPin size={12} /> Zone Manager: {userZone}
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <ShieldCheck size={12} /> Head / Central Admin
+              </span>
+            )}
+          </div>
+          <p className="text-[13px] font-medium text-[var(--color-brand-text-secondary)]">
+            {isHrExecutive 
+              ? `View announcements from HR Head / Manager & send updates to ${userZone} zone applicants.`
+              : "Manage HR alerts, requests, and broadcast messages to teams across zones."}
+          </p>
         </div>
+
+        <button
+          onClick={fetchNotifications}
+          disabled={isLoading}
+          className="flex items-center gap-2 text-xs font-bold text-slate-600 bg-white border border-slate-200 px-3.5 py-2 rounded-xl hover:bg-slate-50 transition-all shadow-sm"
+        >
+          <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} /> Refresh
+        </button>
       </div>
 
       {/* Main Content Area */}
@@ -116,7 +226,7 @@ export default function HRNotifications() {
             className={`flex-1 h-14 flex items-center justify-center gap-2 font-bold text-[13px] transition-colors ${activeTab === 'inbox' ? 'bg-white border-b-2 border-[#489b0d] text-[#489b0d]' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
           >
             <Bell size={16} /> 
-            Inbox
+            Inbox (Senior & System Alerts)
             {unreadCount > 0 && (
               <span className="ml-1 bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full">{unreadCount}</span>
             )}
@@ -125,7 +235,7 @@ export default function HRNotifications() {
             onClick={() => setActiveTab("send")}
             className={`flex-1 h-14 flex items-center justify-center gap-2 font-bold text-[13px] transition-colors ${activeTab === 'send' ? 'bg-white border-b-2 border-[#489b0d] text-[#489b0d]' : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50'}`}
           >
-            <Send size={16} /> Broadcast Message
+            <Send size={16} /> Broadcast Announcement
           </button>
         </div>
 
@@ -222,7 +332,7 @@ export default function HRNotifications() {
                     </div>
                     <h3 className="text-[16px] font-bold text-[var(--color-brand-text)] mb-1">No HR notifications</h3>
                     <p className="text-[13px] font-medium text-[var(--color-brand-text-secondary)] max-w-sm">
-                      You're all caught up! There are no new leave requests, alerts, or notifications at this time.
+                      You're all caught up! There are no new alerts or broadcast announcements at this time.
                     </p>
                   </div>
                 )}
@@ -236,8 +346,16 @@ export default function HRNotifications() {
                     <Send size={18} />
                   </div>
                   <div>
-                    <h2 className="text-[16px] font-extrabold text-[var(--color-brand-text)]">Broadcast HR Message</h2>
-                    <p className="text-[12px] font-medium text-[var(--color-brand-text-secondary)]">Send announcements, policy updates, or alerts to employees.</p>
+                    <h2 className="text-[16px] font-extrabold text-[var(--color-brand-text)]">
+                      {isHrExecutive 
+                        ? `Send Announcement (${userZone} Zone)`
+                        : "Broadcast HR Message"}
+                    </h2>
+                    <p className="text-[12px] font-medium text-[var(--color-brand-text-secondary)]">
+                      {isHrExecutive 
+                        ? `Send alerts & updates to ${userZone} zone job applicants and hired staff.`
+                        : "Send announcements, policy updates, or alerts to employees."}
+                    </p>
                   </div>
                 </div>
 
@@ -253,11 +371,29 @@ export default function HRNotifications() {
                         onChange={(e) => setTargetAudience(e.target.value)}
                         className="w-full h-11 pl-10 pr-4 rounded-[10px] border border-[var(--color-brand-border)] text-[13px] font-semibold text-[var(--color-brand-text)] focus:outline-none focus:border-[#489b0d] bg-white appearance-none cursor-pointer"
                       >
-                        <option value="all">All Employees</option>
-                        <option value="sales">Sales Team</option>
-                        <option value="ops">Operations Team</option>
-                        <option value="credit">Credit Team</option>
-                        <option value="hr">HR Team Only</option>
+                        {isHrExecutive ? (
+                          <>
+                            <option value={`zone_applicants_${userZone}`}>Zone Applicants & Candidates ({userZone})</option>
+                            <option value={`zone_staff_${userZone}`}>Zone Field / Telecalling Staff ({userZone})</option>
+                            <option value={`zone_hired_${userZone}`}>Zone Hired Employees ({userZone})</option>
+                          </>
+                        ) : isHrManager ? (
+                          <>
+                            <option value={`zone_all_${userZone}`}>All Staff & Applicants in Zone ({userZone})</option>
+                            <option value={`zone_executives_${userZone}`}>HR Executives in Zone ({userZone})</option>
+                            <option value={`zone_sales_${userZone}`}>Sales Team ({userZone})</option>
+                            <option value={`zone_ops_${userZone}`}>Operations Team ({userZone})</option>
+                          </>
+                        ) : (
+                          <>
+                            <option value="all">All Employees (Pan-India)</option>
+                            <option value="hr_managers">All HR Managers</option>
+                            <option value="hr_executives">All HR Executives</option>
+                            <option value="sales">Sales Team</option>
+                            <option value="ops">Operations Team</option>
+                            <option value="credit">Credit Team</option>
+                          </>
+                        )}
                       </select>
                     </div>
                   </div>
@@ -296,7 +432,7 @@ export default function HRNotifications() {
                       type="text" 
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g., Holiday Schedule Updated"
+                      placeholder={isHrExecutive ? `e.g., Interview Scheduled / Onboarding Update (${userZone})` : "e.g., Holiday Schedule / Policy Update"}
                       className="w-full h-11 px-4 rounded-[10px] border border-[var(--color-brand-border)] text-[13px] text-[var(--color-brand-text)] focus:outline-none focus:border-[#489b0d] bg-white"
                     />
                   </div>

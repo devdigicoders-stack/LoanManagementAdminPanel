@@ -103,13 +103,16 @@ export default function Sidebar({ isOpen, setIsOpen }) {
   };
 
   const getNavGroups = () => {
-    const isSuperAdmin = ['super admin', 'superadmin'].includes(userRole.toLowerCase());
-    const isAdmin = ['admin', 'administrator'].includes(userRole.toLowerCase());
-    const isHrHead = ['hr head', 'hrhead', 'hr_head'].includes(userRole.toLowerCase());
-    const isHrManager = ['hr manager', 'hrmanager', 'hr_manager'].includes(userRole.toLowerCase());
-    const isHrExecutive = ['hr executive', 'hrexecutive', 'hr_executive'].includes(userRole.toLowerCase());
-    const isHrAdmin = ['hr admin', 'hradmin', 'hr_admin'].includes(userRole.toLowerCase());
-    const isOps = ['operation admin', 'operationadmin', 'operation_admin', 'operations'].includes(userRole.toLowerCase());
+    const rawRole = (userRole || '').trim().toLowerCase();
+    const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+
+    const isSuperAdmin = ['superadmin', 'super_admin'].includes(cleanRole) || rawRole === 'super admin';
+    const isAdmin = ['admin', 'administrator'].includes(cleanRole) || rawRole === 'admin';
+    const isHrHead = ['hrhead', 'hr_head'].includes(cleanRole) || rawRole.includes('hr head');
+    const isHrManager = ['hrmanager', 'hr_manager'].includes(cleanRole) || rawRole.includes('hr manager');
+    const isHrExecutive = ['hrexecutive', 'hr_executive', 'hrexec', 'executive'].includes(cleanRole) || rawRole.includes('hr executive') || cleanRole.includes('executive');
+    const isHrAdmin = ['hradmin', 'hr_admin'].includes(cleanRole) || rawRole.includes('hr admin');
+    const isOps = ['operationadmin', 'operation_admin', 'operations', 'operation'].includes(cleanRole) || rawRole.includes('operation');
 
     // ── SUPER ADMIN & MASTER ADMIN ────────────────────────────────────
     if (isSuperAdmin || isAdmin) {
@@ -195,16 +198,17 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           ? [{ name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" }] : []),
       ];
 
+      const canManagePermissions = !isHrExecutive && (isHrHead || isHrManager || isAdmin || isSuperAdmin);
+
       const hrManagementItems = [
-        ...(hasPermission('Team & Staff') || hasPermission('Manage Users')
+        ...(!isHrExecutive && (hasPermission('Team & Staff') || hasPermission('Manage Users'))
           ? [{ name: "Team & Staff", icon: UserCheck, path: "/users" }] : []),
-        ...(hasPermission('Permission Management') || hasPermission('Role & Permission Management')
+        ...(canManagePermissions && (hasPermission('Permission Management') || hasPermission('Role & Permission Management') || isHrHead || isHrManager)
           ? [
-              { name: "HR Permissions", icon: ShieldCheck, path: "/users/hr-permissions" },
-              { name: "Roles & Permissions", icon: Lock, path: "/users/roles" }
+              { name: "HR Permissions", icon: ShieldCheck, path: "/users/hr-permissions" }
             ] : []),
         ...(hasPermission('Reports & Analytics')
-          ? [{ name: "HR Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
+          ? [{ name: isHrExecutive ? "My Activity Report" : "HR Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
         ...(hasPermission('Notifications')
           ? [{ name: "Announcements", icon: Bell, path: "/notifications" }] : []),
       ];

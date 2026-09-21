@@ -167,6 +167,8 @@ export const ROLE_PERMISSIONS = {
   hrmanager: ROLE_SIDEBAR_PAGES['HR Manager'].map(p => p.name),
   hr_executive: ROLE_SIDEBAR_PAGES['HR Executive'].map(p => p.name),
   hrexecutive: ROLE_SIDEBAR_PAGES['HR Executive'].map(p => p.name),
+  hrexec: ROLE_SIDEBAR_PAGES['HR Executive'].map(p => p.name),
+  executive: ROLE_SIDEBAR_PAGES['HR Executive'].map(p => p.name),
   hr_admin: ROLE_SIDEBAR_PAGES['HR Admin'].map(p => p.name),
   hradmin: ROLE_SIDEBAR_PAGES['HR Admin'].map(p => p.name),
   operation_admin: ROLE_SIDEBAR_PAGES['Operation Admin'].map(p => p.name),
@@ -184,16 +186,18 @@ export const ROLE_PERMISSIONS = {
   accountantadmin: ROLE_SIDEBAR_PAGES['Accountant Admin'].map(p => p.name),
   accountant: ROLE_SIDEBAR_PAGES['Accountant Admin'].map(p => p.name),
   credit_admin: ROLE_SIDEBAR_PAGES['Credit Admin'].map(p => p.name),
-  creditadmin: ROLE_SIDEBAR_PAGES['Credit Admin'].map(p => p.name)
+  creditadmin: ROLE_SIDEBAR_PAGES['Credit Admin'].map(p => p.name),
+  credit: ROLE_SIDEBAR_PAGES['Credit Admin'].map(p => p.name)
 };
 
 const PERMISSION_ALIASES = {
   'Departments': ['Departments', 'Manage Departments'],
-  'Manage Employees': ['Manage Employees', 'Employees'],
+  'Manage Employees': ['Manage Employees', 'Employees', 'Employee Directory'],
+  'Employee Directory': ['Manage Employees', 'Employees', 'Employee Directory'],
   'Employees': ['Manage Employees', 'Employees'],
   'Payroll & Salary': ['Payroll/Salary', 'Payroll & Salary', 'Payroll'],
   'Payroll/Salary': ['Payroll & Salary', 'Payroll/Salary', 'Payroll'],
-  'Reports & Analytics': ['View Reports', 'Export Data', 'Reports & Analytics', 'Reports'],
+  'Reports & Analytics': ['View Reports', 'Export Data', 'Reports & Analytics', 'Reports', 'HR Reports & Analytics'],
   'View Reports': ['Reports & Analytics', 'View Reports'],
   'Loan Applications': ['View Loan Applications', 'Loan Applications', 'Loan Application', 'Approve / Reject Loans', 'Approve/Reject/Hold Loan', 'Applications'],
   'Loan Application': ['View Loan Applications', 'Loan Applications', 'Loan Application', 'Approve / Reject Loans', 'Approve/Reject/Hold Loan'],
@@ -203,10 +207,12 @@ const PERMISSION_ALIASES = {
   'Document Center': ['Document Verification', 'Verify Documents', 'Download Documents', 'Document Center'],
   'Verify Documents': ['Document Verification', 'Verify Documents', 'Document Center'],
   'Lead Management': ['Lead Management', 'All Leads', 'Leads'],
-  'Recruitment': ['View Job', 'Add Job', 'Recruitment', 'Jobs'],
+  'Recruitment': ['View Job', 'Add Job', 'Recruitment', 'Jobs', 'Recruitment & Jobs'],
+  'Recruitment & Jobs': ['View Job', 'Add Job', 'Recruitment', 'Jobs', 'Recruitment & Jobs'],
   'Onboarding': ['Onboarding', 'Candidate Onboarding'],
   'Attendance': ['Attendance', 'Staff Attendance', 'Daily Attendance'],
-  'Leave Management': ['Leave Management', 'Leave Requests', 'Leaves'],
+  'Leave Management': ['Leave Management', 'Leave Requests', 'Leaves', 'My Leaves'],
+  'My Leaves': ['Leave Management', 'Leave Requests', 'Leaves', 'My Leaves'],
   'Notifications': ['Send Reminders/SMS', 'Notifications', 'Announcements'],
   'Customer Follow-ups': ['Customer Follow-ups', 'My Followups', 'Follow-Up Management', 'FollowUps'],
   'My Followups': ['Customer Follow-ups', 'My Followups', 'Follow-Up Management', 'FollowUps'],
@@ -214,8 +220,9 @@ const PERMISSION_ALIASES = {
   'Payments & Collections': ['Payments & Collections', 'Payments & Coll.'],
   'Agent Reports': ['Reports', 'Agent Reports'],
   'Telecaller Reports': ['Reports', 'Telecaller Reports'],
-  'Permission Management': ['Role & Permission Management', 'Permission Management', 'Role Permissions', 'Roles & Permissions'],
-  'Role & Permission Management': ['Role & Permission Management', 'Permission Management', 'Role Permissions', 'Roles & Permissions'],
+  'Permission Management': ['Role & Permission Management', 'Permission Management', 'Role Permissions', 'Roles & Permissions', 'HR Permissions'],
+  'Role & Permission Management': ['Role & Permission Management', 'Permission Management', 'Role Permissions', 'Roles & Permissions', 'HR Permissions'],
+  'HR Permissions': ['Role & Permission Management', 'Permission Management', 'Role Permissions', 'Roles & Permissions', 'HR Permissions'],
   'Manage Complaints': ['Manage Complaints', 'Complaints'],
   'Telecaller Portal': ['Telecaller Portal', 'Telecaller', 'Tele callers operator'],
   'Field Agent Portal': ['Field Agent Portal', 'Agent Portal', 'Agent operator'],
@@ -255,7 +262,7 @@ export const hasPermission = (permission) => {
     }
 
     // Fallback: derive from default role permissions
-    const rolePerms = ROLE_PERMISSIONS[cleanRole] || ROLE_PERMISSIONS[snakeRole] || ROLE_PERMISSIONS[rawRole] || [];
+    const rolePerms = ROLE_PERMISSIONS[cleanRole] || ROLE_PERMISSIONS[snakeRole] || ROLE_PERMISSIONS[rawRole] || (cleanRole.includes('executive') ? ROLE_PERMISSIONS['hr_executive'] : []);
     if (rolePerms.includes(permission)) return true;
 
     const matchingAliases = PERMISSION_ALIASES[permission] || [];
