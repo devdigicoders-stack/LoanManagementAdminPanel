@@ -80,7 +80,7 @@ const PORTAL_CONFIGS = [
     icon: Building2,
     tabs: [
       { name: 'Manage Employees', path: '/employees', icon: Users, exact: true },
-      { name: 'Departments', path: '/employees/departments', icon: Building2 },
+      // { name: 'Departments', path: '/employees/departments', icon: Building2 },
       { name: 'Recruitment', path: '/hr/recruitment', icon: Users },
       { name: 'Onboarding', path: '/hr/onboarding', icon: UserPlus },
       { name: 'Attendance', path: '/employees/attendance', icon: ListChecks },

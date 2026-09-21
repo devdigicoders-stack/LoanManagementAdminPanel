@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
-  Building2, Users, Network, Plus, ChevronRight, Settings, X, Trash2, Pencil, 
-  Crown, UserCheck, Shield, ChevronDown, ChevronUp, Search, Mail, Phone, 
-  Briefcase, UserPlus, CheckCircle2, ArrowRight
+  Building2, Users, Plus, Pencil, Trash2, Crown, 
+  Search, Mail, ArrowRight, LayoutGrid, List, UserCheck, X
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import SearchableSelect from '../../components/common/SearchableSelect';
 
 export default function Departments() {
   const navigate = useNavigate();
@@ -14,24 +14,21 @@ export default function Departments() {
   const [allEmployees, setAllEmployees] = useState([]);
   const [totalHeadcount, setTotalHeadcount] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('cards'); // 'cards' | 'hierarchy'
+  const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'table'
+  const [searchTerm, setSearchTerm] = useState('');
   
   // Modals state
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAssignHeadOpen, setIsAssignHeadOpen] = useState(false);
   
-  // Selected department for Assign Head or Team view
-  const [selectedDeptForHead, setSelectedDeptForHead] = useState(null);
-  const [selectedEmployeeId, setSelectedEmployeeId] = useState('');
-  const [expandedDeptId, setExpandedDeptId] = useState(null);
-  const [headSearchTerm, setHeadSearchTerm] = useState('');
+  // Selected department for Assign Head or Edit
+  const [selectedDept, setSelectedDept] = useState(null);
+  const [selectedHeadId, setSelectedHeadId] = useState('');
 
   // Form states
-  const [newDept, setNewDept] = useState({ name: '', description: '', headEmployeeId: '', budget: '' });
-  const [editDept, setEditDept] = useState(null);
+  const [formData, setFormData] = useState({ name: '', description: '', headEmployeeId: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isUpdating, setIsUpdating] = useState(false);
 
   const API_BASE = import.meta.env.VITE_API_BASE_URL;
 
@@ -64,24 +61,11 @@ export default function Departments() {
       });
       if (res.ok) {
         const data = await res.json();
-        
         let headCountTotal = 0;
-        
-        const formatBudget = (num) => {
-          if (!num || num === 0) return '₹0';
-          if (num >= 10000000) return `₹${(num / 10000000).toFixed(1)} Cr`;
-          if (num >= 100000) return `₹${(num / 100000).toFixed(1)} L`;
-          return `₹${num.toLocaleString()}`;
-        };
-
         const deptArray = data.map(d => {
           headCountTotal += d.headcount || 0;
-          return {
-            ...d,
-            budgetString: formatBudget(d.budgetNum)
-          };
+          return d;
         });
-
         setDepartments(deptArray);
         setTotalHeadcount(headCountTotal);
       } else {
@@ -93,6 +77,30 @@ export default function Departments() {
       setIsLoading(false);
     }
   };
+
+  // Employee options for SearchableSelect
+  const employeeSelectOptions = useMemo(() => {
+    return [
+      { value: '', label: 'None / Unassigned', sublabel: 'No head assigned' },
+      ...allEmployees.map(emp => ({
+        value: emp._id,
+        label: emp.name,
+        sublabel: `${emp.designation || emp.role || 'Staff'} • ${emp.empId || ''}`
+      }))
+    ];
+  }, [allEmployees]);
+
+  // Filtered departments by search term
+  const filteredDepartments = useMemo(() => {
+    if (!searchTerm.trim()) return departments;
+    const term = searchTerm.toLowerCase();
+    return departments.filter(d => 
+      d.name?.toLowerCase().includes(term) ||
+      d.head?.toLowerCase().includes(term) ||
+      d.departmentCode?.toLowerCase().includes(term) ||
+      d.description?.toLowerCase().includes(term)
+    );
+  }, [departments, searchTerm]);
 
   const handleDelete = async (id, name) => {
     if (!id) return;
@@ -127,26 +135,26 @@ export default function Departments() {
 
   const handleAssignHead = async (e) => {
     e.preventDefault();
-    if (!selectedDeptForHead) return;
+    if (!selectedDept) return;
     
     setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/departments/${selectedDeptForHead._id}/assign-head`, {
+      const res = await fetch(`${API_BASE}/departments/${selectedDept._id}/assign-head`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ employeeId: selectedEmployeeId || null })
+        body: JSON.stringify({ employeeId: selectedHeadId || null })
       });
 
       if (res.ok) {
         const data = await res.json();
-        toast.success(data.message || 'Department Head updated successfully');
+        toast.success(data.message || 'Department Head updated');
         setIsAssignHeadOpen(false);
-        setSelectedDeptForHead(null);
-        setSelectedEmployeeId('');
+        setSelectedDept(null);
+        setSelectedHeadId('');
         fetchDepartments();
       } else {
         const err = await res.json();
@@ -161,7 +169,7 @@ export default function Departments() {
 
   const handleCreateDepartment = async (e) => {
     e.preventDefault();
-    if (!newDept.name) {
+    if (!formData.name.trim()) {
       toast.error('Department name is required');
       return;
     }
@@ -176,17 +184,16 @@ export default function Departments() {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: newDept.name,
-          description: newDept.description,
-          headEmployeeId: newDept.headEmployeeId || null,
-          budget: Number(newDept.budget) || 0
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          headEmployeeId: formData.headEmployeeId || null
         })
       });
       
       if (res.ok) {
         toast.success('Department created successfully!');
-        setIsModalOpen(false);
-        setNewDept({ name: '', description: '', headEmployeeId: '', budget: '' });
+        setIsCreateModalOpen(false);
+        setFormData({ name: '', description: '', headEmployeeId: '' });
         fetchDepartments();
       } else {
         const errorData = await res.json();
@@ -201,34 +208,32 @@ export default function Departments() {
 
   const handleUpdateDepartment = async (e) => {
     e.preventDefault();
-    if (!editDept?.name) {
+    if (!formData.name.trim()) {
       toast.error('Department name is required');
       return;
     }
     
-    setIsUpdating(true);
+    setIsSubmitting(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/departments/${editDept._id}`, {
+      const res = await fetch(`${API_BASE}/departments/${selectedDept._id}`, {
         method: 'PUT',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          name: editDept.name,
-          description: editDept.description,
-          headEmployeeId: editDept.headEmployeeId || null,
-          head: editDept.head || 'N/A',
-          headRole: editDept.headRole || 'N/A',
-          budget: Number(editDept.budgetNum) || 0
+          name: formData.name.trim(),
+          description: formData.description.trim(),
+          headEmployeeId: formData.headEmployeeId || null
         })
       });
       
       if (res.ok) {
         toast.success('Department updated successfully!');
         setIsEditModalOpen(false);
-        setEditDept(null);
+        setSelectedDept(null);
+        setFormData({ name: '', description: '', headEmployeeId: '' });
         fetchDepartments();
       } else {
         const errorData = await res.json();
@@ -237,523 +242,340 @@ export default function Departments() {
     } catch (error) {
       toast.error('Server error');
     } finally {
-      setIsUpdating(false);
+      setIsSubmitting(false);
     }
   };
 
-  // Filtered employees for Assign Head modal search
-  const filteredHeadCandidates = allEmployees.filter(emp => {
-    if (!headSearchTerm) return true;
-    const term = headSearchTerm.toLowerCase();
-    return (
-      emp.name?.toLowerCase().includes(term) ||
-      emp.email?.toLowerCase().includes(term) ||
-      emp.empId?.toLowerCase().includes(term) ||
-      emp.designation?.toLowerCase().includes(term)
-    );
-  });
+  const openEditModal = (dept) => {
+    setSelectedDept(dept);
+    setFormData({
+      name: dept.name || '',
+      description: dept.description || '',
+      headEmployeeId: dept.headEmployeeId || ''
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const openAssignHeadModal = (dept) => {
+    setSelectedDept(dept);
+    setSelectedHeadId(dept.headEmployeeId || '');
+    setIsAssignHeadOpen(true);
+  };
 
   return (
-    <div className="p-6 bg-slate-50/60 min-h-screen relative space-y-6">
+    <div className="p-4 md:p-6 bg-slate-50/60 min-h-screen space-y-6">
       
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-blue-600 text-white rounded-xl shadow-xs">
-              <Building2 size={24} />
-            </div>
-            <div>
-              <h1 className="text-2xl font-black text-slate-900 tracking-tight">Departments & Leadership Hierarchy</h1>
-              <p className="text-xs font-semibold text-slate-500 mt-0.5">
-                Every department is led by a Department Head who oversees teams, task allocations, and subordinate roles.
-              </p>
-            </div>
+      {/* Header & Controls */}
+      <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="p-3 bg-blue-600 text-white rounded-xl shadow-xs">
+            <Building2 size={24} />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Departments</h1>
+            <p className="text-xs font-semibold text-slate-500 mt-0.5">
+              Manage departments, department heads, and team members.
+            </p>
           </div>
         </div>
-        
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* View Mode Toggle */}
+
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Search Input */}
+          <div className="relative min-w-[220px] flex-1 md:flex-initial">
+            <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+            <input 
+              type="text"
+              placeholder="Search departments or heads..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:bg-white focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+            />
+          </div>
+
+          {/* View Toggle */}
           <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-bold">
             <button
               type="button"
-              onClick={() => setActiveTab('cards')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'cards' 
-                  ? 'bg-white text-slate-900 shadow-xs font-black' 
-                  : 'text-slate-600 hover:text-slate-900'
+              onClick={() => setViewMode('grid')}
+              className={`p-2 rounded-lg transition-all ${
+                viewMode === 'grid' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
               }`}
+              title="Grid View"
             >
-              Department Cards
+              <LayoutGrid size={16} />
             </button>
             <button
               type="button"
-              onClick={() => setActiveTab('hierarchy')}
-              className={`px-3 py-1.5 rounded-lg transition-all ${
-                activeTab === 'hierarchy' 
-                  ? 'bg-white text-slate-900 shadow-xs font-black' 
-                  : 'text-slate-600 hover:text-slate-900'
+              onClick={() => setViewMode('table')}
+              className={`p-2 rounded-lg transition-all ${
+                viewMode === 'table' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-800'
               }`}
+              title="Table View"
             >
-              Org Hierarchy Tree
+              <List size={16} />
             </button>
           </div>
 
+          {/* Add Department Button */}
           <button 
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors"
+            onClick={() => {
+              setFormData({ name: '', description: '', headEmployeeId: '' });
+              setIsCreateModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black shadow-xs transition-colors cursor-pointer"
           >
-            <Plus size={16} /> New Department
+            <Plus size={16} /> Add Department
           </button>
         </div>
       </div>
 
-      {/* Top Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="p-3.5 bg-blue-50 text-blue-600 rounded-xl"><Building2 size={24} /></div>
+      {/* Quick Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
+          <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><Building2 size={20} /></div>
           <div>
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Total Departments</p>
-            <p className="text-2xl font-black text-slate-900 mt-0.5">{departments.length}</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Departments</p>
+            <p className="text-xl font-black text-slate-900 mt-0.5">{departments.length}</p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl"><Crown size={24} /></div>
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
+          <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><Crown size={20} /></div>
           <div>
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Department Heads Appointed</p>
-            <p className="text-2xl font-black text-emerald-600 mt-0.5">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Appointed Heads</p>
+            <p className="text-xl font-black text-amber-600 mt-0.5">
               {departments.filter(d => d.head && d.head !== 'N/A').length} / {departments.length}
             </p>
           </div>
         </div>
 
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-4">
-          <div className="p-3.5 bg-purple-50 text-purple-600 rounded-xl"><Users size={24} /></div>
+        <div className="bg-white p-4.5 rounded-2xl border border-slate-200 shadow-xs flex items-center gap-3.5">
+          <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><Users size={20} /></div>
           <div>
-            <p className="text-[11px] font-black text-slate-400 uppercase tracking-wider">Total Active Staff</p>
-            <p className="text-2xl font-black text-slate-900 mt-0.5">{totalHeadcount}</p>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Total Staff Members</p>
+            <p className="text-xl font-black text-emerald-700 mt-0.5">{totalHeadcount}</p>
           </div>
         </div>
       </div>
 
+      {/* Content Area */}
       {isLoading ? (
         <div className="bg-white p-16 rounded-2xl border border-slate-200 text-center text-slate-500 font-bold">
           <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          Loading departments and leadership hierarchy...
+          Loading departments...
         </div>
-      ) : activeTab === 'cards' ? (
-        /* ================= CARDS VIEW ================= */
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {departments.map((dept) => {
+      ) : filteredDepartments.length === 0 ? (
+        <div className="bg-white p-16 rounded-2xl border border-slate-200 text-center shadow-xs">
+          <Building2 size={40} className="mx-auto text-slate-300 mb-3" />
+          <h3 className="text-base font-black text-slate-800">No departments found</h3>
+          <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto font-medium">
+            {searchTerm ? `No results match "${searchTerm}". Try a different keyword.` : 'Click "Add Department" above to create your first department.'}
+          </p>
+        </div>
+      ) : viewMode === 'grid' ? (
+        /* ================= GRID VIEW ================= */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          {filteredDepartments.map((dept) => {
             const hasHead = dept.head && dept.head !== 'N/A';
-            const isExpanded = expandedDeptId === dept._id;
 
             return (
               <div 
                 key={dept._id || dept.id}
-                className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col overflow-hidden"
+                className="bg-white rounded-2xl border border-slate-200 shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group"
               >
-                {/* Department Card Header */}
-                <div className="p-5 border-b border-slate-100 bg-gradient-to-br from-slate-50/80 to-white flex items-start justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md">
-                        {dept.departmentCode || dept.id}
-                      </span>
-                      <span className="text-[10px] font-bold text-slate-400">
-                        {dept.headcount} {dept.headcount === 1 ? 'member' : 'members'}
-                      </span>
+                {/* Header */}
+                <div className="p-5 border-b border-slate-100">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md">
+                      {dept.departmentCode || dept.id || 'DEPT'}
+                    </span>
+                    
+                    {/* Action buttons */}
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => openEditModal(dept)}
+                        className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                        title="Edit Department"
+                      >
+                        <Pencil size={14} />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(dept._id, dept.name)}
+                        className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Department"
+                      >
+                        <Trash2 size={14} />
+                      </button>
                     </div>
-                    <h3 className="text-lg font-black text-slate-900 mt-1 truncate">{dept.name}</h3>
-                    {dept.description && (
-                      <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{dept.description}</p>
-                    )}
                   </div>
 
-                  <div className="flex items-center gap-1 shrink-0 ml-2">
-                    <button 
-                      onClick={() => { setEditDept({ ...dept, budgetNum: dept.budgetNum || '' }); setIsEditModalOpen(true); }}
-                      className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                      title="Edit Department"
-                    >
-                      <Pencil size={15} />
-                    </button>
-                    <button 
-                      onClick={() => handleDelete(dept._id, dept.name)}
-                      className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Delete Department"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+                  <h3 className="text-base font-black text-slate-900 group-hover:text-blue-600 transition-colors">
+                    {dept.name}
+                  </h3>
+                  {dept.description && (
+                    <p className="text-xs text-slate-500 mt-1 line-clamp-2 font-medium">
+                      {dept.description}
+                    </p>
+                  )}
                 </div>
 
-                {/* Department Head Profile Box */}
-                <div className="p-5 border-b border-slate-100 flex-1">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
-                      <Crown size={13} className={hasHead ? "text-amber-500" : "text-slate-300"} />
+                {/* Head Section */}
+                <div className="p-5 flex-1 bg-slate-50/40">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                      <Crown size={12} className={hasHead ? "text-amber-500" : "text-slate-300"} />
                       Department Head
                     </span>
                     <button
                       type="button"
-                      onClick={() => {
-                        setSelectedDeptForHead(dept);
-                        setSelectedEmployeeId(dept.headEmployeeId || '');
-                        setIsAssignHeadOpen(true);
-                      }}
-                      className="text-[11px] font-bold text-blue-600 hover:text-blue-700 hover:underline flex items-center gap-1"
+                      onClick={() => openAssignHeadModal(dept)}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                     >
-                      {hasHead ? 'Change Head' : '+ Appoint Head'}
+                      {hasHead ? 'Change' : '+ Appoint'}
                     </button>
                   </div>
 
                   {hasHead ? (
-                    <div className="p-3.5 bg-amber-50/40 border border-amber-200/70 rounded-xl flex items-start gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-400 text-white font-black text-sm flex items-center justify-center shrink-0 shadow-xs">
+                    <div className="p-3 bg-white border border-amber-200/80 rounded-xl flex items-center gap-3 shadow-2xs">
+                      <div className="w-9 h-9 rounded-xl bg-amber-500 text-white font-black text-xs flex items-center justify-center shrink-0">
                         {dept.head.charAt(0).toUpperCase()}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-sm font-black text-slate-900 truncate">{dept.head}</h4>
-                          <span className="px-1.5 py-0.2 bg-amber-500 text-white text-[9px] font-black rounded uppercase">
-                            HEAD
-                          </span>
-                        </div>
-                        <p className="text-xs font-semibold text-slate-600 truncate mt-0.5">
-                          {dept.headRole && dept.headRole !== 'N/A' ? dept.headRole : `${dept.name} Head`}
+                        <h4 className="text-xs font-black text-slate-900 truncate">{dept.head}</h4>
+                        <p className="text-[11px] font-semibold text-slate-500 truncate">
+                          {dept.headRole && dept.headRole !== 'N/A' ? dept.headRole : 'Department Head'}
                         </p>
-                        
-                        {(dept.headDetails?.email || dept.headEmail) && (
-                          <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-1 truncate">
-                            <Mail size={12} className="shrink-0 text-slate-400" />
-                            <span className="truncate">{dept.headDetails?.email || dept.headEmail}</span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   ) : (
-                    <div className="p-4 bg-slate-50 border border-dashed border-slate-200 rounded-xl text-center">
-                      <p className="text-xs font-semibold text-slate-400">No Department Head Appointed</p>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedDeptForHead(dept);
-                          setSelectedEmployeeId('');
-                          setIsAssignHeadOpen(true);
-                        }}
-                        className="mt-2 text-xs font-black text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
-                      >
-                        <UserPlus size={14} /> Appoint Department Head
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Subordinate Roles List */}
-                  {dept.subRoles && dept.subRoles.length > 0 && (
-                    <div className="mt-4">
-                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">
-                        Subordinate Roles Under Head ({dept.subRoles.length})
-                      </p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {dept.subRoles.map((role, rIdx) => (
-                          <span 
-                            key={rIdx}
-                            className="text-[10px] font-bold px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md border border-slate-200"
-                          >
-                            {role}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Team Members Collapsible Section */}
-                <div className="p-4 bg-slate-50/50 flex flex-col gap-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-600">
-                    <span>Department Team ({dept.teamMembers?.length || 0})</span>
-                    <button
-                      type="button"
-                      onClick={() => setExpandedDeptId(isExpanded ? null : dept._id)}
-                      className="text-blue-600 hover:text-blue-800 flex items-center gap-1 text-xs"
+                    <div 
+                      onClick={() => openAssignHeadModal(dept)}
+                      className="p-3 bg-white border border-dashed border-slate-200 rounded-xl text-center cursor-pointer hover:border-blue-400 transition-colors"
                     >
-                      {isExpanded ? (
-                        <>Hide Members <ChevronUp size={14} /></>
-                      ) : (
-                        <>View Members <ChevronDown size={14} /></>
-                      )}
-                    </button>
-                  </div>
-
-                  {isExpanded && (
-                    <div className="mt-2 space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                      {dept.teamMembers && dept.teamMembers.length > 0 ? (
-                        dept.teamMembers.map((emp) => (
-                          <div 
-                            key={emp._id}
-                            className="p-2 bg-white rounded-lg border border-slate-200 flex items-center justify-between text-xs"
-                          >
-                            <div className="min-w-0">
-                              <p className="font-bold text-slate-800 truncate flex items-center gap-1.5">
-                                {emp.name}
-                                {emp.isHead && (
-                                  <span className="text-[9px] px-1 bg-amber-100 text-amber-800 font-bold rounded">
-                                    HEAD
-                                  </span>
-                                )}
-                              </p>
-                              <p className="text-[10px] text-slate-500 truncate">{emp.designation || emp.role || 'Member'}</p>
-                            </div>
-                            <span className="text-[10px] font-mono text-slate-400">{emp.empId || ''}</span>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-xs text-slate-400 italic py-2 text-center">No team members assigned yet</p>
-                      )}
+                      <p className="text-xs font-bold text-blue-600">+ Appoint Head</p>
                     </div>
                   )}
                 </div>
 
-                {/* Card Footer */}
+                {/* Footer Bar */}
                 <div className="px-5 py-3 border-t border-slate-100 bg-white flex items-center justify-between text-xs">
-                  <div>
-                    <span className="text-[10px] font-bold text-slate-400 uppercase">Annual Budget</span>
-                    <p className="font-black text-slate-800">{dept.budgetString}</p>
+                  <div className="flex items-center gap-1.5 font-bold text-slate-600">
+                    <Users size={14} className="text-slate-400" />
+                    <span>{dept.headcount || 0} {(dept.headcount === 1) ? 'Member' : 'Members'}</span>
                   </div>
+
                   <button 
                     onClick={() => navigate('/employees', { state: { initialSearch: dept.name } })} 
-                    className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded-lg text-xs font-bold transition-colors"
+                    className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                   >
-                    Manage Staff <ArrowRight size={12} />
+                    View Staff <ArrowRight size={12} />
                   </button>
                 </div>
-
               </div>
             );
           })}
         </div>
       ) : (
-        /* ================= HIERARCHY TREE VIEW ================= */
-        <div className="space-y-6">
-          <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
-            <div className="flex items-center gap-2 mb-6">
-              <Network className="text-blue-600" size={22} />
-              <div>
-                <h2 className="text-lg font-black text-slate-900">Organizational Department Tree</h2>
-                <p className="text-xs text-slate-500 font-medium">Top-down chain of command: Department Head oversees all subordinate roles and field officers.</p>
-              </div>
-            </div>
+        /* ================= TABLE VIEW ================= */
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-black uppercase text-[10px] tracking-wider">
+                  <th className="py-3.5 px-4">Code</th>
+                  <th className="py-3.5 px-4">Department Name</th>
+                  <th className="py-3.5 px-4">Department Head</th>
+                  <th className="py-3.5 px-4">Staff Count</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredDepartments.map((dept) => {
+                  const hasHead = dept.head && dept.head !== 'N/A';
 
-            <div className="space-y-6">
-              {departments.map((dept) => (
-                <div key={dept._id || dept.id} className="border border-slate-200 rounded-2xl p-5 bg-slate-50/40">
-                  {/* Department Node */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2.5 bg-blue-600 text-white rounded-xl font-black text-xs">
-                        {dept.departmentCode || dept.id}
-                      </div>
-                      <div>
-                        <h3 className="text-base font-black text-slate-900">{dept.name}</h3>
-                        <p className="text-xs text-slate-500 font-medium">
-                          {dept.headcount} Total Team Members • Budget: {dept.budgetString}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-bold text-slate-500">Department Head:</span>
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-black ${
-                        dept.head && dept.head !== 'N/A'
-                          ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                          : 'bg-slate-200 text-slate-600'
-                      }`}>
-                        👑 {dept.head} ({dept.headRole || 'Head'})
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Branch Lines: Sub-Roles & Employees */}
-                  <div className="mt-4 pl-4 sm:pl-8 border-l-2 border-dashed border-blue-300 space-y-4">
-                    
-                    {/* Sub-Roles Level */}
-                    <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                        <Briefcase size={13} className="text-blue-500" />
-                        Subordinate Roles & Designations
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {(dept.subRoles || []).map((role, idx) => (
-                          <div 
-                            key={idx}
-                            className="bg-white px-3 py-1.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs flex items-center gap-1.5"
-                          >
-                            <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                            {role}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Team Members Level */}
-                    <div>
-                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2 flex items-center gap-1.5">
-                        <Users size={13} className="text-emerald-500" />
-                        Reporting Team Members
-                      </h4>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                        {(dept.teamMembers || []).map((emp) => (
-                          <div 
-                            key={emp._id} 
-                            className={`p-3 rounded-xl border text-xs ${
-                              emp.isHead 
-                                ? 'bg-amber-50/70 border-amber-300' 
-                                : 'bg-white border-slate-200'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <p className="font-bold text-slate-900 truncate">{emp.name}</p>
-                              {emp.isHead && <span className="text-[9px] font-black text-amber-700 bg-amber-100 px-1 rounded">HEAD</span>}
-                            </div>
-                            <p className="text-[11px] text-slate-500 truncate mt-0.5">{emp.designation || 'Staff'}</p>
-                            <p className="text-[10px] font-mono text-slate-400 mt-1">Reports to: {dept.head}</p>
-                          </div>
-                        ))}
-                        {(!dept.teamMembers || dept.teamMembers.length === 0) && (
-                          <div className="text-xs text-slate-400 italic py-2">No team members assigned</div>
+                  return (
+                    <tr key={dept._id || dept.id} className="hover:bg-slate-50/70 transition-colors">
+                      <td className="py-3.5 px-4">
+                        <span className="text-[10px] font-black uppercase px-2 py-0.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-md">
+                          {dept.departmentCode || dept.id || 'DEPT'}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 font-black text-slate-900">
+                        <div>{dept.name}</div>
+                        {dept.description && (
+                          <div className="text-[11px] font-normal text-slate-400 line-clamp-1">{dept.description}</div>
                         )}
-                      </div>
-                    </div>
-
-                  </div>
-
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ================= ASSIGN / APPOINT HEAD MODAL ================= */}
-      {isAssignHeadOpen && selectedDeptForHead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <div className="flex items-center gap-2">
-                <Crown size={20} className="text-amber-500" />
-                <div>
-                  <h2 className="text-base font-black text-slate-900">
-                    Appoint Head of {selectedDeptForHead.name}
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Select an employee to lead this department. All team members will report to this Head.
-                  </p>
-                </div>
-              </div>
-              <button 
-                onClick={() => { setIsAssignHeadOpen(false); setSelectedDeptForHead(null); }}
-                className="text-slate-400 hover:text-slate-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <form onSubmit={handleAssignHead} className="p-6 space-y-4">
-              {/* Employee search */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1.5">
-                  Search & Select Employee
-                </label>
-                <div className="relative mb-2">
-                  <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                  <input 
-                    type="text"
-                    placeholder="Search by name, email, designation..."
-                    value={headSearchTerm}
-                    onChange={(e) => setHeadSearchTerm(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:bg-white focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                <div className="max-h-60 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
-                  <label 
-                    className={`flex items-center gap-3 p-3 text-xs cursor-pointer hover:bg-slate-50 ${
-                      selectedEmployeeId === '' ? 'bg-blue-50/60 font-bold text-blue-700' : 'text-slate-700'
-                    }`}
-                  >
-                    <input 
-                      type="radio" 
-                      name="selectedHead" 
-                      value="" 
-                      checked={selectedEmployeeId === ''} 
-                      onChange={() => setSelectedEmployeeId('')}
-                      className="text-blue-600"
-                    />
-                    <div>
-                      <span className="font-bold">None / Unassigned</span>
-                      <p className="text-[10px] text-slate-400">Leave department without an active head</p>
-                    </div>
-                  </label>
-
-                  {filteredHeadCandidates.map((emp) => (
-                    <label 
-                      key={emp._id} 
-                      className={`flex items-center gap-3 p-3 text-xs cursor-pointer hover:bg-slate-50 ${
-                        selectedEmployeeId === emp._id ? 'bg-blue-50/80 font-bold text-blue-800' : 'text-slate-700'
-                      }`}
-                    >
-                      <input 
-                        type="radio" 
-                        name="selectedHead" 
-                        value={emp._id} 
-                        checked={selectedEmployeeId === emp._id} 
-                        onChange={() => setSelectedEmployeeId(emp._id)}
-                        className="text-blue-600"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center justify-between">
-                          <span className="font-bold truncate">{emp.name}</span>
-                          <span className="text-[10px] font-mono text-slate-400">{emp.empId || ''}</span>
+                      </td>
+                      <td className="py-3.5 px-4">
+                        {hasHead ? (
+                          <div className="flex items-center gap-2">
+                            <span className="w-6 h-6 rounded-md bg-amber-100 text-amber-800 text-[10px] font-black flex items-center justify-center shrink-0">
+                              {dept.head.charAt(0).toUpperCase()}
+                            </span>
+                            <div>
+                              <div className="font-bold text-slate-800">{dept.head}</div>
+                              <div className="text-[10px] text-slate-400">{dept.headRole || 'Head'}</div>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openAssignHeadModal(dept)}
+                            className="text-xs font-bold text-blue-600 hover:underline"
+                          >
+                            + Appoint Head
+                          </button>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-4 font-bold text-slate-700">
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-slate-100 rounded-md">
+                          <Users size={12} className="text-slate-400" />
+                          {dept.headcount || 0}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button 
+                            onClick={() => navigate('/employees', { state: { initialSearch: dept.name } })}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors"
+                          >
+                            Staff
+                          </button>
+                          <button 
+                            onClick={() => openEditModal(dept)}
+                            className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Edit"
+                          >
+                            <Pencil size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleDelete(dept._id, dept.name)}
+                            className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Delete"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
-                        <p className="text-[11px] text-slate-500 truncate">{emp.designation || emp.role || 'Staff'} • {emp.email}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div className="pt-3 flex gap-3">
-                <button 
-                  type="button" 
-                  onClick={() => { setIsAssignHeadOpen(false); setSelectedDeptForHead(null); }}
-                  className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={isSubmitting}
-                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-70 flex items-center justify-center gap-1.5"
-                >
-                  <CheckCircle2 size={16} />
-                  {isSubmitting ? 'Saving...' : 'Confirm Appointment'}
-                </button>
-              </div>
-            </form>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
 
       {/* ================= CREATE DEPARTMENT MODAL ================= */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h2 className="text-base font-black text-slate-900">Create New Department</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-visible shadow-2xl border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+              <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <Building2 size={16} className="text-blue-600" /> Add New Department
+              </h2>
+              <button onClick={() => setIsCreateModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={18} />
               </button>
             </div>
             <form onSubmit={handleCreateDepartment} className="p-6 space-y-4">
@@ -762,10 +584,10 @@ export default function Departments() {
                 <input 
                   type="text" 
                   required
-                  value={newDept.name}
-                  onChange={(e) => setNewDept({...newDept, name: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="e.g. OPERATIONS, CREDIT, HR"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="e.g. OPERATIONS, SALES, CREDIT"
                 />
               </div>
 
@@ -773,42 +595,27 @@ export default function Departments() {
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Description (Optional)</label>
                 <textarea 
                   rows={2}
-                  value={newDept.description}
-                  onChange={(e) => setNewDept({...newDept, description: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="Primary role and scope of this department..."
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  placeholder="Department scope and details..."
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Appoint Department Head (Optional)</label>
-                <select 
-                  value={newDept.headEmployeeId}
-                  onChange={(e) => setNewDept({...newDept, headEmployeeId: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="">Select Employee as Head...</option>
-                  {allEmployees.map(e => (
-                    <option key={e._id} value={e._id}>{e.name} ({e.designation || e.role})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Annual Budget Override (₹)</label>
-                <input 
-                  type="number" 
-                  value={newDept.budget}
-                  onChange={(e) => setNewDept({...newDept, budget: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
-                  placeholder="e.g. 5000000"
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Department Head (Optional)</label>
+                <SearchableSelect
+                  placeholder="Search and select employee..."
+                  options={employeeSelectOptions}
+                  value={formData.headEmployeeId}
+                  onChange={(val) => setFormData({...formData, headEmployeeId: val})}
                 />
               </div>
               
-              <div className="pt-4 flex gap-3">
+              <div className="pt-3 flex gap-3">
                 <button 
                   type="button" 
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => setIsCreateModalOpen(false)}
                   className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50"
                 >
                   Cancel
@@ -827,13 +634,15 @@ export default function Departments() {
       )}
 
       {/* ================= EDIT DEPARTMENT MODAL ================= */}
-      {isEditModalOpen && editDept && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white rounded-2xl w-full max-w-md overflow-hidden shadow-2xl border border-slate-200">
-            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-              <h2 className="text-base font-black text-slate-900">Edit Department</h2>
-              <button onClick={() => { setIsEditModalOpen(false); setEditDept(null); }} className="text-slate-400 hover:text-slate-600">
-                <X size={20} />
+      {isEditModalOpen && selectedDept && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-visible shadow-2xl border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+              <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <Pencil size={16} className="text-blue-600" /> Edit Department
+              </h2>
+              <button onClick={() => { setIsEditModalOpen(false); setSelectedDept(null); }} className="text-slate-400 hover:text-slate-600">
+                <X size={18} />
               </button>
             </div>
             <form onSubmit={handleUpdateDepartment} className="p-6 space-y-4">
@@ -842,9 +651,9 @@ export default function Departments() {
                 <input 
                   type="text" 
                   required
-                  value={editDept.name}
-                  onChange={(e) => setEditDept({...editDept, name: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
 
@@ -852,50 +661,90 @@ export default function Departments() {
                 <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Description</label>
                 <textarea 
                   rows={2}
-                  value={editDept.description || ''}
-                  onChange={(e) => setEditDept({...editDept, description: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Department Head (Employee)</label>
-                <select 
-                  value={editDept.headEmployeeId || ''}
-                  onChange={(e) => setEditDept({...editDept, headEmployeeId: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
-                >
-                  <option value="">Select Employee...</option>
-                  {allEmployees.map(e => (
-                    <option key={e._id} value={e._id}>{e.name} ({e.designation || e.role})</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Annual Budget Override (₹)</label>
-                <input 
-                  type="number" 
-                  value={editDept.budgetNum || ''}
-                  onChange={(e) => setEditDept({...editDept, budgetNum: e.target.value})}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-xs font-semibold focus:ring-2 focus:ring-blue-500 outline-none"
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">Department Head</label>
+                <SearchableSelect
+                  placeholder="Search and select employee..."
+                  options={employeeSelectOptions}
+                  value={formData.headEmployeeId}
+                  onChange={(val) => setFormData({...formData, headEmployeeId: val})}
                 />
               </div>
               
-              <div className="pt-4 flex gap-3">
+              <div className="pt-3 flex gap-3">
                 <button 
                   type="button" 
-                  onClick={() => { setIsEditModalOpen(false); setEditDept(null); }}
+                  onClick={() => { setIsEditModalOpen(false); setSelectedDept(null); }}
                   className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50"
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit" 
-                  disabled={isUpdating}
+                  disabled={isSubmitting}
                   className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-70"
                 >
-                  {isUpdating ? 'Saving...' : 'Save Changes'}
+                  {isSubmitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ================= ASSIGN HEAD MODAL ================= */}
+      {isAssignHeadOpen && selectedDept && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white rounded-2xl w-full max-w-md overflow-visible shadow-2xl border border-slate-200">
+            <div className="px-6 py-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/80">
+              <div>
+                <h2 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <Crown size={16} className="text-amber-500" /> Appoint Department Head
+                </h2>
+                <p className="text-[11px] text-slate-500 font-semibold mt-0.5">{selectedDept.name}</p>
+              </div>
+              <button 
+                onClick={() => { setIsAssignHeadOpen(false); setSelectedDept(null); }}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAssignHead} className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase mb-1">
+                  Select Employee as Head
+                </label>
+                <SearchableSelect
+                  placeholder="Search by employee name or ID..."
+                  options={employeeSelectOptions}
+                  value={selectedHeadId}
+                  onChange={(val) => setSelectedHeadId(val)}
+                />
+              </div>
+
+              <div className="pt-3 flex gap-3">
+                <button 
+                  type="button" 
+                  onClick={() => { setIsAssignHeadOpen(false); setSelectedDept(null); }}
+                  className="flex-1 px-4 py-2.5 border border-slate-200 text-slate-700 rounded-xl text-xs font-bold hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 disabled:opacity-70 flex items-center justify-center gap-1.5"
+                >
+                  <UserCheck size={16} />
+                  {isSubmitting ? 'Saving...' : 'Confirm Head'}
                 </button>
               </div>
             </form>

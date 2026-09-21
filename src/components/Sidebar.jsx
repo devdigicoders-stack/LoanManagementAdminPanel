@@ -126,7 +126,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
 
       const hrItems = [
         { name: "Employee Directory", icon: Users, path: "/employees" },
-        { name: "Departments", icon: Building2, path: "/employees/departments" },
+        // { name: "Departments", icon: Building2, path: "/employees/departments" },
         { name: "Recruitment", icon: UserPlus, path: "/hr/recruitment" },
         { name: "Onboarding", icon: UserCheck, path: "/hr/onboarding" },
         { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
@@ -174,8 +174,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       const hrWorkflowItems = [
         ...(hasPermission('Manage Employees')
           ? [{ name: "Employee Directory", icon: Users, path: "/employees" }] : []),
-        ...(hasPermission('Departments')
-          ? [{ name: "Departments", icon: Building2, path: "/employees/departments" }] : []),
+        // ...(hasPermission('Departments')
+        //   ? [{ name: "Departments", icon: Building2, path: "/employees/departments" }] : []),
         ...(hasPermission('Recruitment')
           ? [{ name: "Recruitment & Jobs", icon: Users, path: "/hr/recruitment" }] : []),
         ...(hasPermission('Onboarding')

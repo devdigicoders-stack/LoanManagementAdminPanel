@@ -138,7 +138,7 @@ export default function SearchableSelect({
       </button>
 
       {isOpen && !disabled && (
-        <div className="absolute left-0 right-0 z-50 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden flex flex-col max-h-64 animate-in fade-in duration-150">
+        <div className="absolute left-0 right-0 z-[100] mt-1 bg-white border border-slate-200 rounded-xl shadow-2xl overflow-hidden flex flex-col max-h-64 animate-in fade-in duration-150">
           {/* Search Input Box */}
           <div className="p-2 border-b border-slate-100 bg-slate-50/50">
             <div className="relative">
