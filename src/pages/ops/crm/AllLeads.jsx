@@ -179,12 +179,12 @@ export default function AllLeads() {
           onChange={(e) => setZoneFilter(e.target.value)}
           className="border border-gray-300 rounded-lg text-xs font-bold px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#489b0d] bg-white cursor-pointer"
         >
-          <option value="ALL">🌐 All 5 Zones</option>
-          <option value="NORTH">📍 North Zone (UP, PB, HR, UK, JK, HP)</option>
-          <option value="SOUTH">📍 South Zone (AP, KA, KL, TN, TS, PY)</option>
-          <option value="EAST">📍 East Zone (BR, JH, OD, CG, WB, AS)</option>
-          <option value="WEST">📍 West Zone (MH, GJ, MP, RJ, GA)</option>
-          <option value="CENTRAL">📍 Central Zone (DL, CH)</option>
+          <option value="ALL">All 5 Zones</option>
+          <option value="NORTH">North Zone (UP, PB, HR, UK, JK, HP)</option>
+          <option value="SOUTH">South Zone (AP, KA, KL, TN, TS, PY)</option>
+          <option value="EAST">East Zone (BR, JH, OD, CG, WB, AS)</option>
+          <option value="WEST">West Zone (MH, GJ, MP, RJ, GA)</option>
+          <option value="CENTRAL">Central Zone (DL, CH)</option>
         </select>
         
         {/* Multi-Tier Approval Stage Selector */}
@@ -193,7 +193,7 @@ export default function AllLeads() {
           onChange={(e) => setStageFilter(e.target.value)}
           className="border border-gray-300 rounded-lg text-xs font-bold px-3 py-2 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#489b0d] bg-white cursor-pointer"
         >
-          <option value="all">⚡ All Approval Stages</option>
+          <option value="all">All Approval Stages</option>
           <option value="LEAD_SUBMITTED">1. Lead Submitted</option>
           <option value="TL_VERIFIED">2. TL Verified</option>
           <option value="CREDIT_APPROVED">3. Credit Approved</option>

@@ -432,30 +432,38 @@ export default function Payroll() {
                               </div>
                             ) : (
                               <div className="flex items-center justify-center gap-1.5">
-                                {canApprove && (
+                                {isMasterAdmin ? (
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
+                                    <ShieldCheck size={12} className="text-slate-400" /> Read-only Track
+                                  </span>
+                                ) : (
                                   <>
+                                    {canApprove && (
+                                      <>
+                                        <button 
+                                          onClick={() => handleApprovePayroll(emp.id, emp.name)}
+                                          className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-colors shadow-sm"
+                                          title="Approve Salary Structure"
+                                        >
+                                          <Check size={12} strokeWidth={3} /> Approve
+                                        </button>
+                                        <button 
+                                          onClick={() => handleRejectPayroll(emp.id, emp.name)}
+                                          className="inline-flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2 py-1.5 rounded-md text-[11px] font-bold transition-colors"
+                                          title="Reject Salary"
+                                        >
+                                          <X size={12} strokeWidth={2.5} />
+                                        </button>
+                                      </>
+                                    )}
                                     <button 
-                                      onClick={() => handleApprovePayroll(emp.id, emp.name)}
-                                      className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-md text-[11px] font-bold transition-colors shadow-sm"
-                                      title="Approve Salary Structure"
+                                      onClick={() => handleEditClick(emp)} 
+                                      className="inline-flex items-center justify-center gap-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md text-[12px] font-bold transition-colors"
                                     >
-                                      <Check size={12} strokeWidth={3} /> Approve
-                                    </button>
-                                    <button 
-                                      onClick={() => handleRejectPayroll(emp.id, emp.name)}
-                                      className="inline-flex items-center gap-1 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 px-2 py-1.5 rounded-md text-[11px] font-bold transition-colors"
-                                      title="Reject Salary"
-                                    >
-                                      <X size={12} strokeWidth={2.5} />
+                                      <Edit2 size={12} strokeWidth={2.5} /> {isHrExecutive ? "Decide Salary" : "Edit"}
                                     </button>
                                   </>
                                 )}
-                                <button 
-                                  onClick={() => handleEditClick(emp)} 
-                                  className="inline-flex items-center justify-center gap-1.5 border border-blue-200 text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-md text-[12px] font-bold transition-colors"
-                                >
-                                  <Edit2 size={12} strokeWidth={2.5} /> {isHrExecutive ? "Decide Salary" : "Edit"}
-                                </button>
                               </div>
                             )}
                           </td>

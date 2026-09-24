@@ -652,7 +652,7 @@ export default function ManageComplaints() {
               className="h-8 px-2.5 text-xs font-semibold bg-white border border-slate-200 rounded-lg text-slate-700 focus:outline-none focus:border-[#489b0d]"
             >
               <option value="All">All Staff / Assignees</option>
-              <option value="Unassigned">⚠️ Unassigned Only</option>
+              <option value="Unassigned">Unassigned Only</option>
               {staffList.map(s => (
                 <option key={s._id || s.id} value={s._id || s.id}>{s.name} ({s.role || 'Staff'})</option>
               ))}
@@ -896,7 +896,7 @@ export default function ManageComplaints() {
                   className="w-full h-10 px-3 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-600 focus:outline-none focus:border-[#489b0d]"
                 >
                   <option value="All">All Staff / Assignees</option>
-                  <option value="Unassigned">⚠️ Unassigned Only</option>
+                  <option value="Unassigned">Unassigned Only</option>
                   {staffList.map(s => (
                     <option key={s._id || s.id} value={s._id || s.id}>{s.name} ({s.role || 'Staff'})</option>
                   ))}

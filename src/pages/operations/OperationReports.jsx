@@ -5,6 +5,7 @@ import {
   Users, Download, Filter, ArrowRight, RefreshCw,
   CheckCircle2, XCircle, AlertCircle, TrendingUp, Activity
 } from 'lucide-react';
+import TablePagination from '../../components/TablePagination';
 
 /* ── helpers ─────────────────────────────────────────── */
 const COLORS = {
@@ -234,6 +235,8 @@ const STATUS_STYLE = {
 /* ══ MAIN COMPONENT ══════════════════════════════════════ */
 export default function OperationReports() {
   const [activeReport, setActiveReport] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   return (
     <div className="w-full bg-[#FAFCFD] min-h-screen p-4 space-y-6 pb-12">
@@ -417,6 +420,13 @@ export default function OperationReports() {
                 </tbody>
               </table>
             </div>
+            <TablePagination
+              currentPage={currentPage}
+              totalItems={mockAppReport.length}
+              pageSize={pageSize}
+              onPageChange={(page) => setCurrentPage(page)}
+              onPageSizeChange={(size) => setPageSize(size)}
+            />
           </div>
         </div>
       )}

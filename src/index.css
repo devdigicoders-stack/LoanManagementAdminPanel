@@ -58,3 +58,19 @@ button, [role="button"], input[type="button"], input[type="submit"], input[type=
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Global No-Wrap Enforcement for Badges, Tags, Buttons & Table Cells */
+button, 
+.badge, 
+[class*="badge"], 
+[class*="rounded-full"], 
+th, 
+td, 
+.tag, 
+.pill {
+  white-space: nowrap;
+}
+
+.btn, button {
+  flex-shrink: 0;
+}

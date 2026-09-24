@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, RefreshCw, Eye, Download, Users, FileText, History, FileSearch } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import TablePagination from '../../components/TablePagination';
 
 const mockCustomers = [];
 
@@ -8,6 +9,8 @@ const mockCustomers = [];
 export default function CustomerManagement() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   
   const getStatusStyle = (status) => {
     switch(status) {
@@ -141,6 +144,13 @@ export default function CustomerManagement() {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={mockCustomers.length}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => setPageSize(size)}
+        />
       </div>
     </div>
   );

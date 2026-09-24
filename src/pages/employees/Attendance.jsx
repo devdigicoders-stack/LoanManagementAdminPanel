@@ -22,7 +22,7 @@ export default function Attendance() {
                      ['hrmanager'].includes(cleanRole) || 
                      (currentUser.designation || '').toLowerCase().includes('hr manager');
   const isHRExecutive = !isMasterAdmin && !isHRHead && !isHRManager;
-  const canManage = isMasterAdmin || isHRHead || isHRManager;
+  const canManage = !isMasterAdmin && (isHRHead || isHRManager);
 
   const fetchAttendance = async () => {
     try {

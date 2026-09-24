@@ -1,7 +1,6 @@
-import { useState } from "react";
-import { MessageSquare, Plus, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { MessageSquare, Plus, ChevronDown, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
-import { mockRemarks, mockLeads } from "./telecallerData";
 
 const tc = {
   card: "#FFFFFF", sky: "#DFF3FF", skyMid: "#BFE7F7",
@@ -9,16 +8,97 @@ const tc = {
 };
 
 export default function RemarksNotes() {
-  const [form, setForm] = useState({ leadId: "", type: "", remark: "" });
+  const [form, setForm] = useState({ leadId: "", type: "Customer Interaction", remark: "" });
+  const [leads, setLeads] = useState([]);
+  const [remarksList, setRemarksList] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const fetchLeadsAndRemarks = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/my-leads`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const allLeads = data.leads || [];
+        setLeads(allLeads);
+
+        // Gather all follow-ups / remarks
+        const remarksArr = [];
+        allLeads.forEach(l => {
+          if (l.telecallerNotes) {
+            remarksArr.push({
+              leadId: l.leadId || l._id,
+              customer: l.name,
+              remark: l.telecallerNotes,
+              type: "Verification",
+              date: l.telecallerConfirmedAt ? new Date(l.telecallerConfirmedAt).toLocaleDateString('en-IN') : 'Recent',
+              time: l.telecallerConfirmedBy || 'Telecaller'
+            });
+          }
+          if (Array.isArray(l.followUps)) {
+            l.followUps.forEach(fu => {
+              remarksArr.push({
+                leadId: l.leadId || l._id,
+                customer: l.name,
+                remark: fu.remarks || fu.notes || 'Note added',
+                type: fu.type || fu.status || "Call",
+                date: fu.scheduledAt ? new Date(fu.scheduledAt).toLocaleDateString('en-IN') : 'Recent',
+                time: fu.addedBy || 'Telecaller'
+              });
+            });
+          }
+        });
+        setRemarksList(remarksArr);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeadsAndRemarks();
+  }, []);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.leadId || !form.type || !form.remark) {
-      toast.error("Please fill all fields.");
+    if (!form.leadId || !form.remark) {
+      toast.error("Please select lead and enter remark.");
       return;
     }
-    toast.success("Remark added successfully.");
-    setForm({ leadId: "", type: "", remark: "" });
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${form.leadId}/status`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          status: 'Contacted',
+          remarks: form.remark,
+          reason: form.remark
+        })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Remark added & synced with RM dashboard!");
+        setForm({ leadId: "", type: "Customer Interaction", remark: "" });
+        fetchLeadsAndRemarks();
+      } else {
+        toast.error(data.message || "Failed to add remark");
+      }
+    } catch (err) {
+      toast.error("Server error");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -45,7 +125,7 @@ export default function RemarksNotes() {
                     className="w-full h-10 px-4 rounded-xl border text-[13px] font-medium outline-none appearance-none cursor-pointer"
                     style={{ borderColor: tc.border, background: "#fff", color: tc.text }}>
                     <option value="">Select lead</option>
-                    {mockLeads.map(l => <option key={l.id} value={l.id}>{l.id} - {l.customerName}</option>)}
+                    {leads.map(l => <option key={l._id} value={l._id}>{l.leadId || l._id} - {l.name} ({l.mobile})</option>)}
                   </select>
                   <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: tc.muted }} />
                 </div>
@@ -57,25 +137,30 @@ export default function RemarksNotes() {
                   <select value={form.type} onChange={e => setForm({ ...form, type: e.target.value })}
                     className="w-full h-10 px-4 rounded-xl border text-[13px] font-medium outline-none appearance-none cursor-pointer"
                     style={{ borderColor: tc.border, background: "#fff", color: tc.text }}>
-                    <option value="">Select type</option>
-                    {["Call", "Customer Interaction", "Follow-up", "Requirement", "Document", "Internal"].map(o => <option key={o}>{o}</option>)}
+                    <option value="Customer Interaction">Customer Interaction</option>
+                    <option value="Call Verification">Call Verification</option>
+                    <option value="Follow-up">Follow-up</option>
+                    <option value="Requirement">Requirement</option>
+                    <option value="Documents Pending">Documents Pending</option>
                   </select>
                   <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: tc.muted }} />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[12px] font-bold mb-1.5" style={{ color: tc.text }}>Remark <span style={{ color: "#DC2626" }}>*</span></label>
-                <textarea rows={4} placeholder="Enter your remark..."
+                <label className="block text-[12px] font-bold mb-1.5" style={{ color: tc.text }}>Customer Response / Remark <span style={{ color: "#DC2626" }}>*</span></label>
+                <textarea rows={4} placeholder="Enter what customer said, verification details..."
                   value={form.remark} onChange={e => setForm({ ...form, remark: e.target.value })}
                   className="w-full px-4 py-3 rounded-xl border text-[13px] font-medium outline-none resize-none"
                   style={{ borderColor: tc.border, background: "#fff", color: tc.text }} />
               </div>
 
               <button type="submit"
-                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-[13px] font-bold text-white transition-colors hover:opacity-90"
+                disabled={submitting}
+                className="w-full flex items-center justify-center gap-2 h-10 rounded-xl text-[13px] font-bold text-white transition-colors hover:opacity-90 disabled:opacity-50"
                 style={{ background: tc.blue }}>
-                Add Remark
+                {submitting ? <RefreshCw size={15} className="animate-spin" /> : <Plus size={15} />}
+                Add Remark & Notify RM
               </button>
             </div>
           </form>
@@ -83,10 +168,13 @@ export default function RemarksNotes() {
 
         {/* Remark History */}
         <div className="lg:col-span-2 rounded-2xl" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>
-          <div className="p-5" style={{ borderBottom: `1px solid ${tc.border}` }}>
+          <div className="p-5 flex items-center justify-between" style={{ borderBottom: `1px solid ${tc.border}` }}>
             <h3 className="text-[15px] font-extrabold flex items-center gap-2" style={{ color: tc.text }}>
-              <MessageSquare size={16} style={{ color: tc.primary }} /> Remark History
+              <MessageSquare size={16} style={{ color: tc.blue }} /> Telecaller Interaction & Remarks Timeline
             </h3>
+            <button onClick={fetchLeadsAndRemarks} className="p-2 bg-slate-100 hover:bg-slate-200 rounded-lg text-xs font-semibold text-slate-600 transition">
+              <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            </button>
           </div>
           
           <div className="overflow-x-auto">
@@ -96,18 +184,18 @@ export default function RemarksNotes() {
                   <th className="text-left px-5 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>Lead & Customer</th>
                   <th className="text-left px-5 py-3 font-bold" style={{ color: tc.blue }}>Remark</th>
                   <th className="text-left px-5 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>Type</th>
-                  <th className="text-left px-5 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>Date & Time</th>
+                  <th className="text-left px-5 py-3 font-bold whitespace-nowrap" style={{ color: tc.blue }}>Date & Telecaller</th>
                 </tr>
               </thead>
               <tbody>
-                {mockRemarks.length === 0 ? (
+                {remarksList.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="px-5 py-10 text-center">
                       <p className="font-bold text-[14px]" style={{ color: tc.muted }}>No remarks available</p>
-                      <p className="text-[12px]" style={{ color: tc.primary }}>No remarks have been added yet.</p>
+                      <p className="text-[12px]" style={{ color: tc.blue }}>Remarks added by Telecallers will appear here.</p>
                     </td>
                   </tr>
-                ) : mockRemarks.map((r, i) => (
+                ) : remarksList.map((r, i) => (
                   <tr key={i} style={{ borderBottom: `1px solid ${tc.border}` }} className="hover:bg-[#FAFCFD] transition-colors">
                     <td className="px-5 py-4 whitespace-nowrap">
                       <p className="font-bold" style={{ color: tc.blue }}>{r.leadId}</p>
@@ -119,7 +207,7 @@ export default function RemarksNotes() {
                     </td>
                     <td className="px-5 py-4 whitespace-nowrap" style={{ color: tc.muted }}>
                       <p>{r.date}</p>
-                      <p className="text-[11px]">{r.time}</p>
+                      <p className="text-[11px] font-bold text-slate-500">{r.time}</p>
                     </td>
                   </tr>
                 ))}

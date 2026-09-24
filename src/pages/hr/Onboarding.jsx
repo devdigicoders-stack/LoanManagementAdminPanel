@@ -88,6 +88,10 @@ function StepBar({ step }) {
 }
 
 function EmployeeTableRow({ emp, token, onRefresh, onOpenAssignChaser }) {
+  const rawRole = (localStorage.getItem('userRole') || '').trim().toLowerCase();
+  const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+  const isReadOnlyAdmin = ['superadmin', 'admin', 'administrator', 'super_admin'].includes(cleanRole) || rawRole.includes('super admin') || rawRole === 'admin';
+
   const [expanded, setExpanded] = useState(false);
   const [updatingDoc, setUpdatingDoc] = useState(null);
   const [markingDone, setMarkingDone] = useState(false);
@@ -187,29 +191,42 @@ function EmployeeTableRow({ emp, token, onRefresh, onOpenAssignChaser }) {
 
         <td className="px-4 py-3 align-top">
           <div className="flex flex-wrap items-center gap-1.5 max-w-[220px]">
-            {emp.onboardingStatus !== 'Done' && (
-              <button onClick={() => onOpenAssignChaser(emp)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 bg-indigo-50 rounded hover:bg-indigo-100">
-                <Phone size={10} /> {emp.assignedTelecallerName ? 'Reassign' : 'Assign Chaser'}
-              </button>
+            {isReadOnlyAdmin ? (
+              <>
+                <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-blue-700 border border-blue-200 bg-blue-50 rounded hover:bg-blue-100">
+                  {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {expanded ? 'Hide Details' : 'View Full Details & Docs'}
+                </button>
+                <button onClick={copyLink} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-gray-600 border border-gray-200 bg-gray-50 rounded hover:bg-gray-100" title="Copy Onboarding Link">
+                  <Link2 size={10} /> Link
+                </button>
+              </>
+            ) : (
+              <>
+                {emp.onboardingStatus !== 'Done' && (
+                  <button onClick={() => onOpenAssignChaser(emp)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-indigo-700 border border-indigo-200 bg-indigo-50 rounded hover:bg-indigo-100">
+                    <Phone size={10} /> {emp.assignedTelecallerName ? 'Reassign' : 'Assign Chaser'}
+                  </button>
+                )}
+                {emp.onboardingStatus === 'Pending' && (
+                  <button onClick={async () => {
+                    toast.loading('Sending reminder...', { id: 'remind' });
+                    try {
+                      const res = await fetch(`${API}/api/employees/${emp._id}/remind-employee`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
+                      if (res.ok) toast.success('Reminder email sent!', { id: 'remind' });
+                      else toast.error('Failed to send reminder', { id: 'remind' });
+                    } catch { toast.error('Server error', { id: 'remind' }); }
+                  }} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-orange-600 border border-orange-200 bg-orange-50 rounded hover:bg-orange-100">
+                    <AlertCircle size={10} /> Reminder
+                  </button>
+                )}
+                <button onClick={copyLink} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-blue-600 border border-blue-200 bg-blue-50 rounded hover:bg-blue-100">
+                  <Link2 size={10} /> Link
+                </button>
+                <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-gray-600 border border-gray-200 bg-gray-50 rounded hover:bg-gray-100">
+                  {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {expanded ? 'Hide Docs' : 'View Docs'}
+                </button>
+              </>
             )}
-            {emp.onboardingStatus === 'Pending' && (
-              <button onClick={async () => {
-                toast.loading('Sending reminder...', { id: 'remind' });
-                try {
-                  const res = await fetch(`${API}/api/employees/${emp._id}/remind-employee`, { method: 'POST', headers: { Authorization: `Bearer ${token}` } });
-                  if (res.ok) toast.success('Reminder email sent!', { id: 'remind' });
-                  else toast.error('Failed to send reminder', { id: 'remind' });
-                } catch { toast.error('Server error', { id: 'remind' }); }
-              }} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-orange-600 border border-orange-200 bg-orange-50 rounded hover:bg-orange-100">
-                <AlertCircle size={10} /> Reminder
-              </button>
-            )}
-            <button onClick={copyLink} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-blue-600 border border-blue-200 bg-blue-50 rounded hover:bg-blue-100">
-              <Link2 size={10} /> Link
-            </button>
-            <button onClick={() => setExpanded(!expanded)} className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-gray-600 border border-gray-200 bg-gray-50 rounded hover:bg-gray-100">
-              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {expanded ? 'Hide Docs' : 'View Docs'}
-            </button>
           </div>
         </td>
       </tr>
@@ -219,9 +236,16 @@ function EmployeeTableRow({ emp, token, onRefresh, onOpenAssignChaser }) {
         <tr className="bg-blue-50/20 border-b border-gray-100">
           <td colSpan={4} className="p-0">
             <div className="p-4 border-l-[3px] border-blue-400 pl-5 ml-4 my-2 mr-4 bg-white rounded-r-lg shadow-sm">
-              <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider mb-3 flex items-center gap-2">
-                <FileText size={12} className="text-gray-400" /> Submitted Documents
-              </h4>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider flex items-center gap-2">
+                  <FileText size={12} className="text-gray-400" /> Submitted Employee Onboarding Documents
+                </h4>
+                {isReadOnlyAdmin && (
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
+                    Admin Read-Only Track Mode
+                  </span>
+                )}
+              </div>
 
               {emp.documents && emp.documents.length > 0 ? (
                 <div className="space-y-2 mb-3">
@@ -233,17 +257,17 @@ function EmployeeTableRow({ emp, token, onRefresh, onOpenAssignChaser }) {
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {doc.fileUrl && (
-                          <a href={`${API}/${doc.fileUrl}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-[10px] font-bold flex items-center gap-1">
-                            <Eye size={10} /> View
+                          <a href={`${API}/${doc.fileUrl}`} target="_blank" rel="noreferrer" className="text-blue-600 hover:text-blue-800 text-[10px] font-bold flex items-center gap-1 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                            <Eye size={10} /> View Document
                           </a>
                         )}
                         <DocStatusBadge status={doc.status} />
-                        {doc.status !== 'Verified' && (
+                        {!isReadOnlyAdmin && doc.status !== 'Verified' && (
                           <button disabled={updatingDoc === doc._id} onClick={() => handleDocStatus(doc._id, 'Verified')} className="text-[10px] font-bold text-green-700 bg-green-100 hover:bg-green-200 px-2 py-0.5 rounded disabled:opacity-50">
                             Verify
                           </button>
                         )}
-                        {doc.status !== 'Rejected' && doc.status !== 'Verified' && (
+                        {!isReadOnlyAdmin && doc.status !== 'Rejected' && doc.status !== 'Verified' && (
                           <button disabled={updatingDoc === doc._id} onClick={() => handleDocStatus(doc._id, 'Rejected')} className="text-[10px] font-bold text-red-700 bg-red-100 hover:bg-red-200 px-2 py-0.5 rounded disabled:opacity-50">
                             Reject
                           </button>
@@ -256,7 +280,7 @@ function EmployeeTableRow({ emp, token, onRefresh, onOpenAssignChaser }) {
                 <p className="text-[11px] text-gray-400 italic mb-3">No documents uploaded yet.</p>
               )}
 
-              {emp.onboardingStatus !== 'Done' && (
+              {!isReadOnlyAdmin && emp.onboardingStatus !== 'Done' && (
                 <button
                   onClick={markComplete}
                   disabled={markingDone || step < 3}

@@ -428,13 +428,13 @@ export default function ManageUsers() {
                 value={zoneFilter}
                 onChange={(e) => setZoneFilter(e.target.value)}
                 options={[
-                  { value: 'All Zones', label: '🌐 All Zones' },
-                  { value: 'NORTH', label: '📍 North Zone' },
-                  { value: 'SOUTH', label: '📍 South Zone' },
-                  { value: 'EAST', label: '📍 East Zone' },
-                  { value: 'WEST', label: '📍 West Zone' },
-                  { value: 'CENTRAL', label: '📍 Central Zone' },
-                  { value: 'ALL', label: '📍 All India' }
+                  { value: 'All Zones', label: 'All Zones' },
+                  { value: 'NORTH', label: 'North Zone' },
+                  { value: 'SOUTH', label: 'South Zone' },
+                  { value: 'EAST', label: 'East Zone' },
+                  { value: 'WEST', label: 'West Zone' },
+                  { value: 'CENTRAL', label: 'Central Zone' },
+                  { value: 'ALL', label: 'All India' }
                 ]}
                 placeholder="Filter zone..."
                 buttonClassName="py-2 text-[12px] font-bold"
@@ -446,7 +446,7 @@ export default function ManageUsers() {
                 value={deptFilter}
                 onChange={(e) => setDeptFilter(e.target.value)}
                 options={[
-                  { value: 'All Departments', label: '🏢 All Departments' },
+                  { value: 'All Departments', label: 'All Departments' },
                   { value: 'Operations', label: 'Operations' },
                   { value: 'HR & Recruitment', label: 'HR & Recruitment' },
                   { value: 'Sales & Marketing', label: 'Sales & Loans' },

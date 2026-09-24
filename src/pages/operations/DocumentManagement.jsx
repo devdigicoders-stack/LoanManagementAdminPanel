@@ -4,6 +4,7 @@ import {
   XCircle, FileSearch, X, RotateCw, CheckCircle2 
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import TablePagination from '../../components/TablePagination';
 
 const mockDocs = [];
 
@@ -11,6 +12,8 @@ const mockDocs = [];
 export default function DocumentManagement() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   
   // Modal States
   const [showPreview, setShowPreview] = useState(false);
@@ -164,6 +167,13 @@ export default function DocumentManagement() {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={mockDocs.length}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => setPageSize(size)}
+        />
       </div>
 
       {/* Reject Modal */}

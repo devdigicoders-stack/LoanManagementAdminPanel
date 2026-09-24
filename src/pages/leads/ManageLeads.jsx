@@ -24,11 +24,25 @@ import {
   Edit,
   Users
 } from "lucide-react";
+import TablePagination from "../../components/TablePagination";
 
 export default function ManageLeads() {
   const [leadsList, setLeadsList] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Role detection: Sales users have view-only access
+  const rawRole = (localStorage.getItem('userRole') || '').toLowerCase().trim();
+  const rawZonal = (localStorage.getItem('zonalRole') || '').toLowerCase().trim();
+  const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+  const cleanZonal = rawZonal.replace(/[^a-z0-9]/g, '');
+  const isSalesRole = ['sales head', 'sales_head', 'saleshead', 'rrm', 'arm', 'rm', 'ro', 're', 'sales'].some(r => 
+    rawRole.includes(r) || cleanRole.includes(r) || rawZonal.includes(r) || cleanZonal.includes(r)
+  );
 
   // Assign Modal State
   const [selectedLeadForAssign, setSelectedLeadForAssign] = useState(null);
@@ -74,11 +88,13 @@ export default function ManageLeads() {
 
   const [filterSource, setFilterSource] = useState("All Sources");
   const [filterStatus, setFilterStatus] = useState("All Status");
+  const [filterZone, setFilterZone] = useState("All Zones");
 
   const filteredLeads = leadsList.filter(lead => {
     const matchSource = filterSource === "All Sources" || lead.source === filterSource;
     const matchStatus = filterStatus === "All Status" || lead.status === filterStatus;
-    return matchSource && matchStatus;
+    const matchZone = filterZone === "All Zones" || (lead.zone || 'NORTH') === filterZone;
+    return matchSource && matchStatus && matchZone;
   });
 
   const updateLeadStatus = async (id, newStatus) => {
@@ -227,11 +243,17 @@ export default function ManageLeads() {
 
         {/* Filters & Actions */}
         <div className="flex flex-wrap xl:flex-nowrap items-center gap-3 w-full xl:w-auto justify-start xl:justify-end">
-          <select className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white flex-1 xl:flex-none min-w-[120px]">
-            <option>All Branches</option>
-            <option>Mumbai Branch</option>
-            <option>Delhi Branch</option>
-            <option>Bangalore Branch</option>
+          <select 
+            value={filterZone}
+            onChange={(e) => setFilterZone(e.target.value)}
+            className="h-10 px-3 rounded-md border border-slate-200 text-[13px] font-semibold text-slate-600 focus:outline-none focus:border-[#489b0d] bg-white flex-1 xl:flex-none min-w-[120px]"
+          >
+            <option value="All Zones">All Zones</option>
+            <option value="NORTH">NORTH Zone</option>
+            <option value="SOUTH">SOUTH Zone</option>
+            <option value="EAST">EAST Zone</option>
+            <option value="WEST">WEST Zone</option>
+            <option value="CENTRAL">CENTRAL Zone</option>
           </select>
           <select 
             value={filterSource}
@@ -259,65 +281,74 @@ export default function ManageLeads() {
             <option>Lost</option>
           </select>
 
-          <Link to="/leads/add" className="h-10 px-4 flex items-center gap-2 bg-[#489b0d] hover:bg-[#3e850b] text-white rounded-md text-[13px] font-bold transition-colors shadow-sm flex-1 xl:flex-none justify-center">
-            <Plus size={16} /> Add Lead
-          </Link>
+          {/* View Only Header - Add Lead button removed */}
         </div>
       </div>
 
       {/* Main Table Content */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
         <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-left border-collapse whitespace-nowrap">
             <thead>
-              <tr className="bg-slate-50/80 border-b border-slate-200">
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Lead ID</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Customer</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Source</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Status</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Added By</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider">Created</th>
-                <th className="py-4 px-6 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider text-right">Actions</th>
+              <tr className="bg-slate-50/80 border-b border-slate-200 whitespace-nowrap">
+                <th className="py-3.5 px-5 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap">Lead ID</th>
+                <th className="py-3.5 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap">Customer</th>
+                <th className="py-3.5 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap">Zone</th>
+                <th className="py-3.5 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap">Source</th>
+                <th className="py-3.5 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap">Status</th>
+                <th className="py-3.5 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap">Added By</th>
+                <th className="py-3.5 px-4 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider whitespace-nowrap">Created</th>
+                <th className="py-3.5 px-5 text-[11px] font-extrabold text-slate-500 uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredLeads.map((lead) => (
-                <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group">
-                  <td className="py-4 px-6"><span className="text-[13px] font-bold text-slate-700">{lead.leadId}</span></td>
-                  <td className="py-4 px-6">
-                    <div className="flex items-center gap-3">
-                      <img src={lead.avatar} alt={lead.name} className="w-8 h-8 rounded-full border border-slate-200" />
-                      <div>
-                        <p className="text-[13px] font-bold text-slate-800">{lead.name}</p>
-                        <p className="text-[11px] font-medium text-slate-500">{lead.mobile}</p>
-                      </div>
+              {filteredLeads.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((lead) => (
+                <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group whitespace-nowrap">
+                  <td className="py-3.5 px-5 whitespace-nowrap">
+                    <span className="text-[13px] font-bold text-slate-700">{lead.leadId}</span>
+                  </td>
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <div className="flex items-center gap-2">
+                      <img src={lead.avatar} alt={lead.name} className="w-7 h-7 rounded-full border border-slate-200 shrink-0" />
+                      <span className="text-[13px] font-bold text-slate-800">{lead.name}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-[11px] font-medium text-slate-500">{lead.mobile}</span>
                     </div>
                   </td>
-                  <td className="py-4 px-6">
-                    <p className="text-[13px] font-bold text-slate-700">{lead.source}</p>
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <span className="text-[11px] font-extrabold px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 whitespace-nowrap">
+                      {lead.zone || 'NORTH'}
+                    </span>
                   </td>
-                  <td className="py-4 px-6">
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <span className="text-[12px] font-bold text-slate-700 whitespace-nowrap">{lead.source}</span>
+                  </td>
+                  <td className="py-3.5 px-4 whitespace-nowrap">
                     {getStatusBadge(lead.status)}
                   </td>
-                  <td className="py-4 px-6">
-                    <div className="text-sm font-medium text-slate-800">{lead.createdByName || 'System'}</div>
-                    <div className="text-[12px] text-slate-500 capitalize">{lead.createdByRole || 'Admin'}</div>
+                  <td className="py-3.5 px-4 whitespace-nowrap">
+                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                      <span className="text-xs font-semibold text-slate-800">{lead.createdByName || 'System'}</span>
+                      <span className="text-slate-300">•</span>
+                      <span className="text-[11px] text-slate-500 capitalize bg-slate-100 px-1.5 py-0.5 rounded font-medium">{lead.createdByRole || 'Admin'}</span>
+                    </div>
                   </td>
-                  <td className="py-4 px-6 text-sm text-slate-600">
+                  <td className="py-3.5 px-4 text-xs text-slate-600 whitespace-nowrap">
                     {lead.createdOn || lead.createdAt}
                   </td>
-                  <td className="py-4 px-6 text-right">
-                    <div className="flex items-center justify-end gap-2 transition-opacity">
-                      {(lead.status === 'New' || lead.status === 'Unassigned' || lead.status === 'Rejected') && (
+                  <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                    <div className="flex items-center justify-end gap-1.5">
+                      {/* Only show Assign Lead button to Non-Sales users */}
+                      {!isSalesRole && (lead.status === 'New' || lead.status === 'Unassigned' || lead.status === 'Rejected') && (
                         <button 
                           onClick={() => openAssignModal(lead)}
-                          className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors tooltip-trigger" 
+                          className="p-1.5 text-slate-400 hover:text-blue-500 hover:bg-blue-50 rounded transition-colors tooltip-trigger shrink-0" 
                           title="Assign Lead"
                         >
                           <UserCheck size={16} strokeWidth={2.5} />
                         </button>
                       )}
-                      <Link to={`/leads/${lead.id}`} className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded transition-colors tooltip-trigger" title="View Details">
+                      <Link to={`/leads/${lead.id}`} className="p-1.5 text-slate-400 hover:text-[#489b0d] hover:bg-[#489b0d]/10 rounded transition-colors tooltip-trigger shrink-0" title="View Details">
                         <Eye size={16} strokeWidth={2.5} />
                       </Link>
                     </div>
@@ -332,6 +363,15 @@ export default function ManageLeads() {
             </div>
           )}
         </div>
+
+        {/* Table Pagination */}
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={filteredLeads.length}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => setPageSize(size)}
+        />
       </div>
 
       {/* Assign Modal */}

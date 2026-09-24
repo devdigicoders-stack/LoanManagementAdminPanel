@@ -24,7 +24,12 @@ const tc = {
 };
 
 export default function AgentDashboard() {
+  const rawRole = (localStorage.getItem('userRole') || '').trim().toLowerCase();
+  const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+  const isReadOnlyAdmin = ['superadmin', 'admin', 'administrator', 'super_admin'].includes(cleanRole) || rawRole.includes('super admin') || rawRole === 'admin';
+
   const name = localStorage.getItem(`adminName_${localStorage.getItem("userRole")}`) || "Field Agent";
+  const [selectedZone, setSelectedZone] = useState('ALL');
   const [visitStats, setVisitStats] = useState({ total: 0, scheduled: 0, completed: 0 });
   const [leadsCount, setLeadsCount] = useState(0);
   const [recentVisits, setRecentVisits] = useState([]);
@@ -32,20 +37,21 @@ export default function AgentDashboard() {
 
   useEffect(() => {
     fetchAgentData();
-  }, []);
+  }, [selectedZone]);
 
   const fetchAgentData = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
+      const zoneParam = selectedZone !== 'ALL' ? `?zone=${selectedZone}` : '';
       const [vStatsRes, visitsRes, leadsRes] = await Promise.all([
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/visits/stats`, {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/visits/stats${zoneParam}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/visits`, {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/visits${zoneParam}`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch(`${import.meta.env.VITE_API_BASE_URL}/leads?unassigned=false`, {
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/leads?unassigned=false${selectedZone !== 'ALL' ? `&zone=${selectedZone}` : ''}`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -60,7 +66,7 @@ export default function AgentDashboard() {
       }
       if (leadsRes.ok) {
         const lList = await leadsRes.json();
-        setLeadsCount(lList.length);
+        setLeadsCount(Array.isArray(lList) ? lList.length : 0);
       }
     } catch (err) {
       console.error(err);
@@ -105,11 +111,40 @@ export default function AgentDashboard() {
     <div className="space-y-6 w-full" style={{ color: tc.text }}>
       
       {/* Header */}
-      <div>
-        <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Field Agent Command Center</h1>
-        <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>
-          Welcome back, <strong>{name}</strong> — Live physical verification, address checks and document pickup from MongoDB.
-        </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[20px] font-black" style={{ color: tc.text }}>Field Agent Operations & Visits</h1>
+            {isReadOnlyAdmin && (
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                Track & Monitor Only
+              </span>
+            )}
+          </div>
+          <p className="text-[12px] mt-0.5" style={{ color: tc.muted }}>
+            {isReadOnlyAdmin 
+              ? "Live tracking of all physical verifications, site inspections, and document pickups across all zones." 
+              : `Welcome back, ${name} — Live physical verification, address checks and document pickup from MongoDB.`}
+          </p>
+        </div>
+
+        {/* Zone Selector Buttons */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-bold text-slate-500">Zone:</span>
+          {['ALL', 'NORTH', 'SOUTH', 'EAST', 'WEST', 'CENTRAL'].map(z => (
+            <button
+              key={z}
+              onClick={() => setSelectedZone(z)}
+              className={`px-3 py-1.5 text-xs font-bold rounded-xl transition ${
+                selectedZone === z
+                  ? 'bg-[#1e7ba8] text-white shadow-sm'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              {z}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -136,16 +171,18 @@ export default function AgentDashboard() {
         })}
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        {quickActions.map((qa, i) => (
-          <Link key={i} to={qa.path}
-            className="px-4 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity"
-            style={{ background: qa.bg, color: qa.col }}>
-            {qa.label} <ChevronRight size={14} />
-          </Link>
-        ))}
-      </div>
+      {/* Quick Actions (only for field agents, not read-only admin) */}
+      {!isReadOnlyAdmin && (
+        <div className="flex flex-wrap gap-3">
+          {quickActions.map((qa, i) => (
+            <Link key={i} to={qa.path}
+              className="px-4 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity"
+              style={{ background: qa.bg, color: qa.col }}>
+              {qa.label} <ChevronRight size={14} />
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Chart */}
       <div className="rounded-2xl p-5" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>

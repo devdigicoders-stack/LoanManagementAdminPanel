@@ -23,6 +23,7 @@ import {
   UserPlus,
   CircleDollarSign,
   AlertCircle,
+  AlertTriangle,
   FileCheck,
   MapPin,
   CreditCard,
@@ -113,18 +114,52 @@ export default function Sidebar({ isOpen, setIsOpen }) {
     const isHrExecutive = ['hrexecutive', 'hr_executive', 'hrexec', 'executive'].includes(cleanRole) || rawRole.includes('hr executive') || cleanRole.includes('executive');
     const isHrAdmin = ['hradmin', 'hr_admin'].includes(cleanRole) || rawRole.includes('hr admin');
     const isOps = ['operationadmin', 'operation_admin', 'operations', 'operation'].includes(cleanRole) || rawRole.includes('operation');
+    const isSalesHead = cleanRole.includes('saleshead') || rawRole.includes('sales head');
+    const isRrm = cleanRole === 'rrm' || rawRole.includes('rrm') || rawRole.includes('regional');
+    const isArm = cleanRole === 'arm' || rawRole.includes('arm') || rawRole.includes('area');
+    const isRm = cleanRole === 'rm' || rawRole.includes('reporting manager');
+    const isRo = cleanRole === 'ro' || cleanRole === 're' || rawRole.includes('relationship officer') || rawRole.includes('relationship executive');
+    const isTelecaller = cleanRole.includes('tele') || rawRole.includes('telecaller') || rawRole.includes('calling');
 
     // ── SUPER ADMIN & MASTER ADMIN ────────────────────────────────────
     if (isSuperAdmin || isAdmin) {
+      const salesHeadItems = [
+        { name: "Sales Dashboard", icon: ShieldAlert, path: "/sales/dashboard" },
+        {
+          name: "File Approvals",
+          icon: ShieldCheck,
+          path: "/sales/file-approvals",
+          badge: "Approval",
+          badgeColor: "bg-amber-100 text-amber-800 border border-amber-300 font-bold"
+        },
+        {
+          name: "Bank Submissions",
+          icon: Building2,
+          path: "/sales/bank-submissions",
+          badge: "5 Banks",
+          badgeColor: "bg-sky-100 text-sky-800 border border-sky-300 font-bold"
+        },
+        {
+          name: "Hold Cases",
+          icon: AlertTriangle,
+          path: "/sales/hold-escalations",
+          badge: "Hold Alert",
+          badgeColor: "bg-rose-100 text-rose-700 border border-rose-300 font-bold"
+        },
+        {
+          name: "Request Staff Hiring",
+          icon: UserPlus,
+          path: "/sales/hiring-requests",
+          badge: "HR",
+          badgeColor: "bg-emerald-100 text-emerald-800 border border-emerald-300"
+        },
+      ];
+
       const coreItems = [
         { name: "Customers", icon: Users, path: "/customers", badge: "Borrowers" },
         { name: "All Leads", icon: Target, path: "/leads", badge: "Leads" },
-        { name: "Loan Applications", icon: FileText, path: "/loans", badge: "Loans" },
-        { name: "Document Desk", icon: FileCheck, path: "/loans/documents" },
-        { name: "Active Loans", icon: FileText, path: "/loans/active" },
-        { name: "EMI Collections", icon: CircleDollarSign, path: "/loans/collections" },
+        { name: "Loan Applications", icon: FileText, path: "/loans", badge: "All Views" },
         { name: "Disbursals & Finance", icon: CreditCard, path: "/accountant", badge: "Finance" },
-        { name: "Loan Offers", icon: CircleDollarSign, path: "/offers", badge: "Offers" },
       ];
 
       const hrItems = [
@@ -133,15 +168,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
         { name: "Recruitment", icon: UserPlus, path: "/hr/recruitment" },
         { name: "Onboarding", icon: UserCheck, path: "/hr/onboarding" },
         { name: "Attendance", icon: ListChecks, path: "/employees/attendance" },
-        { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
-        { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" },
         { name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" },
-      ];
-
-      const portalItems = [
-        { name: "Operations LOS", icon: ShieldAlert, path: "/operations/dashboard", badge: "LOS" },
-        { name: "Telecaller Portal", icon: PhoneCall, path: "/telecaller" },
-        { name: "Field Agent Portal", icon: MapPin, path: "/agent" },
       ];
 
       const adminItems = [
@@ -157,10 +184,211 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           title: "",
           items: [{ name: "Dashboard", icon: LayoutDashboard, path: "/" }],
         },
+        { title: "SALES HEAD COMMAND", items: salesHeadItems },
         { title: "CORE WORKFLOWS", items: coreItems },
         { title: "HR & EMPLOYEES", items: hrItems },
-        { title: "PORTALS & FIELD", items: portalItems },
         { title: "MANAGEMENT & CONTROLS", items: adminItems },
+        {
+          title: "ACCOUNT",
+          items: [
+            { name: "My Profile", icon: User, path: "/profile" },
+            { name: "Change Password", icon: Lock, path: "/change-password" },
+            { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          ],
+        },
+      ];
+    }
+
+    // ── 1. RRM / REGIONAL REPORTING MANAGER / SALES HEAD ──────────────
+    if (isSalesHead || isRrm) {
+      const rrmCommandItems = [
+        { name: "Sales Dashboard", icon: ShieldAlert, path: "/sales/dashboard" },
+        {
+          name: "File Approvals",
+          icon: ShieldCheck,
+          path: "/sales/file-approvals",
+          badge: "Approval",
+          badgeColor: "bg-amber-100 text-amber-800 border border-amber-300 font-bold"
+        },
+        {
+          name: "Bank Submissions",
+          icon: Building2,
+          path: "/sales/bank-submissions",
+          badge: "5 Banks",
+          badgeColor: "bg-sky-100 text-sky-800 border border-sky-300 font-bold"
+        },
+        {
+          name: "Hold Cases",
+          icon: AlertTriangle,
+          path: "/sales/hold-escalations",
+          badge: "Hold Alert",
+          badgeColor: "bg-rose-100 text-rose-700 border border-rose-300 font-bold"
+        },
+      ];
+
+      const rrmPipelineItems = [
+        { name: "All Regional Leads", icon: Target, path: "/leads", badge: "Leads" },
+        { name: "Team Attendance", icon: ListChecks, path: "/employees/attendance" },
+      ];
+
+      const rrmHrItems = [
+        {
+          name: "Request Staff Hiring",
+          icon: UserPlus,
+          path: "/sales/hiring-requests",
+          badge: "To HR",
+          badgeColor: "bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold"
+        },
+        { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" },
+      ];
+
+      return [
+        { title: "ZONAL & BANK COMMAND", items: rrmCommandItems },
+        { title: "PIPELINE & ZONAL TEAM", items: rrmPipelineItems },
+        { title: "HR & HIRING DEMAND", items: rrmHrItems },
+        {
+          title: "ACCOUNT",
+          items: [
+            { name: "My Profile", icon: User, path: "/profile" },
+            { name: "Change Password", icon: Lock, path: "/change-password" },
+            { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          ],
+        },
+      ];
+    }
+
+    // ── 2. ARM / AREA REPORTING MANAGER ──────────────────────────────
+    if (isArm) {
+      const armCommandItems = [
+        { name: "Area Dashboard", icon: ShieldAlert, path: "/sales/arm-dashboard" },
+        {
+          name: "Hold Cases Radar",
+          icon: AlertTriangle,
+          path: "/sales/hold-escalations",
+          badge: "Hold Alert",
+          badgeColor: "bg-rose-100 text-rose-700 border border-rose-300 font-bold"
+        },
+        {
+          name: "Bank Submissions",
+          icon: Building2,
+          path: "/sales/bank-submissions",
+          badge: "View Only",
+          badgeColor: "bg-slate-100 text-slate-700 border border-slate-300 font-bold"
+        },
+      ];
+
+      const armPipelineItems = [
+        { name: "Area Leads", icon: Target, path: "/leads", badge: "Live" },
+        { name: "Team Attendance", icon: ListChecks, path: "/employees/attendance" },
+      ];
+
+      const armHrItems = [
+        {
+          name: "Request Team Hiring",
+          icon: UserPlus,
+          path: "/sales/hiring-requests",
+          badge: "Demand",
+          badgeColor: "bg-indigo-100 text-indigo-800 border border-indigo-300 font-bold"
+        },
+        { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" },
+      ];
+
+      return [
+        { title: "AREA COMMAND & SUPERVISION", items: armCommandItems },
+        { title: "AREA PIPELINE & TEAMS", items: armPipelineItems },
+        { title: "STAFFING & LEAVES", items: armHrItems },
+        {
+          title: "ACCOUNT",
+          items: [
+            { name: "My Profile", icon: User, path: "/profile" },
+            { name: "Change Password", icon: Lock, path: "/change-password" },
+            { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          ],
+        },
+      ];
+    }
+
+    // ── 3. RM / REPORTING MANAGER ────────────────────────────────────
+    if (isRm) {
+      const rmReviewItems = [
+        { name: "RM Dashboard", icon: LayoutDashboard, path: "/sales/rm-dashboard" },
+        {
+          name: "Lead Review Desk",
+          icon: Target,
+          path: "/sales/rm-lead-review",
+          badge: "Review",
+          badgeColor: "bg-blue-100 text-blue-800 border border-blue-300 font-bold"
+        },
+        {
+          name: "Hold Escalation Radar",
+          icon: AlertTriangle,
+          path: "/sales/hold-escalations",
+          badge: "HOLD",
+          badgeColor: "bg-rose-100 text-rose-700 border border-rose-300 font-bold"
+        },
+      ];
+
+      const rmWorkItems = [
+        {
+          name: "Telecaller Follow-ups",
+          icon: PhoneCall,
+          path: "/sales/rm-telecaller-desk",
+          badge: "Calling",
+          badgeColor: "bg-amber-100 text-amber-800 border border-amber-300 font-bold"
+        },
+        { name: "Team Attendance", icon: ListChecks, path: "/employees/attendance" },
+      ];
+
+      const rmAccountItems = [
+        { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" },
+      ];
+
+      return [
+        { title: "RM COMMAND CENTER", items: rmReviewItems },
+        { title: "TELECALLER & FIELD DESK", items: rmWorkItems },
+        { title: "MY ATTENDANCE", items: rmAccountItems },
+        {
+          title: "ACCOUNT",
+          items: [
+            { name: "My Profile", icon: User, path: "/profile" },
+            { name: "Change Password", icon: Lock, path: "/change-password" },
+            { name: "Logout", icon: LogOut, path: "/login", isDanger: true },
+          ],
+        },
+      ];
+    }
+
+    // ── 4. TELECALLER PORTAL (Strict Clean Single-Window Workflow) ──────────
+    if (isTelecaller) {
+      const telecallerCoreItems = [
+        { 
+          name: "Telecaller Calling Desk", 
+          icon: PhoneCall, 
+          path: "/telecaller",
+          badge: "Live Desk",
+          badgeColor: "bg-purple-100 text-purple-800 border border-purple-300 font-bold"
+        },
+        {
+          name: "Call Follow-ups",
+          icon: CalendarRange,
+          path: "/telecaller/followups",
+        },
+        { 
+          name: "Customer Documents", 
+          icon: FileCheck, 
+          path: "/telecaller/documents" 
+        },
+      ];
+
+      const telecallerAccountItems = [
+        { name: "My Attendance", icon: ListChecks, path: "/employees/attendance" },
+        { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" },
+        { name: "My Performance", icon: BarChart3, path: "/telecaller/my-performance" },
+      ];
+
+      return [
+        { title: "TELECALLER WORKSPACE", items: telecallerCoreItems },
+        { title: "MY ATTENDANCE & HR", items: telecallerAccountItems },
         {
           title: "ACCOUNT",
           items: [
@@ -185,14 +413,9 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           ? [{ name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" }] : []),
         ...(hasPermission('Attendance')
           ? [{ name: "Attendance", icon: ListChecks, path: "/employees/attendance" }] : []),
-        ...(hasPermission('Leave Management')
+        ...(hasPermission('Leave Management') || hasPermission('My Leaves')
           ? [
-              ...(isHrExecutive ? [
-                { name: "My Leaves", icon: CalendarRange, path: "/employees/leave-management" }
-              ] : [
-                { name: "Leave Management", icon: CalendarRange, path: "/employees/leave-management" },
-                { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" }
-              ])
+              { name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" }
             ] : []),
         ...(hasPermission('Payroll & Salary')
           ? [{ name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" }] : []),
@@ -205,8 +428,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
           ? [{ name: "Team & Staff", icon: UserCheck, path: "/users" }] : []),
         ...(canManagePermissions && (hasPermission('Permission Management') || hasPermission('Role & Permission Management') || isHrHead || isHrManager)
           ? [
-              { name: "HR Permissions", icon: ShieldCheck, path: "/users/hr-permissions" }
-            ] : []),
+            { name: "HR Permissions", icon: ShieldCheck, path: "/users/hr-permissions" }
+          ] : []),
         ...(hasPermission('Reports & Analytics')
           ? [{ name: isHrExecutive ? "My Activity Report" : "HR Reports & Analytics", icon: BarChart3, path: "/hr/reports" }] : []),
         ...(hasPermission('Notifications')
@@ -231,33 +454,37 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       ];
     }
 
-    // ── OPERATIONS ADMIN ──────────────────────────────────────────────
+    // ── OPERATIONS ADMIN / OPERATION MANAGER ─────────────────────────
     if (isOps) {
       const opsItems = [
-        { name: "Operations Dashboard", icon: ShieldAlert, path: "/operations/dashboard" },
-        { name: "Applications Queue", icon: FileText, path: "/loans" },
-        { name: "Document Verification", icon: FileCheck, path: "/loans/documents" },
-        { name: "Verification Desk", icon: ShieldCheck, path: "/operations/verification" },
-        { name: "Follow-Up Desk", icon: ListChecks, path: "/operations/follow-ups" },
-        { name: "Active Running Loans", icon: FileText, path: "/loans/active" },
-        { name: "EMI Collections", icon: CircleDollarSign, path: "/loans/collections" },
-        { name: "Overdue & NPA", icon: AlertCircle, path: "/loans/overdue" },
-      ];
-
-      const opsExtra = [
-        { name: "Customers", icon: Users, path: "/customers" },
-        { name: "All Leads", icon: Target, path: "/leads" },
-        { name: "Reports & Analytics", icon: BarChart3, path: "/hr/reports" },
-        { name: "Announcements", icon: Bell, path: "/notifications" },
+        { 
+          name: "Operations Dashboard", 
+          icon: LayoutDashboard, 
+          path: "/operations/dashboard",
+          badge: "All Zones",
+          badgeColor: "bg-sky-100 text-sky-800 border border-sky-300 font-bold"
+        },
+        { 
+          name: "Verify & Forward Desk", 
+          icon: ShieldCheck, 
+          path: "/operations/verification",
+          badge: "21 Lenders",
+          badgeColor: "bg-emerald-100 text-emerald-800 border border-emerald-300 font-bold"
+        },
+        { 
+          name: "Bank Submissions & Tracking", 
+          icon: Building2, 
+          path: "/sales/bank-submissions",
+          badge: "Live Status",
+          badgeColor: "bg-amber-100 text-amber-800 border border-amber-300 font-bold"
+        },
       ];
 
       return [
         {
-          title: "",
-          items: [{ name: "Operations LOS", icon: LayoutDashboard, path: "/" }],
+          title: "OPERATIONS COMMAND",
+          items: opsItems,
         },
-        { title: "OPERATIONS & LOS", items: opsItems },
-        { title: "CRM & REPORTING", items: opsExtra },
         {
           title: "ACCOUNT",
           items: [
@@ -315,7 +542,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
       ...(items.recruitment ? [{ name: "Recruitment", icon: Users, path: "/hr/recruitment" }] : []),
       ...(items.onboarding ? [{ name: "Onboarding", icon: UserPlus, path: "/hr/onboarding" }] : []),
       ...(items.attendance ? [{ name: "Attendance", icon: ListChecks, path: "/employees/attendance" }] : []),
-      ...(items.leaveManagement ? [{ name: "Leave Requests", icon: CalendarRange, path: "/employees/leave-management" }] : []),
+      ...(items.leaveManagement ? [{ name: "My Leaves", icon: CalendarCheck, path: "/employees/leave-management?tab=my-leaves" }] : []),
       ...(items.payroll ? [{ name: "Payroll & Salary", icon: CircleDollarSign, path: "/hr/payroll" }] : []),
     ];
 
@@ -450,8 +677,8 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                               size={18}
                               strokeWidth={isAnyChildActive ? 2.5 : 2}
                               className={`shrink-0 ${isAnyChildActive
-                                  ? "text-[var(--color-brand-blue-dark)]"
-                                  : "text-slate-400 group-hover:text-[var(--color-brand-blue-dark)]"
+                                ? "text-[var(--color-brand-blue-dark)]"
+                                : "text-slate-400 group-hover:text-[var(--color-brand-blue-dark)]"
                                 }`}
                             />
                             {isOpen && (
@@ -494,14 +721,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                                     if (window.innerWidth < 1024 && setIsOpen) setIsOpen(false);
                                   }}
                                   className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[12px] font-medium transition-all group/sub ${isSubActive
-                                      ? "bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] font-bold shadow-2xs"
-                                      : "text-slate-600 hover:text-[var(--color-brand-blue-dark)] hover:bg-[var(--color-brand-sky-light)]/40"
+                                    ? "bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] font-bold shadow-2xs"
+                                    : "text-slate-600 hover:text-[var(--color-brand-blue-dark)] hover:bg-[var(--color-brand-sky-light)]/40"
                                     }`}
                                 >
                                   <span
                                     className={`w-1.5 h-1.5 rounded-full transition-all shrink-0 ${isSubActive
-                                        ? "bg-[var(--color-brand-blue-dark)] scale-125"
-                                        : "bg-slate-300 group-hover/sub:bg-[var(--color-brand-blue-dark)]"
+                                      ? "bg-[var(--color-brand-blue-dark)] scale-125"
+                                      : "bg-slate-300 group-hover/sub:bg-[var(--color-brand-blue-dark)]"
                                       }`}
                                   />
                                   <span className="truncate">{sub.name}</span>
@@ -527,7 +754,7 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                         if (window.innerWidth < 1024 && setIsOpen) setIsOpen(false);
                       }}
                       title={!isOpen ? item.name : undefined}
-                      className={`flex items-center px-3 py-2.5 rounded-[10px] transition-all duration-200 group ${isOpen ? 'gap-3' : 'justify-center'
+                      className={`flex items-center px-3 py-2.5 rounded-[10px] transition-all duration-200 group whitespace-nowrap ${isOpen ? 'gap-3' : 'justify-center'
                         } ${isActive
                           ? "bg-[var(--color-brand-sky-light)] text-[var(--color-brand-blue-dark)] shadow-sm border border-[var(--color-brand-border)] font-bold"
                           : "text-[var(--color-brand-text-secondary)] hover:bg-[var(--color-brand-sky-light)]/50 hover:text-[var(--color-brand-blue-dark)]"
@@ -537,14 +764,14 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                         size={18}
                         strokeWidth={isActive ? 2.5 : 2}
                         className={`shrink-0 ${isActive
-                            ? "text-[var(--color-brand-blue-dark)]"
-                            : item.isDanger
-                              ? "text-red-500 group-hover:text-red-600"
-                              : "text-slate-400 group-hover:text-[var(--color-brand-blue-dark)]"
+                          ? "text-[var(--color-brand-blue-dark)]"
+                          : item.isDanger
+                            ? "text-red-500 group-hover:text-red-600"
+                            : "text-slate-400 group-hover:text-[var(--color-brand-blue-dark)]"
                           }`}
                       />
                       <span
-                        className={`text-[13px] font-semibold tracking-wide truncate transition-all duration-300 ${isOpen ? 'opacity-100 w-auto ml-1' : 'opacity-0 w-0 hidden'
+                        className={`text-[13px] font-semibold tracking-wide truncate whitespace-nowrap transition-all duration-300 flex-1 ${isOpen ? 'opacity-100 w-auto ml-1' : 'opacity-0 w-0 hidden'
                           } ${isActive
                             ? "text-[var(--color-brand-blue-dark)]"
                             : item.isDanger
@@ -554,6 +781,12 @@ export default function Sidebar({ isOpen, setIsOpen }) {
                       >
                         {item.name}
                       </span>
+                      {isOpen && item.badge && (
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 whitespace-nowrap ${item.badgeColor || 'bg-blue-100/80 text-blue-700'
+                          }`}>
+                          {item.badge}
+                        </span>
+                      )}
                     </NavLink>
                   );
                 })}

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, RefreshCw, Eye, Edit, ClipboardList, Settings2, Download, CheckCircle2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import TablePagination from '../../components/TablePagination';
 
 const mockApps = [];
 
@@ -8,6 +9,8 @@ const mockApps = [];
 export default function ApplicationManagement() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   
   const getStatusStyle = (status) => {
     switch(status) {
@@ -183,16 +186,13 @@ export default function ApplicationManagement() {
         </div>
         
         {/* Pagination */}
-        <div className="p-4 border-t border-[#D9EAF2] bg-[#FAFCFD] flex justify-between items-center">
-          <p className="text-[12px] font-semibold text-[#667085]">Showing <span className="font-bold text-[#344054]">1 to 7</span> of <span className="font-bold text-[#344054]">842</span> entries</p>
-          <div className="flex gap-1">
-            <button className="px-3 py-1.5 text-[12px] font-bold text-[#667085] border border-[#D9EAF2] rounded-md bg-white hover:bg-[#F0FAFF]">Prev</button>
-            <button className="px-3 py-1.5 text-[12px] font-bold text-white border border-[#8ED3F4] rounded-md bg-[#8ED3F4]">1</button>
-            <button className="px-3 py-1.5 text-[12px] font-bold text-[#667085] border border-[#D9EAF2] rounded-md bg-white hover:bg-[#F0FAFF]">2</button>
-            <button className="px-3 py-1.5 text-[12px] font-bold text-[#667085] border border-[#D9EAF2] rounded-md bg-white hover:bg-[#F0FAFF]">3</button>
-            <button className="px-3 py-1.5 text-[12px] font-bold text-[#667085] border border-[#D9EAF2] rounded-md bg-white hover:bg-[#F0FAFF]">Next</button>
-          </div>
-        </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={mockApps.length}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => setPageSize(size)}
+        />
 
       </div>
     </div>

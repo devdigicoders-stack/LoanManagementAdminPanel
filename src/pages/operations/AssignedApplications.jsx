@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, Filter, Search, ClipboardList, CheckCircle2, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import TablePagination from '../../components/TablePagination';
 
 const mockAssigned = [];
 
@@ -22,6 +23,8 @@ const statusStyle = {
 export default function AssignedApplications() {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   return (
     <div className="w-full bg-[#FAFCFD] min-h-screen p-4 space-y-6 pb-12">
@@ -126,6 +129,13 @@ export default function AssignedApplications() {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={mockAssigned.length}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => setPageSize(size)}
+        />
       </div>
     </div>
   );

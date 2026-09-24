@@ -1,440 +1,588 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  ClipboardList, Hourglass, CheckSquare, XSquare, Search, Phone, Mail, 
-  FileText, CheckCircle2, XCircle, Target, FolderOpen, Loader2, UserCheck, 
-  ExternalLink, Copy, Check
+ ClipboardList, Search, Phone, Mail, CheckCircle2, XCircle, 
+ Target, FolderOpen, Loader2, MessageSquare, CalendarCheck, RefreshCw, 
+ X, Send, UserCheck, ShieldCheck, Clock, Check, Eye
 } from 'lucide-react';
 import SupervisorStaffFilter from '../../components/SupervisorStaffFilter';
 import toast from 'react-hot-toast';
 
 export default function TelecallerDashboard() {
-  const [activeFilter, setActiveFilter] = useState('All Records');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedStaff, setSelectedStaff] = useState('all');
-  const [leads, setLeads] = useState([]);
-  const [pendingOnboardings, setPendingOnboardings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [copiedId, setCopiedId] = useState(null);
+ const rawRole = (localStorage.getItem('userRole') || '').trim().toLowerCase();
+ const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+ const isReadOnlyAdmin = ['superadmin', 'admin', 'administrator', 'super_admin'].includes(cleanRole) || rawRole.includes('super admin') || rawRole === 'admin';
 
-  const [stats, setStats] = useState({
-    totalCreatedLeads: 0,
-    totalAssigned: 0,
-    assignedLeadsCount: 0,
-    assignedLoansCount: 0,
-    convertedLeads: 0,
-    followUpsToday: 0
-  });
+ const [activeFilter, setActiveFilter] = useState('All');
+ const [searchQuery, setSearchQuery] = useState('');
+ const [zoneFilter, setZoneFilter] = useState('ALL');
+ const [selectedStaff, setSelectedStaff] = useState('all');
+ const [leads, setLeads] = useState([]);
+ const [loading, setLoading] = useState(true);
 
-  const name = localStorage.getItem(`adminName_${localStorage.getItem("userRole")}`) || "Telecaller Agent";
+ // Quick Action Modal State (Call, Remarks & Update Status together)
+ const [selectedLead, setSelectedLead] = useState(null);
+ const [modalType, setModalType] = useState(null); // 'call_remarks', 'followup'
+ const [actionStatus, setActionStatus] = useState('Interested');
+ const [actionNotes, setActionNotes] = useState('');
+ const [followupDate, setFollowupDate] = useState('');
+ const [callOutcome, setCallOutcome] = useState('Connected');
+ const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchStats();
-    fetchLiveLeads();
-    fetchPendingOnboardings();
-  }, [selectedStaff]);
+ const name = localStorage.getItem(`adminName_${localStorage.getItem("userRole")}`) || "Telecaller Agent";
 
-  const fetchStats = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const url = selectedStaff && selectedStaff !== 'all'
-        ? `${import.meta.env.VITE_API_BASE_URL}/employees/telecaller-dashboard-stats?employeeId=${selectedStaff}`
-        : `${import.meta.env.VITE_API_BASE_URL}/employees/telecaller-dashboard-stats`;
+ useEffect(() => {
+ fetchLiveLeads();
+ }, [selectedStaff]);
 
-      const res = await fetch(url, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setStats(data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+ const fetchLiveLeads = async () => {
+ try {
+ setLoading(true);
+ const token = localStorage.getItem('token');
+ let url = `${import.meta.env.VITE_API_BASE_URL}/employees/my-leads`;
+ if (selectedStaff && selectedStaff !== 'all') {
+ url += `?employeeId=${selectedStaff}`;
+ }
+ const res = await fetch(url, {
+ headers: { Authorization: `Bearer ${token}` }
+ });
+ if (res.ok) {
+ const data = await res.json();
+ const combined = [
+ ...(data.leads || []).map(l => {
+ const hasCalled = Boolean(l.telecallerConfirmedAt || l.telecallerNotes || (l.followUps && l.followUps.length > 0) || ['Interested', 'Contacted', 'Follow-up', 'Documents Pending', 'Lost', 'Qualified', 'Converted'].includes(l.status));
+ return {
+ _id: l._id,
+ id: l.leadId || l._id,
+ name: l.name,
+ mobile: l.mobile,
+ email: l.email,
+ loanPurpose: l.productSubtype || l.loanPurpose || "Personal Loan",
+ expectedAmount: l.expectedAmount || l.loanAmount || 500000,
+ status: l.status || "New",
+ workflowStage: l.workflowStage || "Field_Lead_Created",
+ isRmApproved: l.workflowStage === 'RM_Telecaller_Review' || ['Contacted', 'Interested', 'Under Review'].includes(l.status),
+ zone: l.zone || "NORTH",
+ rmReviewedBy: l.rmReviewedBy || l.rmName || "Reporting Manager",
+ rmReviewRemarks: l.rmReviewRemarks || "",
+ telecallerName: l.telecallerName || "",
+ remarks: l.telecallerNotes || l.remarks || "",
+ telecallerNotes: l.telecallerNotes || "",
+ telecallerConfirmedAt: l.telecallerConfirmedAt || null,
+ telecallerConfirmedBy: l.telecallerConfirmedBy || "",
+ hasCalled,
+ nextFollowUp: l.nextFollowUp || "-",
+ leadType: 'Lead'
+ };
+ }),
+ ...(data.loanApplications || []).map(a => {
+ const hasCalled = Boolean(a.telecallerConfirmedAt || a.telecallerNotes || ['Interested', 'Contacted', 'Under Review'].includes(a.status));
+ return {
+ _id: a._id,
+ id: a.applicationId || a._id,
+ name: a.customer,
+ mobile: a.mobile,
+ email: a.email,
+ loanPurpose: a.loanType || "Home Loan",
+ expectedAmount: a.amount || 500000,
+ status: a.status || "Pending",
+ workflowStage: a.workflowStage || "RM_Telecaller_Review",
+ isRmApproved: true,
+ zone: "NORTH",
+ remarks: a.telecallerNotes || a.remarks || "",
+ telecallerNotes: a.telecallerNotes || "",
+ telecallerConfirmedAt: a.telecallerConfirmedAt || null,
+ telecallerConfirmedBy: a.telecallerConfirmedBy || "",
+ hasCalled,
+ nextFollowUp: "-",
+ leadType: 'LoanApplication'
+ };
+ })
+ ];
+ setLeads(combined);
+ }
+ } catch (err) {
+ console.error(err);
+ toast.error("Failed to load customer leads");
+ } finally {
+ setLoading(false);
+ }
+ };
 
-  const fetchLiveLeads = async () => {
-    try {
-      setLoading(true);
-      const token = localStorage.getItem('token');
-      let url = `${import.meta.env.VITE_API_BASE_URL}/leads?unassigned=false`;
-      if (selectedStaff && selectedStaff !== 'all') {
-        url += `&assignedToId=${selectedStaff}`;
-      }
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setLeads(data);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to load customer leads");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const openActionModal = (lead, type) => {
+ setSelectedLead(lead);
+ setModalType(type);
+ setActionStatus(lead.status === 'New' ? 'Contacted' : lead.status);
+ setActionNotes(lead.remarks || '');
+ setCallOutcome('Connected');
+ setFollowupDate(new Date(Date.now() + 86400000).toISOString().split('T')[0]);
+ };
 
-  const fetchPendingOnboardings = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      let url = `${import.meta.env.VITE_API_BASE_URL}/employees/pending-onboarding?unassigned=false`;
-      if (selectedStaff && selectedStaff !== 'all') {
-        url += `&assignedTelecallerId=${selectedStaff}`;
-      }
-      const res = await fetch(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setPendingOnboardings(data);
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
+ const closeModal = () => {
+ setSelectedLead(null);
+ setModalType(null);
+ setActionNotes('');
+ setIsSubmitting(false);
+ };
 
-  const handleStatusChange = async (id, isInterested) => {
-    const newStatus = isInterested ? "Qualified" : "Lost";
-    try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${id}/status`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
+ // Submit Call, Notes, Follow-up and Status change directly to Database
+ const handleSaveAction = async (e) => {
+ e.preventDefault();
+ if (!selectedLead) return;
+ if (!actionNotes.trim() && modalType === 'call_remarks') {
+ return toast.error("Please add conversation remarks for Reporting Manager (RM)");
+ }
 
-      if (res.ok) {
-        setLeads(prev => prev.map(lead => 
-          lead._id === id ? { ...lead, status: newStatus } : lead
-        ));
-        toast.success(`Lead marked as ${newStatus} in Database`);
-      } else {
-        toast.error("Failed to update lead status");
-      }
-    } catch (err) {
-      toast.error("Network error updating status");
-    }
-  };
+ try {
+ setIsSubmitting(true);
+ const token = localStorage.getItem('token');
+ const targetId = selectedLead._id;
 
-  const handleCopyOnboardingLink = (empId) => {
-    const link = `${window.location.origin}/onboarding/${empId}`;
-    navigator.clipboard.writeText(link);
-    setCopiedId(empId);
-    toast.success("Candidate onboarding link copied! Share via WhatsApp or SMS.");
-    setTimeout(() => setCopiedId(null), 2500);
-  };
+ // 1. Update Lead Status & Remarks
+ const statusRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${targetId}/status`, {
+ method: "PUT",
+ headers: {
+ "Content-Type": "application/json",
+ Authorization: `Bearer ${token}`
+ },
+ body: JSON.stringify({
+ status: actionStatus,
+ remarks: `[Telecaller Call - ${callOutcome}]: ${actionNotes}`,
+ reason: actionNotes
+ })
+ });
 
-  const filteredLeads = leads.filter(lead => {
-    if (activeFilter === 'Interested' && lead.status !== 'Qualified' && lead.status !== 'Converted') return false;
-    if (activeFilter === 'Not Interested' && lead.status !== 'Lost' && lead.status !== 'Rejected') return false;
-    
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return (lead.name && lead.name.toLowerCase().includes(q)) || 
-             (lead.mobile && lead.mobile.includes(q)) || 
-             (lead.loanPurpose && lead.loanPurpose.toLowerCase().includes(q));
-    }
-    return true;
-  });
+ // 2. If scheduling followup or logging call outcome
+ if (modalType === 'followup' || followupDate) {
+ await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${targetId}/followup`, {
+ method: "POST",
+ headers: {
+ "Content-Type": "application/json",
+ Authorization: `Bearer ${token}`
+ },
+ body: JSON.stringify({
+ type: "Call",
+ scheduledAt: followupDate || new Date().toISOString().split('T')[0],
+ status: "Scheduled",
+ notes: actionNotes || `Followup scheduled for ${actionStatus}`,
+ addedBy: "Telecaller"
+ })
+ });
+ }
 
-  const filteredOnboardings = pendingOnboardings.filter(emp => {
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      return (emp.name && emp.name.toLowerCase().includes(q)) ||
-             (emp.mobile && emp.mobile.includes(q)) ||
-             (emp.email && emp.email.toLowerCase().includes(q));
-    }
-    return true;
-  });
+ if (statusRes.ok) {
+ toast.success(` Lead updated to ${actionStatus} & Remarks recorded for RM!`);
+ setLeads(prev => prev.map(l => 
+ l._id === targetId ? { 
+ ...l, 
+ status: actionStatus, 
+ remarks: actionNotes, 
+ telecallerNotes: actionNotes,
+ hasCalled: true,
+ telecallerConfirmedAt: new Date(),
+ nextFollowUp: followupDate || l.nextFollowUp 
+ } : l
+ ));
+ closeModal();
+ } else {
+ toast.error("Failed to update status");
+ }
+ } catch (err) {
+ toast.error("Server network error");
+ } finally {
+ setIsSubmitting(false);
+ }
+ };
 
-  return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Telecaller Calling Portal</h1>
-          <p className="text-[14px] text-gray-500 mt-1">Live customer calling & candidate onboarding chasers from MongoDB</p>
-        </div>
-        <div className="flex flex-wrap items-center gap-3">
-          <SupervisorStaffFilter onSelectStaff={setSelectedStaff} role="tele" />
-          <div className="flex items-center gap-2 bg-green-50 border border-green-200 text-green-700 px-3 py-1.5 rounded-lg font-medium text-[13px] shadow-sm">
-            <CheckCircle2 size={16} className="text-green-600" />
-            Active: {name}
-          </div>
-        </div>
-      </div>
+ const filteredLeads = leads.filter(lead => {
+ if (zoneFilter !== 'ALL' && (lead.zone || '').toUpperCase() !== zoneFilter) return false;
+ if (activeFilter === 'RM_Approved' && (!lead.isRmApproved || lead.hasCalled)) return false;
+ if (activeFilter === 'Completed' && !lead.hasCalled) return false;
+ if (activeFilter === 'Awaiting_RM' && lead.isRmApproved) return false;
+ if (activeFilter === 'Interested' && lead.status !== 'Interested' && lead.status !== 'Qualified' && lead.status !== 'Converted') return false;
+ if (activeFilter === 'Follow-up' && lead.status !== 'Follow-up') return false;
+ 
+ if (searchQuery) {
+ const q = searchQuery.toLowerCase();
+ return (lead.name && lead.name.toLowerCase().includes(q)) || 
+ (lead.mobile && lead.mobile.includes(q)) || 
+ (lead.id && lead.id.toLowerCase().includes(q)) ||
+ (lead.zone && lead.zone.toLowerCase().includes(q)) ||
+ (lead.loanPurpose && lead.loanPurpose.toLowerCase().includes(q));
+ }
+ return true;
+ });
 
-      {/* Stats Widgets */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <div>
-            <p className="text-[12px] font-bold text-gray-500 mb-1">Total Leads</p>
-            <p className="text-2xl font-bold text-blue-600">{leads.length}</p>
-          </div>
-          <div className="text-gray-400 bg-gray-50 p-2 rounded-lg">
-            <FolderOpen size={22} />
-          </div>
-        </div>
+ const totalLeads = leads.length;
+ const readyToCallCount = leads.filter(l => l.isRmApproved && !l.hasCalled).length;
+ const completedCount = leads.filter(l => l.hasCalled).length;
+ const awaitingRmCount = leads.filter(l => !l.isRmApproved).length;
+ const interestedCount = leads.filter(l => ['Interested', 'Qualified', 'Converted'].includes(l.status)).length;
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <div>
-            <p className="text-[12px] font-bold text-gray-500 mb-1">Qualified Leads</p>
-            <p className="text-2xl font-bold text-purple-600">
-              {leads.filter(l => l.status === 'Qualified').length}
-            </p>
-          </div>
-          <div className="text-gray-400 bg-gray-50 p-2 rounded-lg">
-            <Target size={22} />
-          </div>
-        </div>
+ return (
+ <div className="p-4 md:p-6 max-w-7xl mx-auto space-y-6">
+ {/* Top Header */}
+ <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+ <div>
+ <div className="flex items-center gap-2">
+ <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+ <h1 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">Telecaller Calling Desk</h1>
+ </div>
+ <p className="text-[13px] font-medium text-slate-500 mt-1">
+ Call customers, add verification remarks, and update lead status directly for Reporting Manager (RM).
+ </p>
+ </div>
+ <div className="flex flex-wrap items-center gap-3">
+ <SupervisorStaffFilter onSelectStaff={setSelectedStaff} role="tele" />
+ <div className="flex items-center gap-2 bg-purple-50 border border-purple-200 text-purple-700 px-3.5 py-1.5 rounded-xl font-bold text-[13px] shadow-xs">
+ <UserCheck size={16} className="text-purple-600" />
+ {name}
+ </div>
+ </div>
+ </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-          <div>
-            <p className="text-[12px] font-bold text-gray-500 mb-1">Converted Loans</p>
-            <p className="text-2xl font-bold text-green-600">
-              {leads.filter(l => l.status === 'Converted').length}
-            </p>
-          </div>
-          <div className="text-gray-400 bg-gray-50 p-2 rounded-lg">
-            <CheckSquare size={22} />
-          </div>
-        </div>
+ {/* Metric Cards */}
+ {/* Metric Cards - Clean & Focused */}
+ <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+ <div 
+ onClick={() => setActiveFilter('RM_Approved')}
+ className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${activeFilter === 'RM_Approved' ? 'bg-emerald-600 text-white border-emerald-600 shadow-md scale-[1.02]' : 'bg-white border-slate-200 text-slate-800 hover:border-emerald-300'}`}
+ >
+ <div className="flex justify-between items-center mb-1">
+ <span className={`text-[12px] font-bold ${activeFilter === 'RM_Approved' ? 'text-emerald-200' : 'text-emerald-700'}`}>Ready to Call (Assigned by RM)</span>
+ <Phone size={18} className={activeFilter === 'RM_Approved' ? 'text-white' : 'text-emerald-600'} />
+ </div>
+ <div className="text-2xl font-black">{readyToCallCount}</div>
+ <p className={`text-[11px] mt-1 font-medium ${activeFilter === 'RM_Approved' ? 'text-emerald-100' : 'text-slate-400'}`}>Pending customer call & remarks</p>
+ </div>
 
-        <div className="bg-white border border-amber-200 rounded-xl p-4 flex items-center justify-between shadow-sm bg-amber-50/20">
-          <div>
-            <p className="text-[12px] font-bold text-amber-700 mb-1">Onboarding Chasers</p>
-            <p className="text-2xl font-bold text-amber-600">
-              {pendingOnboardings.filter(e => e.onboardingStatus !== 'Done').length}
-            </p>
-          </div>
-          <div className="text-amber-600 bg-amber-100 p-2 rounded-lg">
-            <UserCheck size={22} />
-          </div>
-        </div>
-      </div>
+ <div 
+ onClick={() => setActiveFilter('Completed')}
+ className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${activeFilter === 'Completed' ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-[1.02]' : 'bg-white border-slate-200 text-slate-800 hover:border-blue-300'}`}
+ >
+ <div className="flex justify-between items-center mb-1">
+ <span className={`text-[12px] font-bold ${activeFilter === 'Completed' ? 'text-blue-200' : 'text-blue-700'}`}>Done / Handed Over</span>
+ <CheckCircle2 size={18} className={activeFilter === 'Completed' ? 'text-white' : 'text-blue-600'} />
+ </div>
+ <div className="text-2xl font-black">{completedCount}</div>
+ <p className={`text-[11px] mt-1 font-medium ${activeFilter === 'Completed' ? 'text-blue-100' : 'text-slate-400'}`}>Remarks submitted & synced to RM</p>
+ </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-2">
-        <button 
-          onClick={() => setActiveFilter('All Records')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-bold transition-colors shadow-sm ${activeFilter === 'All Records' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
-        >
-          <ClipboardList size={14} /> Customer Leads ({leads.length})
-        </button>
-        <button 
-          onClick={() => setActiveFilter('Interested')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-bold transition-colors shadow-sm ${activeFilter === 'Interested' ? 'bg-green-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
-        >
-          <CheckSquare size={14} className={activeFilter === 'Interested' ? 'text-white' : 'text-green-500'} /> Interested Leads
-        </button>
-        <button 
-          onClick={() => setActiveFilter('Not Interested')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-bold transition-colors shadow-sm ${activeFilter === 'Not Interested' ? 'bg-red-600 text-white' : 'bg-white border border-gray-200 text-gray-700'}`}
-        >
-          <XSquare size={14} className={activeFilter === 'Not Interested' ? 'text-white' : 'text-gray-400'} /> Lost / Dropped
-        </button>
-        <button 
-          onClick={() => setActiveFilter('Onboardings')}
-          className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-[12px] font-bold transition-colors shadow-sm ${activeFilter === 'Onboardings' ? 'bg-amber-600 text-white' : 'bg-amber-50 border border-amber-300 text-amber-800'}`}
-        >
-          <UserCheck size={14} className={activeFilter === 'Onboardings' ? 'text-white' : 'text-amber-600'} /> 
-          Candidate Onboarding Chasers ({pendingOnboardings.length})
-        </button>
-      </div>
+ <div 
+ onClick={() => setActiveFilter('All')}
+ className={`p-4 rounded-2xl border transition-all cursor-pointer shadow-xs ${activeFilter === 'All' ? 'bg-purple-600 text-white border-purple-600 shadow-md scale-[1.02]' : 'bg-white border-slate-200 text-slate-800 hover:border-purple-300'}`}
+ >
+ <div className="flex justify-between items-center mb-1">
+ <span className={`text-[12px] font-bold ${activeFilter === 'All' ? 'text-purple-200' : 'text-slate-500'}`}>All Assigned Leads</span>
+ <FolderOpen size={18} className={activeFilter === 'All' ? 'text-white' : 'text-slate-400'} />
+ </div>
+ <div className="text-2xl font-black">{totalLeads}</div>
+ <p className={`text-[11px] mt-1 font-medium ${activeFilter === 'All' ? 'text-purple-100' : 'text-slate-400'}`}>Total assigned leads across all zones</p>
+ </div>
+ </div>
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-        <input 
-          type="text" 
-          placeholder={activeFilter === 'Onboardings' ? "Search candidate name, phone or email..." : "Search customer name, phone, loan purpose..."}
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:border-blue-500 shadow-sm"
-        />
-      </div>
+ {/* Filter Tabs & Search Bar */}
+ <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row justify-between items-center gap-4">
+ <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
+ {[
+ { id: 'RM_Approved', label: ` Ready to Call (${readyToCallCount})` },
+ { id: 'Completed', label: ` Done / Handed Over (${completedCount})` },
+ { id: 'All', label: `All Assigned (${leads.length})` },
+ ].map(tab => (
+ <button
+ key={tab.id}
+ onClick={() => setActiveFilter(tab.id)}
+ className={`px-3.5 py-1.5 rounded-xl text-[12px] font-bold transition-all ${
+ activeFilter === tab.id
+ ? 'bg-slate-900 text-white shadow-xs'
+ : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+ }`}
+ >
+ {tab.label}
+ </button>
+ ))}
+ </div>
 
-      {/* Table: Conditional based on active tab */}
-      {activeFilter === 'Onboardings' ? (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-          <div className="p-4 bg-amber-50/50 border-b border-amber-100 flex justify-between items-center">
-            <div>
-              <h3 className="text-sm font-bold text-amber-900">Hired Candidates Pending Onboarding Form</h3>
-              <p className="text-xs text-amber-700">Call candidates to guide them in submitting their KYC & Bank details.</p>
-            </div>
-            <span className="text-xs font-bold text-amber-800 bg-amber-100 px-3 py-1 rounded-full">
-              {pendingOnboardings.filter(e => e.onboardingStatus !== 'Done').length} Pending Action
-            </span>
-          </div>
+ <div className="flex items-center gap-3 w-full md:w-auto">
+ {/* Zone Selector Filter */}
+ <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
+ <span className="text-[11px] font-bold text-slate-500 uppercase">Zone:</span>
+ <select
+ value={zoneFilter}
+ onChange={(e) => setZoneFilter(e.target.value)}
+ className="bg-transparent text-[12px] font-extrabold text-purple-900 outline-none cursor-pointer"
+ >
+ <option value="ALL">All Zones (Pan-India)</option>
+ <option value="NORTH">North Zone</option>
+ <option value="SOUTH">South Zone</option>
+ <option value="EAST">East Zone</option>
+ <option value="WEST">West Zone</option>
+ <option value="CENTRAL">Central Zone</option>
+ </select>
+ </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/50 text-[12px] font-bold text-gray-500 uppercase">
-                  <th className="py-4 px-6">Candidate Name</th>
-                  <th className="py-4 px-6">Designation / Role</th>
-                  <th className="py-4 px-6">Contact Number</th>
-                  <th className="py-4 px-6">Onboarding Status</th>
-                  <th className="py-4 px-6 text-center">Quick Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {filteredOnboardings.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-400 text-sm">
-                      No pending candidate onboardings assigned.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredOnboardings.map((emp) => (
-                    <tr key={emp._id} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-gray-900 text-sm">{emp.name}</div>
-                        <div className="text-xs text-gray-400">{emp.email}</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="font-semibold text-gray-800 text-sm">{emp.designation}</span>
-                        <div className="text-xs text-gray-400">{emp.division || 'Operations'}</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <a href={`tel:${emp.mobile}`} className="font-mono text-sm text-blue-600 hover:underline flex items-center gap-1.5 font-bold">
-                          <Phone size={13} /> {emp.mobile || 'No phone'}
-                        </a>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                          emp.onboardingStatus === 'Done' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
-                        }`}>
-                          {emp.onboardingStatus === 'Done' ? '✓ Completed' : 'Pending Submission'}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => handleCopyOnboardingLink(emp._id)}
-                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-xs flex items-center gap-1.5 transition-colors"
-                            title="Copy Form Link to WhatsApp/SMS"
-                          >
-                            {copiedId === emp._id ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-                            {copiedId === emp._id ? 'Copied Link' : 'Copy Form Link'}
-                          </button>
-                          <a
-                            href={`/onboarding/${emp._id}`}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-gray-100 rounded-lg"
-                            title="Open Form"
-                          >
-                            <ExternalLink size={15} />
-                          </a>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-200 bg-gray-50/50 text-[12px] font-bold text-gray-500 uppercase">
-                  <th className="py-4 px-6">Customer</th>
-                  <th className="py-4 px-6">Loan Purpose</th>
-                  <th className="py-4 px-6">Expected Amount</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6 text-center">Interest Decision</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-gray-400">
-                      <Loader2 size={24} className="animate-spin mx-auto mb-2 text-blue-600" />
-                      Loading live leads...
-                    </td>
-                  </tr>
-                ) : filteredLeads.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-8 text-center text-gray-400 text-sm">
-                      No leads match your filter.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredLeads.map((lead) => (
-                    <tr key={lead._id} className="hover:bg-gray-50/80 transition-colors">
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-gray-900 text-sm">{lead.name}</div>
-                        <div className="flex items-center gap-3 text-xs text-gray-500 mt-1">
-                          <a href={`tel:${lead.mobile}`} className="flex items-center gap-1 hover:text-blue-600">
-                            <Phone size={12} /> {lead.mobile}
-                          </a>
-                          {lead.email && (
-                            <span className="flex items-center gap-1">
-                              <Mail size={12} /> {lead.email}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className="font-semibold text-gray-800 text-sm">{lead.loanPurpose}</span>
-                        <div className="text-xs text-gray-400 mt-0.5">{lead.source}</div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="font-bold text-gray-900 text-sm">
-                          {lead.expectedAmount || '₹10,00,000'}
-                        </div>
-                      </td>
-                      <td className="py-4 px-6">
-                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                          lead.status === 'Qualified' || lead.status === 'Converted' ? 'bg-green-100 text-green-700' :
-                          lead.status === 'Lost' || lead.status === 'Rejected' ? 'bg-red-100 text-red-700' :
-                          'bg-blue-50 text-blue-700'
-                        }`}>
-                          {lead.status}
-                        </span>
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center justify-center gap-2">
-                          <button 
-                            onClick={() => handleStatusChange(lead._id, true)}
-                            className={`p-2 rounded-lg border transition-all ${
-                              lead.status === 'Qualified'
-                                ? 'bg-green-600 text-white border-green-600 shadow-sm'
-                                : 'border-gray-200 text-gray-400 hover:text-green-600 hover:bg-green-50'
-                            }`}
-                            title="Interested / Qualified"
-                          >
-                            <CheckCircle2 size={18} />
-                          </button>
-                          <button 
-                            onClick={() => handleStatusChange(lead._id, false)}
-                            className={`p-2 rounded-lg border transition-all ${
-                              lead.status === 'Lost'
-                                ? 'bg-red-600 text-white border-red-600 shadow-sm'
-                                : 'border-gray-200 text-gray-400 hover:text-red-600 hover:bg-red-50'
-                            }`}
-                            title="Not Interested / Lost"
-                          >
-                            <XCircle size={18} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
-  );
+ <div className="relative w-full md:w-64">
+ <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
+ <input 
+ type="text"
+ placeholder="Search name, phone, zone..."
+ value={searchQuery}
+ onChange={(e) => setSearchQuery(e.target.value)}
+ className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-[13px] font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 transition-all"
+ />
+ </div>
+ </div>
+ </div>
+
+ {/* Main Single-Window Leads Table */}
+ <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+ <div className="overflow-x-auto">
+ <table className="w-full text-left border-collapse whitespace-nowrap">
+ <thead>
+ <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+ <th className="py-3.5 px-4">Customer & Contact</th>
+ <th className="py-3.5 px-4">Loan Purpose & Amount</th>
+ <th className="py-3.5 px-4">RM Approval Stage</th>
+ <th className="py-3.5 px-4">Latest Remarks / Log</th>
+ <th className="py-3.5 px-4 text-center">Calling, Remarks & Action</th>
+ </tr>
+ </thead>
+ <tbody className="divide-y divide-slate-100 text-[13px]">
+ {loading ? (
+ <tr>
+ <td colSpan={5} className="py-16 text-center text-slate-400">
+ <Loader2 size={24} className="animate-spin mx-auto mb-2 text-purple-600" />
+ Loading leads from database...
+ </td>
+ </tr>
+ ) : filteredLeads.length === 0 ? (
+ <tr>
+ <td colSpan={5} className="py-12 text-center text-slate-400 font-medium">
+ No leads match your search criteria.
+ </td>
+ </tr>
+ ) : (
+ filteredLeads.map((lead) => {
+ const isApproved = lead.isRmApproved;
+ return (
+ <tr key={lead._id} className="hover:bg-slate-50/80 transition-colors">
+ {/* Customer Info */}
+ <td className="py-3.5 px-4 whitespace-nowrap">
+ <div className="font-bold text-slate-900 leading-tight">{lead.name}</div>
+ <div className="flex items-center gap-2 mt-1">
+ <a href={`tel:${lead.mobile}`} className="font-mono font-bold text-blue-600 hover:underline flex items-center gap-1 text-[12px] whitespace-nowrap">
+ <Phone size={11} /> {lead.mobile}
+ </a>
+ <span className="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-purple-100 text-purple-800 border border-purple-200 whitespace-nowrap">
+ {lead.zone} Zone
+ </span>
+ </div>
+ </td>
+
+ {/* Loan info */}
+ <td className="py-3.5 px-4 whitespace-nowrap">
+ <div className="font-bold text-slate-800 leading-tight">
+ ₹{Number(lead.expectedAmount).toLocaleString('en-IN')}
+ </div>
+ <div className="text-[12px] text-slate-500 mt-0.5 whitespace-nowrap">{lead.loanPurpose}</div>
+ </td>
+
+ {/* Workflow Status */}
+ <td className="py-3.5 px-4 whitespace-nowrap">
+ <div className="flex flex-col items-start gap-1">
+ {isApproved ? (
+ <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1 whitespace-nowrap" title={lead.rmReviewRemarks ? `RM Note: ${lead.rmReviewRemarks}` : ''}>
+ APPROVED BY RM ({lead.zone})
+ </span>
+ ) : (
+ <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200 flex items-center gap-1 whitespace-nowrap">
+ AWAITING {lead.zone} RM REVIEW
+ </span>
+ )}
+ <span className="text-[11px] font-semibold text-slate-500 whitespace-nowrap">
+ Status: <b className="text-slate-800">{lead.status}</b>
+ </span>
+ </div>
+ </td>
+
+ {/* Remarks */}
+ <td className="py-3.5 px-4 max-w-xs whitespace-nowrap">
+ <p className="text-[12px] text-slate-600 truncate font-medium max-w-[220px]" title={lead.remarks}>
+ {lead.remarks || <span className="text-slate-400 italic">No notes recorded yet</span>}
+ </p>
+ {lead.nextFollowUp && lead.nextFollowUp !== '-' && (
+ <div className="text-[10px] font-bold text-amber-700 mt-0.5 flex items-center gap-1 whitespace-nowrap">
+ <CalendarCheck size={10} /> Follow-up: {lead.nextFollowUp}
+ </div>
+ )}
+ </td>
+
+ {/* Single Unified Action Area */}
+ <td className="py-3.5 px-4 text-center whitespace-nowrap">
+ {isReadOnlyAdmin ? (
+ <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-500 bg-slate-100 border border-slate-200 px-3 py-1.5 rounded-lg">
+ <Eye size={13} /> Monitored by Admin
+ </span>
+ ) : lead.hasCalled ? (
+ <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+ <span className="px-3.5 py-1.5 bg-emerald-50 text-emerald-800 border border-emerald-300 font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-2xs whitespace-nowrap" title={`Called & Verified: ${lead.telecallerNotes || lead.status}`}>
+ <CheckCircle2 size={13} className="text-emerald-600" /> Done / Handed Over
+ </span>
+ <button
+ onClick={() => openActionModal(lead, 'followup')}
+ className="p-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 border border-slate-200 rounded-xl transition-colors shrink-0"
+ title="Reschedule Callback / Follow-up"
+ >
+ <CalendarCheck size={14} />
+ </button>
+ </div>
+ ) : isApproved ? (
+ <div className="flex items-center justify-center gap-2 whitespace-nowrap">
+ <button
+ onClick={() => openActionModal(lead, 'call_remarks')}
+ className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors whitespace-nowrap"
+ title="Call Customer & Log Remarks"
+ >
+ <Phone size={13} /> Call & Log
+ </button>
+ <button
+ onClick={() => openActionModal(lead, 'followup')}
+ className="p-1.5 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 rounded-xl transition-colors shrink-0"
+ title="Schedule Follow-up"
+ >
+ <CalendarCheck size={14} />
+ </button>
+ </div>
+ ) : (
+ <span className="text-[11px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl inline-block whitespace-nowrap" title="RM approval required before calling customer">
+ RM Review Pending
+ </span>
+ )}
+ </td>
+ </tr>
+ );
+ })
+ )}
+ </tbody>
+ </table>
+ </div>
+ </div>
+
+ {/* ALL-IN-ONE POPUP MODAL: Call, Remarks & Status Update in ONE Place */}
+ {selectedLead && (
+ <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+ <div className="bg-white w-full max-w-lg rounded-3xl border border-slate-200 shadow-2xl overflow-hidden">
+ {/* Modal Header */}
+ <div className="p-5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex justify-between items-center">
+ <div>
+ <h3 className="font-bold text-base flex items-center gap-2">
+ <Phone size={18} /> Customer Calling & Verification Desk
+ </h3>
+ <p className="text-xs text-purple-100 mt-0.5">
+ {selectedLead.name} • {selectedLead.mobile} • {selectedLead.loanPurpose}
+ </p>
+ </div>
+ <button onClick={closeModal} className="p-1.5 rounded-full hover:bg-white/20 text-white transition-colors">
+ <X size={18} />
+ </button>
+ </div>
+
+ {/* Modal Form */}
+ <form onSubmit={handleSaveAction} className="p-6 space-y-4">
+ {/* Quick Dial Bar */}
+ <div className="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex justify-between items-center">
+ <div>
+ <p className="text-[11px] font-bold text-emerald-800 uppercase">Customer Number</p>
+ <p className="text-[16px] font-mono font-extrabold text-emerald-950">{selectedLead.mobile}</p>
+ </div>
+ <a
+ href={`tel:${selectedLead.mobile}`}
+ className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-1.5 shadow-sm transition-colors"
+ >
+ <Phone size={14} /> Dial Customer Now
+ </a>
+ </div>
+
+ {/* Call Outcome & Status */}
+ <div className="grid grid-cols-2 gap-3">
+ <div>
+ <label className="block text-[12px] font-bold text-slate-700 mb-1">Call Outcome *</label>
+ <select
+ value={callOutcome}
+ onChange={(e) => setCallOutcome(e.target.value)}
+ className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-purple-500"
+ >
+ <option value="Connected">Connected & Discussed</option>
+ <option value="Not Connected">Not Answering / Ringing</option>
+ <option value="Busy">Busy / Waiting</option>
+ <option value="Call Back Requested">Call Back Requested</option>
+ <option value="Switched Off">Switched Off</option>
+ </select>
+ </div>
+
+ <div>
+ <label className="block text-[12px] font-bold text-slate-700 mb-1">Update Status (For RM) *</label>
+ <select
+ value={actionStatus}
+ onChange={(e) => setActionStatus(e.target.value)}
+ className="w-full px-3 py-2 bg-purple-50 border border-purple-200 rounded-xl text-xs font-bold text-purple-900 outline-none focus:bg-white focus:ring-2 focus:ring-purple-500"
+ >
+ <option value="Interested">Interested (Proceed to RM/Ops)</option>
+ <option value="Contacted">Contacted & Discussion in Progress</option>
+ <option value="Follow-up">Follow-up Needed</option>
+ <option value="Documents Pending">Documents Pending</option>
+ <option value="Lost">Not Interested / Lost</option>
+ </select>
+ </div>
+ </div>
+
+ {/* Follow-up Date */}
+ <div>
+ <label className="block text-[12px] font-bold text-slate-700 mb-1">Next Callback / Follow-up Date</label>
+ <input
+ type="date"
+ value={followupDate}
+ onChange={(e) => setFollowupDate(e.target.value)}
+ className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 outline-none focus:bg-white focus:ring-2 focus:ring-purple-500"
+ />
+ </div>
+
+ {/* Calling Remarks & Notes */}
+ <div>
+ <label className="block text-[12px] font-bold text-slate-700 mb-1">
+ Customer Calling Remarks & Notes for Reporting Manager (RM) <span className="text-rose-600">*</span>
+ </label>
+ <textarea
+ rows={3}
+ required
+ placeholder="Enter detailed customer feedback (e.g. Customer confirmed required amount ₹5L, salary 45k, KYC documents ready for verification)..."
+ value={actionNotes}
+ onChange={(e) => setActionNotes(e.target.value)}
+ className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-800 outline-none resize-none focus:bg-white focus:ring-2 focus:ring-purple-500 transition-all"
+ />
+ </div>
+
+ {/* Modal Footer */}
+ <div className="flex justify-end items-center gap-2.5 pt-2">
+ <button
+ type="button"
+ onClick={closeModal}
+ className="px-4 py-2 rounded-xl text-xs font-bold border border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors"
+ >
+ Cancel
+ </button>
+ <button
+ type="submit"
+ disabled={isSubmitting}
+ className="flex items-center gap-1.5 px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs transition-colors shadow-sm disabled:opacity-50"
+ >
+ {isSubmitting ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+ {isSubmitting ? "Submitting..." : "Save & Update RM"}
+ </button>
+ </div>
+ </form>
+ </div>
+ </div>
+ )}
+ </div>
+ );
 }

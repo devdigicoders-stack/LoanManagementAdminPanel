@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   ChevronRight, MapPin, Building2, Home, CheckCircle2, 
@@ -9,6 +9,23 @@ import toast from 'react-hot-toast';
 
 export default function AddLead() {
   const navigate = useNavigate();
+
+  // Role detection: Sales users cannot add leads
+  useEffect(() => {
+    const rawRole = (localStorage.getItem('userRole') || '').toLowerCase().trim();
+    const rawZonal = (localStorage.getItem('zonalRole') || '').toLowerCase().trim();
+    const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+    const cleanZonal = rawZonal.replace(/[^a-z0-9]/g, '');
+    const isSalesRole = ['sales head', 'sales_head', 'saleshead', 'rrm', 'arm', 'rm', 'ro', 're', 'sales'].some(r => 
+      rawRole.includes(r) || cleanRole.includes(r) || rawZonal.includes(r) || cleanZonal.includes(r)
+    );
+
+    if (isSalesRole) {
+      toast.error('Sales users cannot add new leads. Leads are view-only.');
+      navigate('/leads', { replace: true });
+    }
+  }, [navigate]);
+
   const [formData, setFormData] = useState({
     name: '', 
     mobile: '', 

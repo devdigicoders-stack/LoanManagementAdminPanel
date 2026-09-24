@@ -44,6 +44,20 @@ import LeadSources from "./pages/leads/LeadSources";
 import LeadStatus from "./pages/leads/LeadStatus";
 import FollowUps from "./pages/leads/FollowUps";
 
+// Sales Head & Zonal Imports
+import SalesDashboard from "./pages/sales/SalesDashboard";
+import ARMDashboard from "./pages/sales/ARMDashboard";
+import RMDashboard from "./pages/sales/RMDashboard";
+import RMLeadReviewDesk from "./pages/sales/RMLeadReviewDesk";
+import RMTelecallerDesk from "./pages/sales/RMTelecallerDesk";
+import HoldEscalationDesk from "./pages/sales/HoldEscalationDesk";
+import ZonalTeamTree from "./pages/sales/ZonalTeamTree";
+import HiringRequestsTracking from "./pages/sales/HiringRequestsTracking";
+import FileApprovalsDesk from "./pages/sales/FileApprovalsDesk";
+import BankSubmissionsDesk from "./pages/sales/BankSubmissionsDesk";
+import CustomerOfferDecision from "./pages/customer/CustomerOfferDecision";
+
+
 // Work Management Imports
 import TaskManagement from './pages/work/TaskManagement';
 import ApplicationAssignment from './pages/work/ApplicationAssignment';
@@ -227,6 +241,21 @@ const RoleBasedDashboard = () => {
   if (role.includes('account')) {
     return <Navigate to="/accountant" replace />;
   }
+  if (role === 'arm') {
+    return <Navigate to="/sales/arm-dashboard" replace />;
+  }
+  if (role === 'rm') {
+    return <Navigate to="/sales/rm-dashboard" replace />;
+  }
+  if (
+    role === 'saleshead' ||
+    role === 'rrm' ||
+    role === 'ro' ||
+    role === 're' ||
+    role.includes('sales')
+  ) {
+    return <Navigate to="/sales/dashboard" replace />;
+  }
   if (role.includes('hr')) {
     return <HRDashboard />;
   }
@@ -243,11 +272,15 @@ function App() {
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/onboarding/:id" element={<EmployeeOnboardingPage />} />
-        
+        <Route path="/customer/offer/:id" element={<CustomerOfferDecision />} />
+        <Route path="/apply/:id/offer" element={<CustomerOfferDecision />} />
+        <Route path="/offer/:id" element={<CustomerOfferDecision />} />
+
         {/* Telecaller Routes */}
         <Route path="/telecaller" element={<ProtectedRoute><TelecallerLayout /></ProtectedRoute>}>
           <Route index element={<TelecallerDashboard />} />
           <Route path="leads" element={<MyLeads />} />
+          <Route path="my-leads" element={<MyLeads />} />
           <Route path="assigned-leads" element={<AssignedLeads />} />
           <Route path="leads/add" element={<AddNewLead />} />
           <Route path="leads/:id" element={<LeadDetails />} />
@@ -260,8 +293,11 @@ function App() {
           <Route path="notifications" element={<TelecallerNotifications />} />
           <Route path="reports" element={<TelecallerReports />} />
           <Route path="performance" element={<MyPerformance />} />
+          <Route path="my-performance" element={<MyPerformance />} />
           <Route path="profile" element={<TelecallerProfile />} />
           <Route path="change-password" element={<ChangePassword />} />
+          <Route path="update-status" element={<UpdateLeadStatus />} />
+          <Route path="update-status/:id" element={<UpdateLeadStatus />} />
           <Route path="status/:id" element={<UpdateLeadStatus />} />
         </Route>
 
@@ -319,7 +355,7 @@ function App() {
           <Route path="employees/leave-management" element={<LeaveManagement />} />
           <Route path="employees/:id" element={<EmployeeDetails />} />
           <Route path="employees/:id/edit" element={<EditEmployee />} />
-          
+
           <Route path="hr/reports" element={<HRReports />} />
           <Route path="hr/notifications" element={<HRNotifications />} />
           <Route path="hr/onboarding" element={<Onboarding />} />
@@ -335,6 +371,19 @@ function App() {
           <Route path="leads/sources" element={<LeadSources />} />
           <Route path="leads/status" element={<LeadStatus />} />
           <Route path="leads/follow-ups" element={<FollowUps />} />
+
+          {/* Sales Head & Zonal Hierarchy Routes */}
+          <Route path="sales/dashboard" element={<SalesDashboard />} />
+          <Route path="sales/arm-dashboard" element={<ARMDashboard />} />
+          <Route path="sales/rm-dashboard" element={<RMDashboard />} />
+          <Route path="sales/rm-lead-review" element={<RMLeadReviewDesk />} />
+          <Route path="sales/rm-telecaller-desk" element={<RMTelecallerDesk />} />
+          <Route path="sales/file-approvals" element={<FileApprovalsDesk />} />
+          <Route path="sales/bank-submissions" element={<BankSubmissionsDesk />} />
+          <Route path="sales/hold-escalations" element={<HoldEscalationDesk />} />
+          <Route path="sales/team-tree" element={<ZonalTeamTree />} />
+          <Route path="sales/hiring-requests" element={<HiringRequestsTracking />} />
+
 
           {/* Work Management Routes */}
           <Route path="work/tasks" element={<TaskManagement />} />
@@ -356,7 +405,7 @@ function App() {
           <Route path="loans/documents" element={<DocumentCenter />} />
           <Route path="loans/offers" element={<ManageOffers />} />
           <Route path="offers" element={<ManageOffers />} />
-          
+
           {/* System Routes */}
           <Route path="settings" element={<Settings />} />
           <Route path="audit" element={<AuditLogs />} />
@@ -364,7 +413,7 @@ function App() {
           <Route path="complaints" element={<ManageComplaints />} />
           <Route path="profile" element={<AdminProfile />} />
           <Route path="notifications" element={<Notifications />} />
-          
+
           {/* Operations Admin Direct Routes */}
           <Route path="operations/dashboard" element={<OperationDashboard />} />
           <Route path="operations/applications" element={<ApplicationManagement />} />
@@ -379,11 +428,11 @@ function App() {
           <Route path="operations/history" element={<ApplicationHistory />} />
           <Route path="operations/notifications" element={<OperationNotifications />} />
           <Route path="operations/reports" element={<OperationReports />} />
-          
+
           {/* OPS Management Routes */}
           {/* Dashboard */}
           {/* Note: "/" handles the dashboard based on role, so we don't strictly need a separate /ops/dashboard unless desired, but we can map /ops to it. */}
-          
+
           {/* Lead & CRM */}
           <Route path="ops/leads" element={<AllLeads />} />
           <Route path="ops/leads/add" element={<OpsAddLead />} />
@@ -427,14 +476,14 @@ function App() {
           <Route path="ops/reports/npa" element={<NpaTracking />} />
           <Route path="ops/reports/defaulters" element={<DefaultersList />} />
           <Route path="ops/reports/performance" element={<Performance />} />
-          
+
           {/* HR & Employees */}
           <Route path="hr/recruitment" element={<Recruitment />} />
           <Route path="hr/onboarding" element={<Onboarding />} />
           <Route path="employees" element={<EmployeeDirectory />} />
           <Route path="employees/departments" element={<Departments />} />
           <Route path="hr/ess" element={<ESS />} />
-          
+
           {/* Placeholder Routes for missing pages */}
           <Route path="user-profile/:id" element={<UserProfile />} />
           <Route path="verify-documents" element={<VerifyDocuments />} />

@@ -152,6 +152,43 @@ export const ROLE_SIDEBAR_PAGES = {
     { name: 'Repayment Schedule', path: '/loans/repayments', description: 'Customer EMI schedule & repayment details' },
     { name: 'Reports & Analytics', path: '/hr/reports', description: 'Approval rates, NPA & risk analytics' },
     { name: 'Notifications', path: '/notifications', description: 'Underwriting alerts & loan escalations' }
+  ],
+  'Sales Head': [
+    { name: 'View Dashboard', path: '/sales/dashboard', description: 'National sales command center & KPI overview' },
+    { name: 'Lead Management', path: '/leads', description: 'All leads across all zones & pipelines' },
+    { name: 'Hiring Requests', path: '/sales/hiring-requests', description: 'Track headcount demands and hiring progress' },
+    { name: 'Loan Applications', path: '/loans', description: 'All loan applications & approval tracking' },
+    { name: 'Assign Lead to Employee', path: '/leads', description: 'Assign & reassign leads to zonal teams' },
+    { name: 'Status Management', path: '/leads', description: 'Update & track lead & loan statuses' },
+    { name: 'Verify Documents', path: '/loans/documents', description: 'Review & verify submitted documents' },
+    { name: 'Reports & Analytics', path: '/hr/reports', description: 'Sales reports, zone performance & metrics' },
+    { name: 'Notifications', path: '/notifications', description: 'Company-wide alerts & team announcements' }
+  ],
+  'RRM': [
+    { name: 'View Dashboard', path: '/sales/dashboard', description: 'Regional sales dashboard & zone KPIs' },
+    { name: 'Lead Management', path: '/leads', description: 'Regional lead pipeline & assignments' },
+    { name: 'Loan Applications', path: '/loans', description: 'Zone loan applications & tracking' },
+    { name: 'Assign Lead to Employee', path: '/leads', description: 'Assign leads to ARM teams' },
+    { name: 'Status Management', path: '/leads', description: 'Update lead & loan statuses' },
+    { name: 'Reports & Analytics', path: '/hr/reports', description: 'Regional performance reports' }
+  ],
+  'ARM': [
+    { name: 'View Dashboard', path: '/sales/dashboard', description: 'Area sales dashboard & team KPIs' },
+    { name: 'Lead Management', path: '/leads', description: 'Area lead pipeline & tracking' },
+    { name: 'Loan Applications', path: '/loans', description: 'Area loan applications' },
+    { name: 'Assign Lead to Employee', path: '/leads', description: 'Assign leads to RM teams' },
+    { name: 'Status Management', path: '/leads', description: 'Update lead & loan statuses' }
+  ],
+  'RM': [
+    { name: 'View Dashboard', path: '/sales/dashboard', description: 'Team dashboard & performance' },
+    { name: 'Lead Management', path: '/leads', description: 'Team lead pipeline & assignments' },
+    { name: 'Loan Applications', path: '/loans', description: 'Team loan applications' },
+    { name: 'Status Management', path: '/leads', description: 'Update lead statuses' }
+  ],
+  'RO': [
+    { name: 'Lead Management', path: '/leads', description: 'My leads & customer visits' },
+    { name: 'Status Management', path: '/leads', description: 'Update my lead statuses' },
+    { name: 'Customer Follow-ups', path: '/leads', description: 'Follow-up reminders & customer callbacks' }
   ]
 };
 
@@ -187,7 +224,16 @@ export const ROLE_PERMISSIONS = {
   accountant: ROLE_SIDEBAR_PAGES['Accountant Admin'].map(p => p.name),
   credit_admin: ROLE_SIDEBAR_PAGES['Credit Admin'].map(p => p.name),
   creditadmin: ROLE_SIDEBAR_PAGES['Credit Admin'].map(p => p.name),
-  credit: ROLE_SIDEBAR_PAGES['Credit Admin'].map(p => p.name)
+  credit: ROLE_SIDEBAR_PAGES['Credit Admin'].map(p => p.name),
+  // Sales Hierarchy roles
+  'sales head': ROLE_SIDEBAR_PAGES['Sales Head'].map(p => p.name),
+  sales_head: ROLE_SIDEBAR_PAGES['Sales Head'].map(p => p.name),
+  saleshead: ROLE_SIDEBAR_PAGES['Sales Head'].map(p => p.name),
+  rrm: ROLE_SIDEBAR_PAGES['RRM'].map(p => p.name),
+  arm: ROLE_SIDEBAR_PAGES['ARM'].map(p => p.name),
+  rm: ROLE_SIDEBAR_PAGES['RM'].map(p => p.name),
+  ro: ROLE_SIDEBAR_PAGES['RO'].map(p => p.name),
+  re: ROLE_SIDEBAR_PAGES['RO'].map(p => p.name)
 };
 
 const PERMISSION_ALIASES = {
@@ -342,4 +388,3 @@ export const storePermissions = (permissions) => {
 export const clearPermissions = () => {
   localStorage.removeItem('permissions');
 };
-

@@ -30,14 +30,10 @@ const PORTAL_CONFIGS = [
     badgeColor: 'bg-purple-50 text-purple-700 border-purple-200',
     icon: PhoneCall,
     tabs: [
-      { name: 'Dashboard', path: '/telecaller', icon: Activity, exact: true },
-      { name: 'Assigned Leads', path: '/telecaller/assigned-leads', icon: FolderOpen },
-      { name: 'My Leads', path: '/telecaller/leads', icon: Target },
-      { name: 'My Followups', path: '/telecaller/followups', icon: CalendarCheck },
+      { name: 'Telecaller Calling Desk', path: '/telecaller', icon: PhoneCall, exact: true },
+      { name: 'Call Follow-ups', path: '/telecaller/followups', icon: CalendarCheck },
       { name: 'Customer Documents', path: '/telecaller/documents', icon: FolderOpen },
-      { name: 'Remarks & Notes', path: '/telecaller/remarks', icon: MessageSquare },
-      { name: 'Telecaller Reports', path: '/telecaller/reports', icon: BarChart3 },
-      { name: 'Performance', path: '/telecaller/performance', icon: Activity },
+      { name: 'My Performance', path: '/telecaller/my-performance', icon: BarChart3 },
     ]
   },
   {

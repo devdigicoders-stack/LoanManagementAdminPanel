@@ -42,7 +42,20 @@ export default function LeadDetails() {
     fetchLeadDetails();
   }, [id]);
 
+  // Role detection: Sales users have view-only access (no status changes)
+  const rawRole = (localStorage.getItem('userRole') || '').toLowerCase().trim();
+  const rawZonal = (localStorage.getItem('zonalRole') || '').toLowerCase().trim();
+  const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+  const cleanZonal = rawZonal.replace(/[^a-z0-9]/g, '');
+  const isSalesRole = ['sales head', 'sales_head', 'saleshead', 'rrm', 'arm', 'rm', 'ro', 're', 'sales'].some(r => 
+    rawRole.includes(r) || cleanRole.includes(r) || rawZonal.includes(r) || cleanZonal.includes(r)
+  );
+
   const updateLeadStatus = async (newStatus) => {
+    if (isSalesRole) {
+      toast.error('Sales team has view-only permissions. Status changes not allowed.');
+      return;
+    }
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/leads/${id}/status`, {
@@ -99,39 +112,119 @@ export default function LeadDetails() {
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col md:flex-row">
         {/* Sidebar Actions */}
-        <div className="w-full md:w-[220px] bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 p-5 shrink-0 flex flex-col gap-1">
-          <div className="mb-4">
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Update Status</p>
-            <div className="space-y-1.5">
-              {statusOptions.map(option => {
-                const isActive = lead.status === option.value;
-                return (
-                  <button 
-                    key={option.value}
-                    onClick={() => updateLeadStatus(option.value)} 
-                    className={`flex items-center gap-2 text-[13px] font-bold py-2 px-3 w-full rounded transition-colors cursor-pointer text-left
-                      ${isActive ? `${option.activeBg} ${option.color}` : 'text-slate-600 hover:bg-slate-100'}
-                    `}
-                  >
-                    <CheckCircle2 size={16} className={isActive ? option.color : 'text-slate-400'} /> {option.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        <div className="w-full md:w-[240px] bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 p-5 shrink-0 flex flex-col gap-2">
+          {cleanRole === 'rm' || cleanZonal === 'rm' ? (
+            <div className="space-y-4">
+              <div className="p-3 bg-blue-50/60 rounded-xl border border-blue-200">
+                <p className="text-[11px] font-bold text-blue-700 uppercase tracking-wider mb-1">RM Action Desk</p>
+                <span className="text-xs font-bold text-slate-800">Stage: {lead.workflowStage || lead.status}</span>
+                {lead.telecallerNotes && (
+                  <p className="text-[11px] text-slate-600 italic mt-1 border-t border-blue-100 pt-1">
+                    "{lead.telecallerNotes}"
+                  </p>
+                )}
+              </div>
 
-          <div className="mt-2 pt-5 border-t border-slate-200">
-            <button 
-              onClick={() => updateLeadStatus('Lost')} 
-              className={`flex items-center gap-2 text-[13px] font-bold py-2 px-3 transition-colors cursor-pointer w-full text-left rounded
-                ${lead.status === 'Lost' ? 'bg-red-50 text-red-600' : 'text-red-500 hover:bg-slate-100'}`}
-            >
-              <XCircle size={16} className={lead.status === 'Lost' ? 'text-red-600' : 'text-red-400'} /> Mark as Lost
-            </button>
-            <button onClick={() => setActiveTab('Notes')} className="flex items-center justify-center gap-2 mt-4 w-full py-2.5 border border-[#489b0d]/20 bg-[#489b0d]/5 text-[#489b0d] rounded-lg text-[13px] font-bold hover:bg-[#489b0d]/10 transition-colors cursor-pointer shadow-sm">
-              <MessageSquare size={16} /> Add Note
-            </button>
-          </div>
+              {/* RM Stage Specific Action Buttons */}
+              {lead.workflowStage === 'Field_Lead_Created' && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sales/${lead._id}/rm-review`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ action: 'Approved', remarks: 'Approved by RM for Telecaller follow-up' })
+                      });
+                      if (res.ok) {
+                        toast.success("Lead approved & forwarded to Telecaller!");
+                        fetchLeadDetails();
+                      }
+                    } catch (e) {
+                      toast.error("Error approving lead");
+                    }
+                  }}
+                  className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle2 size={15} /> Forward to Telecaller
+                </button>
+              )}
+
+              {(lead.workflowStage === 'Customer_Confirmed' || lead.status === 'Contacted' || lead.status === 'Interested') && (
+                <button
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('token');
+                      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/sales/${lead._id}/assign-operations`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ operationsRemarks: 'Verified by RM & Telecaller, ready for KYC' })
+                      });
+                      if (res.ok) {
+                        toast.success("File forwarded to Operations Manager for KYC!");
+                        fetchLeadDetails();
+                      }
+                    } catch (e) {
+                      toast.error("Error forwarding to operations");
+                    }
+                  }}
+                  className="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5"
+                >
+                  <CheckCircle2 size={15} /> Forward to Operations
+                </button>
+              )}
+
+              <Link
+                to="/sales/rm-dashboard"
+                className="w-full py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold text-center block transition"
+              >
+                Go to RM Dashboard
+              </Link>
+            </div>
+          ) : isSalesRole ? (
+            <div className="mb-4">
+              <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Current Status</p>
+              <div className="p-3 bg-white rounded-xl border border-slate-200 text-center">
+                <span className="text-sm font-extrabold text-slate-800">{lead.status}</span>
+                <p className="text-[11px] text-slate-400 mt-1">Zonal Sales Access</p>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4">
+                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Update Status</p>
+                <div className="space-y-1.5">
+                  {statusOptions.map(option => {
+                    const isActive = lead.status === option.value;
+                    return (
+                      <button 
+                        key={option.value}
+                        onClick={() => updateLeadStatus(option.value)} 
+                        className={`flex items-center gap-2 text-[13px] font-bold py-2 px-3 w-full rounded transition-colors cursor-pointer text-left
+                          ${isActive ? `${option.activeBg} ${option.color}` : 'text-slate-600 hover:bg-slate-100'}
+                        `}
+                      >
+                        <CheckCircle2 size={16} className={isActive ? option.color : 'text-slate-400'} /> {option.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="mt-2 pt-5 border-t border-slate-200">
+                <button 
+                  onClick={() => updateLeadStatus('Lost')} 
+                  className={`flex items-center gap-2 text-[13px] font-bold py-2 px-3 transition-colors cursor-pointer w-full text-left rounded
+                    ${lead.status === 'Lost' ? 'bg-red-50 text-red-600' : 'text-red-500 hover:bg-slate-100'}`}
+                >
+                  <XCircle size={16} className={lead.status === 'Lost' ? 'text-red-600' : 'text-red-400'} /> Mark as Lost
+                </button>
+                <button onClick={() => setActiveTab('Notes')} className="flex items-center justify-center gap-2 mt-4 w-full py-2.5 border border-[#489b0d]/20 bg-[#489b0d]/5 text-[#489b0d] rounded-lg text-[13px] font-bold hover:bg-[#489b0d]/10 transition-colors cursor-pointer shadow-sm">
+                  <MessageSquare size={16} /> Add Note
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Main Content */}

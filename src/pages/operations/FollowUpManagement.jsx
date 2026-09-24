@@ -3,6 +3,7 @@ import {
   CalendarRange, PlusCircle, Clock, CheckCircle2, AlertCircle, 
   Phone, Users, FileText, X, Calendar, AlarmClock 
 } from 'lucide-react';
+import TablePagination from '../../components/TablePagination';
 
 const mockFollowUps = [];
 
@@ -19,6 +20,8 @@ const StatCard = ({ icon: Icon, title, value, color, bg }) => (
 
 export default function FollowUpManagement() {
   const [showModal, setShowModal] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const getStatusStyle = (status) => {
     switch(status) {
@@ -109,6 +112,13 @@ export default function FollowUpManagement() {
             </tbody>
           </table>
         </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={mockFollowUps.length}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => setPageSize(size)}
+        />
       </div>
 
       {/* Schedule Follow-up Modal */}

@@ -16,6 +16,10 @@ const tc = {
 };
 
 export default function AccountantDashboard() {
+  const rawRole = (localStorage.getItem('userRole') || '').trim().toLowerCase();
+  const cleanRole = rawRole.replace(/[^a-z0-9]/g, '');
+  const isReadOnlyAdmin = ['superadmin', 'admin', 'administrator', 'super_admin'].includes(cleanRole) || rawRole.includes('super admin') || rawRole === 'admin';
+
   const name = localStorage.getItem(`adminName_${localStorage.getItem("userRole")}`) || "Accountant Admin";
   const [stats, setStats] = useState(null);
   const [recentTransactions, setRecentTransactions] = useState([]);
@@ -157,11 +161,22 @@ export default function AccountantDashboard() {
     <div className="space-y-6 w-full" style={{ color: tc.text }}>
       
       {/* Header */}
-      <div>
-        <h1 className="text-[22px] font-extrabold" style={{ color: tc.text }}>Accounts & Financial Command Center</h1>
-        <p className="text-[13px] mt-0.5" style={{ color: tc.muted }}>
-          Welcome back, <strong>{name}</strong> — Live MongoDB tracking of collections, loans outstanding, expenses and reconciliations.
-        </p>
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-5 rounded-2xl border border-slate-100 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-[20px] font-black" style={{ color: tc.text }}>Finance, Disbursals & Collections</h1>
+            {isReadOnlyAdmin && (
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                Track & Monitor Only
+              </span>
+            )}
+          </div>
+          <p className="text-[12px] mt-0.5" style={{ color: tc.muted }}>
+            {isReadOnlyAdmin
+              ? "Live financial tracking of company collections, active EMI repayments, branch expenditures and reconciliation records."
+              : `Welcome back, ${name} — Live MongoDB tracking of collections, loans outstanding, expenses and reconciliations.`}
+          </p>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -188,16 +203,18 @@ export default function AccountantDashboard() {
         })}
       </div>
 
-      {/* Quick Actions */}
-      <div className="flex flex-wrap gap-3">
-        {quickActions.map((qa, i) => (
-          <Link key={i} to={qa.path}
-            className="px-4 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity"
-            style={{ background: qa.bg, color: qa.col }}>
-            {qa.label} <ChevronRight size={14} />
-          </Link>
-        ))}
-      </div>
+      {/* Quick Actions (only for finance executive/accountant, not read-only admin) */}
+      {!isReadOnlyAdmin && (
+        <div className="flex flex-wrap gap-3">
+          {quickActions.map((qa, i) => (
+            <Link key={i} to={qa.path}
+              className="px-4 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 hover:opacity-90 transition-opacity"
+              style={{ background: qa.bg, color: qa.col }}>
+              {qa.label} <ChevronRight size={14} />
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* Chart */}
       <div className="rounded-2xl p-5" style={{ background: tc.card, border: `1px solid ${tc.border}` }}>

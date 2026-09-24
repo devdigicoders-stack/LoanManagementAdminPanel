@@ -31,11 +31,14 @@ export default function ApplicationDetails() {
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-xl font-extrabold text-[#344054]">Application Overview</h3>
               <div className="flex gap-3">
-                <button className="flex items-center gap-2 px-4 py-2 bg-white text-[#344054] border border-[#D9EAF2] rounded-xl font-bold text-[13px] hover:bg-[#F0FAFF] transition-all">
-                  <Edit size={16} /> Edit Application
+                <button 
+                  onClick={() => navigate(`/operations/verification?appId=${appId}`)}
+                  className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold text-[13px] hover:bg-emerald-700 shadow transition-all"
+                >
+                  <ShieldCheck size={16} /> Verify & Forward to Bank/NBFC
                 </button>
                 <button className="flex items-center gap-2 px-4 py-2 bg-white text-[#344054] border border-[#D9EAF2] rounded-xl font-bold text-[13px] hover:bg-[#F0FAFF] transition-all">
-                  <UserPlus size={16} /> Assign Application
+                  <Edit size={16} /> Edit Application
                 </button>
                 <button className="flex items-center gap-2 px-4 py-2 bg-[#BFE7F7] text-[#0369A1] rounded-xl font-bold text-[13px] hover:bg-[#8ED3F4] transition-all">
                   <CheckCircle2 size={16} /> Update Status

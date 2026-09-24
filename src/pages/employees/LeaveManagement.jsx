@@ -31,23 +31,25 @@ export default function LeaveManagement() {
   const isHrManager = ['hr manager', 'hrmanager', 'hr_manager'].includes(userRoleStr);
   const isHrExecutive = ['hr executive', 'hrexecutive', 'hr_executive'].includes(userRoleStr);
 
+  // Only HR Head, Admin, or SuperAdmin can see team approval management; all other roles (RM, ARM, Telecaller, RE/RO, Employees) ONLY see My Leaves
+  const canManageTeamLeaves = isSuperAdmin || isAdmin || isHrHead || isHrManager;
+
   // Tab State: 'my-leaves' or 'team-requests'
-  // HR Executive always views 'my-leaves'.
   const tabParam = searchParams.get('tab');
   const [activeTab, setActiveTab] = useState(() => {
-    if (isHrExecutive) return 'my-leaves';
-    return tabParam === 'my-leaves' ? 'my-leaves' : 'team-requests';
+    if (!canManageTeamLeaves) return 'my-leaves';
+    return tabParam === 'team-requests' ? 'team-requests' : 'my-leaves';
   });
 
   useEffect(() => {
-    if (isHrExecutive) {
-      setActiveTab('my-leaves');
-    } else if (tabParam === 'my-leaves') {
+    if (!canManageTeamLeaves) {
       setActiveTab('my-leaves');
     } else if (tabParam === 'team-requests') {
       setActiveTab('team-requests');
+    } else {
+      setActiveTab('my-leaves');
     }
-  }, [tabParam, isHrExecutive]);
+  }, [tabParam, canManageTeamLeaves]);
 
   const handleTabChange = (newTab) => {
     setActiveTab(newTab);
@@ -323,19 +325,9 @@ export default function LeaveManagement() {
         </button>
       </div>
 
-      {/* Role Tab Switcher (For HR Manager, HR Head, Admin) */}
-      {!isHrExecutive && (
+      {/* Role Tab Switcher (Only For HR Manager, HR Head, Admin) */}
+      {canManageTeamLeaves && (
         <div className="flex items-center gap-2 border-b border-[var(--color-brand-border)] pb-2">
-          <button
-            onClick={() => handleTabChange('team-requests')}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
-              activeTab === 'team-requests'
-                ? 'bg-[#489b0d] text-white shadow-sm'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
-            }`}
-          >
-            <Users size={16} /> Team Leave Management
-          </button>
           <button
             onClick={() => handleTabChange('my-leaves')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
@@ -344,7 +336,17 @@ export default function LeaveManagement() {
                 : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
             }`}
           >
-            <CalendarCheckIcon size={16} /> My Applied Leaves
+            <Clock size={16} /> My Leaves
+          </button>
+          <button
+            onClick={() => handleTabChange('team-requests')}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[13px] font-bold transition-all cursor-pointer ${
+              activeTab === 'team-requests'
+                ? 'bg-[#489b0d] text-white shadow-sm'
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/80'
+            }`}
+          >
+            <Users size={16} /> Team Leave Approvals
           </button>
         </div>
       )}

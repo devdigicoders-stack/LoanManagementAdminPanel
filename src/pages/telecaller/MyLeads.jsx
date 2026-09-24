@@ -8,6 +8,7 @@ const loanTypes = ["All", "Home Loan", "Personal Loan", "Business Loan", "Educat
 const priorities = ["All", "Normal", "Low", "Medium", "High", "Urgent"];
 
 import SupervisorStaffFilter from "../../components/SupervisorStaffFilter";
+import TablePagination from "../../components/TablePagination";
 
 export default function MyLeads() {
   const [leadsData, setLeadsData] = useState([]);
@@ -18,6 +19,10 @@ export default function MyLeads() {
   const [loanFilter, setLoanFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [selectedStaff, setSelectedStaff] = useState("all");
+
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -143,9 +148,10 @@ export default function MyLeads() {
                     <p className="text-[13px] text-gray-500 mt-1">Try adjusting your search or filters to find what you're looking for.</p>
                   </td>
                 </tr>
-              ) : filtered.map((lead, i) => {
+              ) : filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((lead, i) => {
                 const sc = statusColors[lead.status] || { bg: "#F3F4F6", text: "#4B5563" };
                 const pc = priorityColors[lead.priority] || { bg: "#F3F4F6", text: "#4B5563" };
+
                 return (
                   <tr key={i} className="hover:bg-gray-50/80 transition-colors group cursor-pointer">
                     {/* Lead ID */}
@@ -217,9 +223,13 @@ export default function MyLeads() {
             </tbody>
           </table>
         </div>
-        <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between">
-          <p className="text-[13px] font-bold text-gray-500">Showing <span className="text-purple-600">{filtered.length}</span> of <span className="text-gray-900">{leadsData.length}</span> leads</p>
-        </div>
+        <TablePagination
+          currentPage={currentPage}
+          totalItems={filtered.length}
+          pageSize={pageSize}
+          onPageChange={(page) => setCurrentPage(page)}
+          onPageSizeChange={(size) => setPageSize(size)}
+        />
       </div>
     </div>
   );
