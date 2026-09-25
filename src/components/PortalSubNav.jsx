@@ -125,7 +125,6 @@ const PORTAL_CONFIGS = [
       { name: 'Manage Users', path: '/users', icon: UserCheck, exact: true },
       { name: 'Add User', path: '/users/add', icon: UserPlus },
       { name: 'Role & Permissions', path: '/users/roles', icon: Lock },
-      { name: 'Bulk Import', path: '/users/import', icon: Upload },
     ]
   }
 ];
