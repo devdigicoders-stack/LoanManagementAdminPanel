@@ -93,8 +93,17 @@ export default function AdminProfile() {
             name: data.name || "",
             email: data.email || "",
             phone: data.phone || "",
-            location: data.location || ""
+            location: data.location || "",
+            zone: data.zone || ""
           });
+          if (data.zone) {
+            localStorage.setItem('userZone', data.zone);
+            try {
+              const u = JSON.parse(localStorage.getItem('user') || '{}');
+              u.zone = data.zone;
+              localStorage.setItem('user', JSON.stringify(u));
+            } catch (e) {}
+          }
           if (data.avatar) {
             // Need absolute URL for the image
             const avatarUrl = data.avatar.startsWith('http') ? data.avatar : `${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}${data.avatar}`;
@@ -293,9 +302,21 @@ export default function AdminProfile() {
               className="hidden" 
             />
             <h2 className="text-lg font-bold text-slate-800">{profileData.name}</h2>
-            <p className="text-[12px] font-semibold text-[#489b0d] mt-1 bg-[#489b0d]/10 px-3 py-1 rounded-md flex items-center gap-1.5 justify-center">
-              <Shield size={12} /> {initialRole}
-            </p>
+            <div className="flex flex-col items-center gap-1 mt-1">
+              <p className="text-[12px] font-semibold text-[#489b0d] bg-[#489b0d]/10 px-3 py-1 rounded-md flex items-center gap-1.5 justify-center">
+                <Shield size={12} /> {initialRole}
+              </p>
+              {(() => {
+                const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+                const zone = (profileData.zone || storedUser.zone || localStorage.getItem('userZone') || '').toUpperCase();
+                if (!zone || zone === 'ALL') return null;
+                return (
+                  <span className="px-3 py-1 rounded-full text-[11px] font-extrabold bg-gradient-to-r from-amber-50 to-orange-50 text-amber-800 border border-amber-300 flex items-center gap-1.5 shadow-2xs mt-1">
+                    <MapPin size={12} className="text-amber-600" /> Assigned Zone: {zone}
+                  </span>
+                );
+              })()}
+            </div>
             
             <div className="w-full h-px bg-slate-100 my-5"></div>
             

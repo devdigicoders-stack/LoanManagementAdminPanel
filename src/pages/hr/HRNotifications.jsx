@@ -34,9 +34,13 @@ export default function HRNotifications() {
     isHrExecutive 
       ? `zone_applicants_${userZone}` 
       : isHrManager 
-        ? `zone_all_${userZone}` 
+        ? 'all_employees' 
         : 'all'
   );
+  const [selectedRecipientId, setSelectedRecipientId] = useState("");
+  const [employeesList, setEmployeesList] = useState([]);
+  const [customersList, setCustomersList] = useState([]);
+  const [searchRecipient, setSearchRecipient] = useState("");
   const [priority, setPriority] = useState("info");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
@@ -70,8 +74,35 @@ export default function HRNotifications() {
     }
   };
 
+  const fetchRecipients = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // 1. Fetch Employees
+      const empRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (empRes.ok) {
+        const empData = await empRes.json();
+        setEmployeesList(Array.isArray(empData) ? empData : []);
+      }
+
+      // 2. Fetch Customers
+      const custRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (custRes.ok) {
+        const custData = await custRes.json();
+        const users = Array.isArray(custData) ? custData : (custData.users || []);
+        setCustomersList(users);
+      }
+    } catch (e) {
+      console.warn("Could not load recipients:", e.message);
+    }
+  };
+
   useEffect(() => {
     fetchNotifications();
+    fetchRecipients();
   }, []);
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
@@ -118,8 +149,12 @@ export default function HRNotifications() {
 
   const handleSendNotification = async (e) => {
     e.preventDefault();
-    if (!title || !message) {
+    if (!title.trim() || !message.trim()) {
       toast.error("Please fill in both title and message");
+      return;
+    }
+    if ((targetAudience === 'specific_employee' || targetAudience === 'specific_customer') && !selectedRecipientId) {
+      toast.error("Please select a specific recipient");
       return;
     }
 
@@ -133,13 +168,16 @@ export default function HRNotifications() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          title,
-          message,
+          title: title.trim(),
+          message: message.trim(),
           type: priority,
           targetAudience,
+          targetId: selectedRecipientId || null,
           zone: userZone
         })
       });
+
+      const resData = await res.json();
 
       const newNotif = {
         id: Date.now().toString(),
@@ -155,16 +193,19 @@ export default function HRNotifications() {
       setNotifications([newNotif, ...notifications]);
       
       Swal.fire({
-        title: 'Sent!',
-        text: 'Notification broadcasted successfully.',
+        title: 'Dispatched Successfully! 🚀',
+        text: resData.message || 'Notification broadcasted successfully.',
         icon: 'success',
         confirmButtonColor: '#489b0d'
       });
       
       setTitle("");
       setMessage("");
+      setSelectedRecipientId("");
+      setSearchRecipient("");
       setPriority("info");
       setActiveTab("inbox");
+      fetchNotifications();
     } catch (err) {
       toast.error("Failed to broadcast notification");
     } finally {
@@ -368,7 +409,11 @@ export default function HRNotifications() {
                       <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                       <select 
                         value={targetAudience}
-                        onChange={(e) => setTargetAudience(e.target.value)}
+                        onChange={(e) => {
+                          setTargetAudience(e.target.value);
+                          setSelectedRecipientId("");
+                          setSearchRecipient("");
+                        }}
                         className="w-full h-11 pl-10 pr-4 rounded-[10px] border border-[var(--color-brand-border)] text-[13px] font-semibold text-[var(--color-brand-text)] focus:outline-none focus:border-[#489b0d] bg-white appearance-none cursor-pointer"
                       >
                         {isHrExecutive ? (
@@ -376,17 +421,26 @@ export default function HRNotifications() {
                             <option value={`zone_applicants_${userZone}`}>Zone Applicants & Candidates ({userZone})</option>
                             <option value={`zone_staff_${userZone}`}>Zone Field / Telecalling Staff ({userZone})</option>
                             <option value={`zone_hired_${userZone}`}>Zone Hired Employees ({userZone})</option>
+                            <option value="specific_employee">👤 Specific Employee (Individual Staff)</option>
+                            <option value="specific_customer">🙋 Specific Customer (Individual User)</option>
                           </>
                         ) : isHrManager ? (
                           <>
-                            <option value={`zone_all_${userZone}`}>All Staff & Applicants in Zone ({userZone})</option>
-                            <option value={`zone_executives_${userZone}`}>HR Executives in Zone ({userZone})</option>
-                            <option value={`zone_sales_${userZone}`}>Sales Team ({userZone})</option>
-                            <option value={`zone_ops_${userZone}`}>Operations Team ({userZone})</option>
+                            <option value="all_employees">👥 All HR Executives & Employees (All Zones)</option>
+                            <option value="hr_executives">All HR Executives (Pan-India)</option>
+                            <option value="specific_employee">👤 Specific Employee (Individual Staff)</option>
+                            <option value="all_customers">📱 All Customers (Mobile App Users)</option>
+                            <option value="specific_customer">🙋 Specific Customer (Individual User)</option>
+                            <option value="sales">Sales Team (All Zones)</option>
+                            <option value="ops">Operations Team (All Zones)</option>
                           </>
                         ) : (
                           <>
-                            <option value="all">All Employees (Pan-India)</option>
+                            <option value="all">🌐 All Users & Employees (Global Broadcast)</option>
+                            <option value="all_employees">👥 All Employees (Pan-India)</option>
+                            <option value="specific_employee">👤 Specific Employee (Individual Staff)</option>
+                            <option value="all_customers">📱 All Customers (Mobile App Users)</option>
+                            <option value="specific_customer">🙋 Specific Customer (Individual User)</option>
                             <option value="hr_managers">All HR Managers</option>
                             <option value="hr_executives">All HR Executives</option>
                             <option value="sales">Sales Team</option>
@@ -397,6 +451,85 @@ export default function HRNotifications() {
                       </select>
                     </div>
                   </div>
+
+                  {/* Specific Employee Selection */}
+                  {targetAudience === 'specific_employee' && (
+                    <div className="bg-slate-50 p-4 rounded-[10px] border border-[var(--color-brand-border)] space-y-3">
+                      <label className="block text-[12px] font-bold text-[var(--color-brand-text)]">
+                        Select Employee <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="Search employee by name, empId, or email..."
+                        value={searchRecipient}
+                        onChange={(e) => setSearchRecipient(e.target.value)}
+                        className="w-full h-10 px-3 rounded-[8px] border border-[var(--color-brand-border)] text-[12px] bg-white focus:outline-none focus:border-[#489b0d]"
+                      />
+                      <select
+                        value={selectedRecipientId}
+                        onChange={(e) => setSelectedRecipientId(e.target.value)}
+                        className="w-full h-11 px-3 rounded-[8px] border border-[var(--color-brand-border)] text-[13px] font-medium text-[var(--color-brand-text)] bg-white focus:outline-none focus:border-[#489b0d]"
+                      >
+                        <option value="">-- Choose Employee --</option>
+                        {employeesList
+                          .filter(emp => {
+                            if (!searchRecipient) return true;
+                            const query = searchRecipient.toLowerCase();
+                            return (
+                              (emp.name && emp.name.toLowerCase().includes(query)) ||
+                              (emp.email && emp.email.toLowerCase().includes(query)) ||
+                              (emp.empId && emp.empId.toLowerCase().includes(query))
+                            );
+                          })
+                          .map(emp => (
+                            <option key={emp._id || emp.empId} value={emp._id || emp.empId}>
+                              {emp.name} ({emp.empId || 'Staff'}) - {emp.designation || emp.role || 'Employee'} [{emp.zone || 'Zone'}]
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Specific Customer Selection */}
+                  {targetAudience === 'specific_customer' && (
+                    <div className="bg-slate-50 p-4 rounded-[10px] border border-[var(--color-brand-border)] space-y-3">
+                      <label className="block text-[12px] font-bold text-[var(--color-brand-text)]">
+                        Select Customer <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="Search customer by name, phone, or email..."
+                        value={searchRecipient}
+                        onChange={(e) => setSearchRecipient(e.target.value)}
+                        className="w-full h-10 px-3 rounded-[8px] border border-[var(--color-brand-border)] text-[12px] bg-white focus:outline-none focus:border-[#489b0d]"
+                      />
+                      <select
+                        value={selectedRecipientId}
+                        onChange={(e) => setSelectedRecipientId(e.target.value)}
+                        className="w-full h-11 px-3 rounded-[8px] border border-[var(--color-brand-border)] text-[13px] font-medium text-[var(--color-brand-text)] bg-white focus:outline-none focus:border-[#489b0d]"
+                      >
+                        <option value="">-- Choose Customer --</option>
+                        {customersList
+                          .filter(cust => {
+                            if (!searchRecipient) return true;
+                            const query = searchRecipient.toLowerCase();
+                            return (
+                              (cust.name && cust.name.toLowerCase().includes(query)) ||
+                              (cust.phone && cust.phone.includes(query)) ||
+                              (cust.email && cust.email.toLowerCase().includes(query)) ||
+                              (cust.userId && cust.userId.toLowerCase().includes(query))
+                            );
+                          })
+                          .map(cust => (
+                            <option key={cust._id || cust.userId} value={cust._id || cust.userId}>
+                              {cust.name} ({cust.phone || cust.email || cust.userId})
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-[12px] font-bold text-[var(--color-brand-text)] mb-2">

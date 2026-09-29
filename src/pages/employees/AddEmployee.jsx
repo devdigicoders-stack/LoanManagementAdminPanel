@@ -3,7 +3,7 @@ import { X, UserPlus, MapPin, Navigation } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
-import { validate } from '../../utils/validation';
+import { validate, sanitize } from '../../utils/validation';
 import InputError from '../../components/common/InputError';
 
 export default function AddEmployee() {
@@ -29,7 +29,13 @@ export default function AddEmployee() {
     const { name, value } = e.target;
     let finalValue = value;
     if (name === 'pan') {
-      finalValue = value.toUpperCase();
+      finalValue = sanitize.pan(value);
+    } else if (name === 'mobile') {
+      finalValue = sanitize.mobile(value);
+    } else if (name === 'aadhar') {
+      finalValue = sanitize.aadhaar(value);
+    } else if (name === 'pincode') {
+      finalValue = sanitize.pincode(value);
     }
     setFormData(prev => ({ ...prev, [name]: finalValue }));
     if (errors[name]) {

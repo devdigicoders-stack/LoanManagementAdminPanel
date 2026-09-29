@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import SearchableSelect from '../components/common/SearchableSelect';
+import { sanitize, validate } from '../utils/validation';
 
 export default function AddUser() {
  const navigate = useNavigate();
@@ -156,7 +157,8 @@ export default function AddUser() {
  }));
  setSelectedPermissions(getDefaultPermissionsForRole(value));
  } else {
- setFormData(prev => ({ ...prev, [name]: value }));
+ const finalVal = name === 'phone' ? sanitize.mobile(value) : value;
+ setFormData(prev => ({ ...prev, [name]: finalVal }));
  }
  };
 
@@ -164,6 +166,10 @@ export default function AddUser() {
  e.preventDefault();
  if (!formData.name || !formData.email || !formData.phone || !formData.password) {
  toast.error('Please fill all required fields (*)');
+ return;
+ }
+ if (formData.phone && !validate.mobile(formData.phone)) {
+ toast.error('Mobile Number must be a valid 10-digit number starting with 6-9');
  return;
  }
  if (formData.password !== formData.confirmPassword) {

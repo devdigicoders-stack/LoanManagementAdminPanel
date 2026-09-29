@@ -99,7 +99,6 @@ const PORTAL_CONFIGS = [
       { name: 'Customer Balances', path: '/accountant/customers', icon: Users },
       { name: 'Receipts', path: '/accountant/receipts', icon: Receipt },
       { name: 'Bank Reconciliation', path: '/accountant/reconciliation', icon: ShieldCheck },
-      { name: 'Financial Reports', path: '/accountant/reports', icon: BarChart3 },
     ]
   },
   {

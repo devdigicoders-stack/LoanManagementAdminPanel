@@ -92,7 +92,12 @@ const LoginPage = () => {
  localStorage.setItem('userRole', role === 'Super Admin' ? 'Super Admin' : actualRole);
  localStorage.setItem('userEmail', userEmail);
  localStorage.setItem('token', data.token);
- localStorage.setItem('user', JSON.stringify(data.admin || data.user || data.employee || { _id: data._id, name: data.name, email: userEmail, role: actualRole }));
+ const loggedAdmin = data.admin || data.user || data.employee || { _id: data._id, name: data.name, email: userEmail, role: actualRole };
+ if (data.zone) loggedAdmin.zone = data.zone;
+ localStorage.setItem('user', JSON.stringify(loggedAdmin));
+ if (loggedAdmin.zone) {
+   localStorage.setItem('userZone', loggedAdmin.zone);
+ }
  
  // Store permissions from backend
  const roleKey = actualRole.toLowerCase().replace(/ /g, '_');
@@ -199,10 +204,11 @@ const LoginPage = () => {
  localStorage.setItem('userRole', effectiveRole);
  localStorage.setItem('userEmail', userEmail);
  localStorage.setItem('token', data.token);
- if (data.employee || data.user) {
- localStorage.setItem('user', JSON.stringify(data.employee || data.user));
- } else {
- localStorage.setItem('user', JSON.stringify({ _id: data._id, name: data.name, email: userEmail, role: effectiveRole, empId: data.empId }));
+ const loggedUser = data.employee || data.user || { _id: data._id, name: data.name, email: userEmail, role: effectiveRole, empId: data.empId };
+ if (data.zone) loggedUser.zone = data.zone;
+ localStorage.setItem('user', JSON.stringify(loggedUser));
+ if (loggedUser.zone) {
+   localStorage.setItem('userZone', loggedUser.zone);
  }
  
  // Store permissions from backend (or fallback to defaults if empty)

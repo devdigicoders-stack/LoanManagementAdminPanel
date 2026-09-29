@@ -11,6 +11,14 @@ export default function Header({ toggleSidebar }) {
   const [adminName, setAdminName] = useState(localStorage.getItem(nameKey) || "Admin User");
   const [adminPic, setAdminPic] = useState(localStorage.getItem(picKey) || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc");
   const [adminRole, setAdminRole] = useState(currentRole);
+  const [adminZone, setAdminZone] = useState(() => {
+    try {
+      const u = JSON.parse(localStorage.getItem('user') || '{}');
+      return u.zone || localStorage.getItem('userZone') || '';
+    } catch (e) {
+      return localStorage.getItem('userZone') || '';
+    }
+  });
 
   const [unreadCount, setUnreadCount] = useState(0);
 
@@ -24,7 +32,37 @@ export default function Header({ toggleSidebar }) {
       setAdminName(localStorage.getItem(nKey) || "Admin User");
       setAdminPic(localStorage.getItem(pKey) || "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=f8fafc");
       setAdminRole(role);
+      try {
+        const u = JSON.parse(localStorage.getItem('user') || '{}');
+        setAdminZone(u.zone || localStorage.getItem('userZone') || '');
+      } catch (e) {
+        setAdminZone(localStorage.getItem('userZone') || '');
+      }
     };
+
+    const fetchAdminProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/profile`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.zone) {
+            setAdminZone(data.zone);
+            localStorage.setItem('userZone', data.zone);
+            try {
+              const u = JSON.parse(localStorage.getItem('user') || '{}');
+              u.zone = data.zone;
+              localStorage.setItem('user', JSON.stringify(u));
+            } catch (e) {}
+          }
+        }
+      } catch (e) {}
+    };
+
+    fetchAdminProfile();
 
     const fetchUnreadCount = async () => {
       try {
@@ -108,6 +146,18 @@ export default function Header({ toggleSidebar }) {
           
           <div className="w-px h-8 bg-slate-200 hidden sm:block"></div>
 
+          {/* Header Zone Badge for Executives & Regional Staff */}
+          {(() => {
+            const z = (adminZone || '').toUpperCase();
+            if (!z || z === 'ALL') return null;
+            return (
+              <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 text-amber-900 shadow-2xs">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                <span className="text-[11px] font-black tracking-wide uppercase">{z} ZONE</span>
+              </div>
+            );
+          })()}
+
           {/* Profile Dropdown */}
           <Link to="/profile" className="flex items-center gap-3 text-left hover:opacity-80 transition-opacity">
             <div className="w-10 h-10 rounded-full bg-slate-100 overflow-hidden flex items-center justify-center border border-slate-200 shrink-0">
@@ -115,7 +165,18 @@ export default function Header({ toggleSidebar }) {
             </div>
             <div className="hidden sm:block">
               <p className="text-[13px] font-bold text-slate-800 leading-tight">{adminName}</p>
-              <p className="text-[11px] font-medium text-slate-500 leading-tight mt-0.5">{adminRole}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[11px] font-semibold text-slate-500 leading-tight">{adminRole}</span>
+                {(() => {
+                  const z = (adminZone || '').toUpperCase();
+                  if (!z || z === 'ALL') return null;
+                  return (
+                    <span className="px-1.5 py-0.5 rounded text-[9.5px] font-black bg-amber-100/80 text-amber-800 border border-amber-200">
+                      {z}
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
           </Link>
 

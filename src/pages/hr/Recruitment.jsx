@@ -141,71 +141,89 @@ const getLocationsForZone = (zone) => {
  return matched.length > 0 ? matched : ALL_LOCATIONS;
 };
 
+const getZoneFromState = (stateName) => {
+ if (!stateName) return null;
+ const cleanState = stateName.trim().toUpperCase();
+ for (const [zone, states] of Object.entries(ZONE_STATES_MAP)) {
+   if (states.some(s => cleanState.includes(s) || s.includes(cleanState))) {
+     return zone;
+   }
+ }
+ return null;
+};
+
 // ── Searchable single-select dropdown ──────────────────────────────────────
-const SearchableSelect = ({ label, value, onChange, options, placeholder, required }) => {
- const [open, setOpen] = useState(false);
- const [search, setSearch] = useState('');
- const ref = useRef(null);
+const SearchableSelect = ({ label, value, onChange, options, placeholder, required, extraHeader }) => {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const ref = useRef(null);
 
- useEffect(() => {
- const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
- document.addEventListener('mousedown', handler);
- return () => document.removeEventListener('mousedown', handler);
- }, []);
+  useEffect(() => {
+    const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
- const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
+  const filtered = options.filter(o => o.toLowerCase().includes(search.toLowerCase()));
 
- const handleSelect = (val) => {
- onChange(val);
- setOpen(false);
- setSearch('');
- };
+  const handleSelect = (val) => {
+    onChange(val);
+    setOpen(false);
+    setSearch('');
+  };
 
- return (
- <div className="relative" ref={ref}>
- <label className="block text-xs font-bold text-gray-700 mb-1">{label}{required && ' *'}</label>
- <button
- type="button"
- onClick={() => setOpen(o => !o)}
- className="w-full flex items-center justify-between border border-gray-300 rounded p-2 text-sm bg-white focus:ring-1 focus:ring-blue-500 text-left"
- >
- <span className={value ? 'text-gray-900' : 'text-gray-400'}>{value || placeholder}</span>
- <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`} />
- </button>
- {open && (
- <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-56 flex flex-col">
- <div className="p-2 border-b border-gray-100">
- <div className="relative">
- <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
- <input
- autoFocus
- type="text"
- placeholder="Search..."
- value={search}
- onChange={e => setSearch(e.target.value)}
- className="w-full pl-7 pr-3 py-1.5 border border-gray-200 rounded text-xs focus:outline-none focus:border-blue-400"
- />
- </div>
- </div>
- <div className="overflow-y-auto flex-1">
- {filtered.length === 0 ? (
- <div className="px-3 py-3 text-xs text-gray-400 text-center">No results</div>
- ) : filtered.map((opt, i) => (
- <div
- key={i}
- onClick={() => handleSelect(opt)}
- className={`px-3 py-2 text-sm cursor-pointer hover:bg-blue-50 transition-colors ${
- value === opt ? 'bg-blue-50 text-blue-700 font-semibold' : 'text-gray-800'
- }`}
- >
- {opt}
- </div>
- ))}
- </div>
- </div>
- )}
- </div>
- );
+  return (
+    <div className="relative" ref={ref}>
+      <div className="flex items-center justify-between mb-1">
+        <label className="block text-xs font-bold text-gray-700">{label}{required && ' *'}</label>
+        {extraHeader}
+      </div>
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between border border-gray-300 hover:border-blue-400 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none text-left shadow-sm min-h-[38px] transition-all"
+      >
+        <span className={`truncate ${value ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
+          {value || placeholder}
+        </span>
+        <ChevronDown size={16} className={`text-gray-400 shrink-0 ml-1.5 transition-transform duration-200 ${open ? 'rotate-180 text-blue-600' : ''}`} />
+      </button>
+      {open && (
+        <div className="absolute z-50 left-0 right-0 top-full mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl max-h-60 flex flex-col overflow-hidden animate-in fade-in slide-in-from-top-1 duration-150">
+          <div className="p-2 border-b border-gray-100 bg-gray-50/70">
+            <div className="relative">
+              <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input
+                autoFocus
+                type="text"
+                placeholder="Search..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                onClick={e => e.stopPropagation()}
+                className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg text-xs bg-white focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-400"
+              />
+            </div>
+          </div>
+          <div className="overflow-y-auto max-h-48 divide-y divide-gray-50">
+            {filtered.length === 0 ? (
+              <div className="px-3 py-4 text-xs text-gray-400 text-center italic">No matching results</div>
+            ) : filtered.map((opt, i) => (
+              <div
+                key={i}
+                onClick={() => handleSelect(opt)}
+                className={`px-3 py-2 text-xs sm:text-sm cursor-pointer transition-colors flex items-center justify-between ${
+                  value === opt ? 'bg-blue-50 text-blue-700 font-bold' : 'text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <span className="truncate">{opt}</span>
+                {value === opt && <CheckCircle2 size={15} className="text-blue-600 shrink-0 ml-2" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 };
 
 const DEFAULT_JOB_DESC = `Join our rapidly growing team and shape the future of financial services.
@@ -277,12 +295,15 @@ export default function Recruitment() {
  const userRole = (currentUser.role || '').toLowerCase();
  const userDesig = (currentUser.designation || '').toLowerCase();
  const isMasterAdmin = ['super admin', 'superadmin', 'admin'].includes(userRole);
- const isHRLead = ['hr head', 'hr_head', 'hr admin', 'hr manager', 'hr_manager'].includes(userRole) || 
- userDesig.includes('hr head') || userDesig.includes('hr manager');
- const isHRHead = isHRLead;
- const isExecutive = !isMasterAdmin && !isHRHead && (userRole.includes('executive') || userDesig.includes('executive'));
- const userZone = (currentUser.zone && currentUser.zone !== 'ALL') ? currentUser.zone.toUpperCase() : 'NORTH';
- const canAssignApplications = isHRLead && !isMasterAdmin;
+ const isHRHeadOnly = userRole.includes('hr head') || userRole.includes('hr_head') || userRole.includes('hr admin') || userDesig.includes('hr head');
+  const isHRManagerOnly = userRole.includes('hr manager') || userRole.includes('hr_manager') || userDesig.includes('hr manager');
+  const isHRLead = isHRHeadOnly || isHRManagerOnly;
+  const isHRHead = isHRHeadOnly;
+  const isHRManager = isHRManagerOnly;
+  const isExecutive = !isMasterAdmin && !isHRLead && (userRole.includes('executive') || userDesig.includes('executive'));
+  const rawZone = currentUser.zone || localStorage.getItem('userZone');
+  const userZone = (rawZone && rawZone !== 'ALL') ? rawZone.toUpperCase() : (isExecutive ? 'SOUTH' : 'ALL');
+  const canAssignApplications = (isHRLead || isMasterAdmin);
 
  // Assignment & Filter states
  const [appFilterTab, setAppFilterTab] = useState('all'); // 'all', 'unassigned', 'assigned'
@@ -416,29 +437,27 @@ export default function Recruitment() {
  };
 
  const fetchEmployees = async () => {
- try {
- const token = localStorage.getItem('token');
- const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users?type=staff`, {
- headers: { 'Authorization': `Bearer ${token}` }
- });
- if (res.ok) {
- const data = await res.json();
- const list = Array.isArray(data) ? data : (data.users || []);
- // Filter out superadmins and show relevant executives/staff
- setEmployees(list.filter(u => !['superadmin', 'super admin', 'Super Admin'].includes(u.role)));
- } else {
- const fallback = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
- headers: { 'Authorization': `Bearer ${token}` }
- });
- if (fallback.ok) {
- const fbData = await fallback.json();
- setEmployees(Array.isArray(fbData) ? fbData : []);
- }
- }
- } catch (err) {
- console.error('Error fetching staff list for assignment:', err);
- }
- };
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/assignable-staff`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setEmployees(Array.isArray(data) ? data : (data.staff || []));
+      } else {
+        const fallback = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (fallback.ok) {
+          const fbData = await fallback.json();
+          setEmployees(Array.isArray(fbData) ? fbData : []);
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching staff list for assignment:', err);
+    }
+  };
 
  const fetchJobs = async () => {
  try {
@@ -540,7 +559,7 @@ export default function Recruitment() {
  'Content-Type': 'application/json',
  'Authorization': `Bearer ${token}`
  },
- body: JSON.stringify(jobForm)
+ body: JSON.stringify({ ...jobForm, openings: Math.max(1, parseInt(jobForm.openings, 10) || 1) })
  });
  
  if (res.ok) {
@@ -582,28 +601,50 @@ export default function Recruitment() {
  });
  };
 
- const handleUpdateAppStatus = async (id, newStatus) => {
- try {
- const token = localStorage.getItem('token');
- const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/applications/${id}/status`, {
- method: 'PUT',
- headers: { 
- 'Content-Type': 'application/json',
- 'Authorization': `Bearer ${token}`
- },
- body: JSON.stringify({ status: newStatus })
- });
- if (res.ok) {
- toast.success('Status updated');
- fetchApplications();
- if (selectedApp && selectedApp._id === id) {
- setSelectedApp({...selectedApp, status: newStatus});
- }
- }
- } catch (err) {
- toast.error('Failed to update status');
- }
- };
+  const handleUpdateAppStatus = async (id, newStatus) => {
+    // 🔒 Lock: cannot change status once Hired or Rejected
+    const currentApp = applications.find(a => a._id === id) || selectedApp;
+    if (currentApp && (currentApp.status === 'Hired' || currentApp.status === 'Rejected')) {
+      toast.error(`Status is locked — cannot change after being marked "${currentApp.status}"`);
+      return;
+    }
+
+    // Instant UI reflection
+    if (selectedApp && selectedApp._id === id) {
+      setSelectedApp(prev => ({ ...prev, status: newStatus }));
+    }
+    setApplications(prev => prev.map(app => app._id === id ? { ...app, status: newStatus } : app));
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/recruitment/applications/${id}/status`, {
+        method: 'PUT',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ status: newStatus })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success('Status updated');
+        if (data.application) {
+          if (selectedApp && selectedApp._id === id) {
+            setSelectedApp(prev => ({ ...prev, ...data.application }));
+          }
+          setApplications(prev => prev.map(app => app._id === id ? { ...app, ...data.application } : app));
+        }
+        fetchApplications();
+        fetchJobs();
+      } else {
+        toast.error(data.message || 'Failed to update status');
+        fetchApplications();
+      }
+    } catch (err) {
+      toast.error('Failed to update status');
+      fetchApplications();
+    }
+  };
 
  const handleSaveAppEdit = async () => {
  try {
@@ -927,32 +968,7 @@ export default function Recruitment() {
  {/* Filter Toolbar */}
  <div className="p-4 border-b border-gray-100 bg-gray-50 flex flex-wrap justify-between items-center gap-3">
  <div className="flex flex-wrap items-center gap-2">
- <div className="flex gap-1.5 bg-gray-200/70 p-1 rounded-lg">
- <button
- onClick={() => setAppFilterTab('all')}
- className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
- appFilterTab === 'all' ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'
- }`}
- >
- All ({applications.length})
- </button>
- <button
- onClick={() => setAppFilterTab('unassigned')}
- className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
- appFilterTab === 'unassigned' ? 'bg-amber-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
- }`}
- >
- Unassigned ({applications.filter(a => !a.assignedToId).length})
- </button>
- <button
- onClick={() => setAppFilterTab('assigned')}
- className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${
- appFilterTab === 'assigned' ? 'bg-green-600 text-white shadow-sm' : 'text-gray-600 hover:text-gray-900'
- }`}
- >
- Assigned ({applications.filter(a => a.assignedToId).length})
- </button>
- </div>
+ 
 
  {/* Zone Filter */}
  <select
@@ -1003,14 +1019,7 @@ export default function Recruitment() {
  )}
  </div>
 
- {canAssignApplications && selectedAppIds.length > 0 && (
- <button
- onClick={() => { setAssigningApp(null); setTargetEmployeeId(''); setShowAssignModal(true); }}
- className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-sm"
- >
- <UserCheck size={14} /> Bulk Assign ({selectedAppIds.length})
- </button>
- )}
+ 
  </div>
  </div>
 
@@ -1018,32 +1027,13 @@ export default function Recruitment() {
  <table className="w-full text-left border-collapse min-w-[1100px]">
  <thead>
  <tr className="bg-gray-50/80 border-b border-gray-200 text-xs font-bold text-gray-500 uppercase tracking-wider">
- {canAssignApplications && (
- <th className="py-3 px-4 w-10 whitespace-nowrap">
- <input
- type="checkbox"
- checked={
- paginatedApplications.length > 0 &&
- paginatedApplications.every(a => selectedAppIds.includes(a._id))
- }
- onChange={(e) => {
- if (e.target.checked) {
- const newIds = Array.from(new Set([...selectedAppIds, ...paginatedApplications.map(a => a._id)]));
- setSelectedAppIds(newIds);
- } else {
- const pageIds = new Set(paginatedApplications.map(a => a._id));
- setSelectedAppIds(selectedAppIds.filter(id => !pageIds.has(id)));
- }
- }}
- className="rounded text-blue-600"
- />
- </th>
- )}
+ 
  <th className="py-3 px-4 whitespace-nowrap">App No & Candidate</th>
- <th className="py-3 px-4 whitespace-nowrap">Zone & State</th>
+ <th className="py-3 px-4 whitespace-nowrap">Job Zone & Location</th>
+                  <th className="py-3 px-4 whitespace-nowrap">Applicant Zone & Location</th>
  <th className="py-3 px-4 whitespace-nowrap">Applied For</th>
  <th className="py-3 px-4 whitespace-nowrap">Contact</th>
- <th className="py-3 px-4 whitespace-nowrap">Assigned HR Exec</th>
+ 
  <th className="py-3 px-4 whitespace-nowrap">Date</th>
  <th className="py-3 px-4 whitespace-nowrap">Status</th>
  <th className="py-3 px-4 text-right whitespace-nowrap">Actions</th>
@@ -1052,22 +1042,7 @@ export default function Recruitment() {
  <tbody className="divide-y divide-gray-100 text-sm">
  {paginatedApplications.map(app => (
  <tr key={app._id} className="hover:bg-blue-50/50 transition-colors">
- {canAssignApplications && (
- <td className="py-3 px-4 whitespace-nowrap">
- <input
- type="checkbox"
- checked={selectedAppIds.includes(app._id)}
- onChange={(e) => {
- if (e.target.checked) {
- setSelectedAppIds([...selectedAppIds, app._id]);
- } else {
- setSelectedAppIds(selectedAppIds.filter(id => id !== app._id));
- }
- }}
- className="rounded text-blue-600"
- />
- </td>
- )}
+ 
  <td className="py-3 px-4 whitespace-nowrap">
  {app.applicationNo && (
  <span className="font-mono text-[10.5px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 inline-block mb-1 whitespace-nowrap">
@@ -1084,22 +1059,52 @@ export default function Recruitment() {
  {app.candidateType || 'Fresher'}
  </span>
  </div>
- <span className="text-xs text-gray-500 block mt-0.5">Exp CTC: {app.expectedSalary || 'N/A'}</span>
+ <div className="text-xs space-y-0.5 mt-0.5">
+                        <span className="text-gray-500 block">Exp CTC: <strong className="text-gray-700 font-semibold">{app.expectedSalary ? (app.expectedSalary.toString().startsWith('₹') ? app.expectedSalary : `₹${app.expectedSalary}`) : 'N/A'}</strong></span>
+                        {app.status === 'Hired' && (
+                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                            Offered: {app.employeeId?.grossMonthly ? `₹${Number(app.employeeId.grossMonthly).toLocaleString('en-IN')}/mo` : (app.monthlyNetSalary ? `₹${Number(app.monthlyNetSalary).toLocaleString('en-IN')}/mo` : (app.yearlyGrossSalary ? `₹${app.yearlyGrossSalary}/yr` : 'Fixed / In Onboarding'))}
+                          </span>
+                        )}
+                      </div>
  </td>
- <td className="py-3 px-4 whitespace-nowrap">
- <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${
- app.zone === 'NORTH' ? 'bg-sky-50 text-sky-700 border-sky-200' :
- app.zone === 'SOUTH' ? 'bg-amber-50 text-amber-700 border-amber-200' :
- app.zone === 'EAST' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
- app.zone === 'WEST' ? 'bg-purple-50 text-purple-700 border-purple-200' :
- 'bg-slate-50 text-slate-700 border-slate-200'
- }`}>
- <MapPin size={10} /> {app.zone || 'NORTH'}
- </span>
- <div className="text-[11.5px] text-gray-500 mt-0.5 font-medium whitespace-nowrap">
- {app.state || 'State Mapped'}
- </div>
- </td>
+                  {/* Job Target Zone & Office Location */}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <div className="flex flex-col items-start gap-1">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${
+                        (app.jobId?.zone || app.zone) === 'NORTH' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                        (app.jobId?.zone || app.zone) === 'SOUTH' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        (app.jobId?.zone || app.zone) === 'EAST' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        (app.jobId?.zone || app.zone) === 'WEST' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                        'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}>
+                        <Briefcase size={10} /> Job: {app.jobId?.zone || app.zone || 'NORTH'}
+                      </span>
+                      <div className="text-[11.5px] text-gray-700 font-semibold flex items-center gap-1 whitespace-nowrap">
+                        <MapPin size={11} className="text-gray-400 shrink-0" />
+                        <span>{app.jobId?.location || 'Head Office / Base'}</span>
+                      </div>
+                    </div>
+                  </td>
+
+                  {/* Applicant Origin Zone & Address (District, State) */}
+                  <td className="py-3 px-4 whitespace-nowrap">
+                    <div className="flex flex-col items-start gap-1">
+                      <span className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded border whitespace-nowrap ${
+                        (getZoneFromState(app.state) || app.zone) === 'NORTH' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                        (getZoneFromState(app.state) || app.zone) === 'SOUTH' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                        (getZoneFromState(app.state) || app.zone) === 'EAST' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                        (getZoneFromState(app.state) || app.zone) === 'WEST' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                        'bg-slate-50 text-slate-700 border-slate-200'
+                      }`}>
+                        <Users size={10} /> Applicant: {getZoneFromState(app.state) || app.zone || 'NORTH'}
+                      </span>
+                      <div className="text-[11.5px] text-gray-700 font-medium flex items-center gap-1 whitespace-nowrap">
+                        <MapPin size={11} className="text-blue-500 shrink-0" />
+                        <span>{[app.district || app.area, app.state].filter(Boolean).join(', ') || app.state || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </td>
  <td className="py-3 px-4 whitespace-nowrap">
  <span className="font-bold text-blue-600 block">{app.jobId?.title || 'Unknown Job'}</span>
  </td>
@@ -1107,24 +1112,7 @@ export default function Recruitment() {
  <div className="text-xs font-medium text-gray-700">{app.email}</div>
  <div className="text-xs text-gray-500">{app.phone}</div>
  </td>
- <td className="py-3 px-4 whitespace-nowrap">
- {app.assignedTo && app.assignedTo !== 'Unassigned' ? (
- <div>
- <div className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 whitespace-nowrap">
- <UserCheck size={12} /> {app.assignedTo}
- </div>
- {app.assignedManagerName && (
- <span className="text-[10px] text-gray-500 font-medium mt-0.5 block whitespace-nowrap">
- Mgr: {app.assignedManagerName}
- </span>
- )}
- </div>
- ) : (
- <span className="inline-block text-xs font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 whitespace-nowrap">
- Unassigned
- </span>
- )}
- </td>
+ 
  <td className="py-3 px-4 text-gray-500 text-xs whitespace-nowrap">{new Date(app.createdAt).toLocaleDateString()}</td>
  <td className="py-3 px-4 whitespace-nowrap">
  <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold whitespace-nowrap ${
@@ -1139,15 +1127,7 @@ export default function Recruitment() {
  </td>
  <td className="py-3 px-4 text-right whitespace-nowrap">
  <div className="flex items-center justify-end gap-1.5">
- {canAssignApplications && (
- <button
- onClick={() => { setAssigningApp(app); setTargetEmployeeId(app.assignedToId?._id || app.assignedToId || ''); setShowAssignModal(true); }}
- className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-gray-300 text-gray-700 rounded-md text-xs font-bold hover:bg-gray-50 cursor-pointer whitespace-nowrap shadow-2xs"
- title="Assign to HR Executive"
- >
- <UserCheck size={12} /> Reassign
- </button>
- )}
+ 
  <button 
  onClick={() => { setSelectedApp(app); setShowAppModal(true); }} 
  className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-50 border border-blue-200 text-blue-700 rounded-md text-xs font-bold hover:bg-blue-100 cursor-pointer whitespace-nowrap shadow-2xs"
@@ -1160,7 +1140,7 @@ export default function Recruitment() {
  ))}
  {paginatedApplications.length === 0 && (
  <tr>
- <td colSpan="9" className="text-center py-12 text-gray-500">
+ <td colSpan="7" className="text-center py-12 text-gray-500">
  <div className="flex flex-col items-center justify-center gap-2">
  <Users size={32} className="text-gray-300" />
  <p className="font-semibold text-gray-600">No applications match your filter.</p>
@@ -1464,42 +1444,35 @@ export default function Recruitment() {
  placeholder="Select department"
  />
 
- <div>
- <div className="flex items-center justify-between mb-1">
- <label className="block text-xs font-bold text-gray-700">Designation *</label>
- <button
- type="button"
- onClick={() => {
- setNewDesigForm({ name: '', department: jobForm.department || 'OPERATIONAL', description: '', status: 'Active' });
- setShowAddDesigModal(true);
- }}
- className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5"
- >
- <Plus size={12} /> Add New
- </button>
- </div>
- <select
- required
- value={jobForm.designation}
- onChange={e => {
- const val = e.target.value;
- setJobForm({
- ...jobForm,
- designation: val,
- title: jobForm.title === jobForm.designation || !jobForm.title ? val : jobForm.title
- });
- }}
- className="w-full border border-gray-300 rounded p-2 text-sm bg-white focus:ring-1 focus:ring-blue-500 font-medium text-gray-900"
- >
- <option value="">Select Designation</option>
- {(designations.filter(d => d.department === jobForm.department).length > 0
- ? designations.filter(d => d.department === jobForm.department)
- : (DEPARTMENT_DESIGNATIONS[jobForm.department] || []).map(name => ({ name }))
- ).map((d, idx) => (
- <option key={idx} value={d.name}>{d.name}</option>
- ))}
- </select>
- </div>
+                <SearchableSelect
+                  label="Position / Designation"
+                  required
+                  value={jobForm.designation}
+                  onChange={val => {
+                    setJobForm({
+                      ...jobForm,
+                      designation: val,
+                      title: jobForm.title === jobForm.designation || !jobForm.title ? val : jobForm.title
+                    });
+                  }}
+                  options={(designations.filter(d => d.department === jobForm.department).length > 0
+                    ? designations.filter(d => d.department === jobForm.department).map(d => d.name)
+                    : (DEPARTMENT_DESIGNATIONS[jobForm.department] || [])
+                  )}
+                  placeholder="Search and select designation"
+                  extraHeader={(
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setNewDesigForm({ name: '', department: jobForm.department || 'OPERATIONAL', description: '', status: 'Active' });
+                        setShowAddDesigModal(true);
+                      }}
+                      className="text-[11px] font-bold text-blue-600 hover:text-blue-800 flex items-center gap-0.5"
+                    >
+                      <Plus size={12} /> Add New
+                    </button>
+                  )}
+                />
 
  <div>
  <label className="block text-xs font-bold text-gray-700 mb-1">Job Title *</label>
@@ -1509,7 +1482,7 @@ export default function Recruitment() {
  placeholder="e.g. HAUS NUO-Pay Offer- Liability"
  value={jobForm.title}
  onChange={e=>setJobForm({...jobForm, title: e.target.value})}
- className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500"
+ className="w-full border border-gray-300 hover:border-blue-400 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none text-gray-900 shadow-sm h-[38px] transition-all"
  />
  </div>
  </div>
@@ -1544,7 +1517,7 @@ export default function Recruitment() {
  location: locs.includes(jobForm.location) ? jobForm.location : (ZONE_DEFAULT_LOCATIONS[newZ] || locs[0] || '')
  });
  }}
- className="w-full border border-gray-300 rounded p-2 text-sm bg-white focus:ring-1 focus:ring-blue-500 font-bold text-gray-800 h-[38px]"
+ className="w-full border border-gray-300 hover:border-blue-400 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none font-bold text-gray-800 shadow-sm h-[38px] transition-all"
  >
  <option value="ALL">ALL (Pan-India)</option>
  <option value="NORTH">NORTH Zone</option>
@@ -1565,7 +1538,7 @@ export default function Recruitment() {
  />
  <div>
  <label className="block text-xs font-bold text-gray-700 mb-1">Status (Active/Inactive)</label>
- <select value={jobForm.status} onChange={e=>setJobForm({...jobForm, status: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500 h-[38px]">
+ <select value={jobForm.status} onChange={e=>setJobForm({...jobForm, status: e.target.value})} className="w-full border border-gray-300 hover:border-blue-400 rounded-lg px-3 py-2 text-sm bg-white focus:ring-2 focus:ring-blue-100 focus:outline-none text-gray-900 shadow-sm h-[38px] transition-all">
  <option value="Open">Active (Open)</option>
  <option value="Inactive">Inactive</option>
  <option value="Closed">Closed</option>
@@ -1583,7 +1556,7 @@ export default function Recruitment() {
  </div>
  <div>
  <label className="block text-xs font-bold text-gray-700 mb-1">Number of Openings</label>
- <input type="number" min="1" value={jobForm.openings} onChange={e=>setJobForm({...jobForm, openings: parseInt(e.target.value) || 1})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500" />
+ <input type="number" min="1" value={jobForm.openings} onChange={e=>setJobForm({...jobForm, openings: e.target.value})} className="w-full border border-gray-300 rounded p-2 text-sm focus:ring-1 focus:ring-blue-500" />
  </div>
  <div>
  <label className="block text-xs font-bold text-gray-700 mb-1">Required Skills (Comma separated)</label>
@@ -1674,7 +1647,20 @@ export default function Recruitment() {
  <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
  <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-xl">
  <div>
- <h2 className="text-lg font-bold text-gray-900">{selectedApp.name}'s Application</h2>
+ <div className="flex items-center gap-3">
+ <h2 className="text-lg font-bold text-gray-900">{selectedApp.name}'s Profile</h2>
+ <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+ (selectedApp.employeeId?.onboardingStatus === 'Done' || selectedApp.onboardingStatus === 'Done')
+ ? 'bg-green-100 text-green-700 border border-green-200'
+ : (selectedApp.employeeId?.onboardingStatus === 'Submitted' || selectedApp.onboardingStatus === 'Submitted')
+ ? 'bg-blue-100 text-blue-700 border border-blue-200'
+ : selectedApp.status === 'Hired'
+ ? 'bg-amber-100 text-amber-700 border border-amber-200'
+ : 'bg-gray-100 text-gray-600'
+ }`}>
+ Onboarding: {(selectedApp.employeeId?.onboardingStatus || selectedApp.onboardingStatus || (selectedApp.status === 'Hired' ? 'Pending' : 'Not Initiated'))}
+ </span>
+ </div>
  <p className="text-xs text-gray-500">Applied for: {selectedApp.jobId?.title}</p>
  </div>
  <div className="flex items-center gap-2">
@@ -1729,53 +1715,111 @@ export default function Recruitment() {
  )}
  
  <div className="w-full mt-4 pt-4 border-t border-gray-200 space-y-2">
- <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Father:</span> {isEditingApp ? <input type="text" value={editAppForm.fatherName || ''} onChange={e=>setEditAppForm({...editAppForm, fatherName: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate">{selectedApp.fatherName}</span>}</div>
- <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Mother:</span> {isEditingApp ? <input type="text" value={editAppForm.motherName || ''} onChange={e=>setEditAppForm({...editAppForm, motherName: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate">{selectedApp.motherName}</span>}</div>
- <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Marital:</span> {isEditingApp ? <input type="text" value={editAppForm.maritalStatus || ''} onChange={e=>setEditAppForm({...editAppForm, maritalStatus: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate">{selectedApp.maritalStatus}</span>}</div>
- <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">PAN:</span> {isEditingApp ? <input type="text" value={editAppForm.pan || ''} onChange={e=>setEditAppForm({...editAppForm, pan: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate">{selectedApp.pan}</span>}</div>
- <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Aadhaar:</span> {isEditingApp ? <input type="text" value={editAppForm.aadhaar || ''} onChange={e=>setEditAppForm({...editAppForm, aadhaar: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate">{selectedApp.aadhaar}</span>}</div>
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Father:</span> {isEditingApp ? <input type="text" value={editAppForm.fatherName || ''} onChange={e=>setEditAppForm({...editAppForm, fatherName: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.fatherName || 'N/A'}</span>}</div>
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Mother:</span> {isEditingApp ? <input type="text" value={editAppForm.motherName || ''} onChange={e=>setEditAppForm({...editAppForm, motherName: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.motherName || 'N/A'}</span>}</div>
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Marital:</span> {isEditingApp ? <input type="text" value={editAppForm.maritalStatus || ''} onChange={e=>setEditAppForm({...editAppForm, maritalStatus: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.maritalStatus || 'Single'}</span>}</div>
+ {(isEditingApp || selectedApp.spouseName) && (
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Spouse:</span> {isEditingApp ? <input type="text" value={editAppForm.spouseName || ''} onChange={e=>setEditAppForm({...editAppForm, spouseName: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.spouseName}</span>}</div>
+ )}
+ {(isEditingApp || selectedApp.dob) && (
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">DOB:</span> {isEditingApp ? <input type="date" value={editAppForm.dob || ''} onChange={e=>setEditAppForm({...editAppForm, dob: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.dob}</span>}</div>
+ )}
+ {(isEditingApp || selectedApp.gender) && (
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Gender:</span> {isEditingApp ? <input type="text" value={editAppForm.gender || ''} onChange={e=>setEditAppForm({...editAppForm, gender: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.gender}</span>}</div>
+ )}
+ {(isEditingApp || selectedApp.religion) && (
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Religion:</span> {isEditingApp ? <input type="text" value={editAppForm.religion || ''} onChange={e=>setEditAppForm({...editAppForm, religion: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.religion}</span>}</div>
+ )}
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Nationality:</span> {isEditingApp ? <input type="text" value={editAppForm.nationality || ''} onChange={e=>setEditAppForm({...editAppForm, nationality: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.nationality || 'Indian'}</span>}</div>
+ {(isEditingApp || selectedApp.alternatePhone) && (
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Alt Phone:</span> {isEditingApp ? <input type="text" value={editAppForm.alternatePhone || ''} onChange={e=>setEditAppForm({...editAppForm, alternatePhone: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-medium text-gray-800">{selectedApp.alternatePhone}</span>}</div>
+ )}
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">PAN:</span> {isEditingApp ? <input type="text" value={editAppForm.pan || ''} onChange={e=>setEditAppForm({...editAppForm, pan: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-mono font-bold text-gray-800">{selectedApp.pan || 'N/A'}</span>}</div>
+ <div className="text-xs text-gray-600 flex justify-between items-center"><span className="font-semibold text-gray-900 mr-2">Aadhaar:</span> {isEditingApp ? <input type="text" value={editAppForm.aadhaar || ''} onChange={e=>setEditAppForm({...editAppForm, aadhaar: e.target.value})} className="border border-blue-300 p-1 rounded text-xs w-2/3 focus:ring-1 focus:ring-blue-500" /> : <span className="text-right truncate font-mono font-bold text-gray-800">{selectedApp.aadhaar || 'N/A'}</span>}</div>
  </div>
  </div>
 
- <div className="p-4 border border-gray-200 rounded-xl">
- <h4 className="text-sm font-bold text-gray-900 mb-2">Documents</h4>
+ <div className="p-4 border border-gray-200 rounded-xl space-y-2">
+ <div className="flex items-center justify-between mb-1">
+ <h4 className="text-sm font-bold text-gray-900">Documents</h4>
+ {selectedApp.employeeId?.documents && selectedApp.employeeId.documents.length > 0 && (
+ <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+ selectedApp.employeeId.documents.every(d => d.status === 'Verified')
+ ? 'bg-green-100 text-green-700 border border-green-200'
+ : 'bg-amber-100 text-amber-700 border border-amber-200'
+ }`}>
+ {selectedApp.employeeId.documents.filter(d => d.status === 'Verified').length}/{selectedApp.employeeId.documents.length} Verified
+ </span>
+ )}
+ </div>
  {selectedApp.resumeUrl && (
- <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.resumeUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded text-xs font-bold mb-2 hover:bg-blue-100">
- <FileText size={14} /> View Resume
+ <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.resumeUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-blue-50 text-blue-700 rounded text-xs font-bold hover:bg-blue-100">
+ <FileText size={14} /> Resume
  </a>
  )}
  {selectedApp.profilePhotoUrl && (
- <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.profilePhotoUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-emerald-50 text-emerald-700 rounded text-xs font-bold mb-2 hover:bg-emerald-100">
- <FileText size={14} /> View Candidate Photo
+ <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.profilePhotoUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-emerald-50 text-emerald-700 rounded text-xs font-bold hover:bg-emerald-100">
+ <FileText size={14} /> Candidate Photo
  </a>
  )}
  {selectedApp.salarySlipUrl && (
- <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.salarySlipUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded text-xs font-bold mb-2 hover:bg-green-100">
- <FileText size={14} /> View Salary Slip
+ <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.salarySlipUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-green-50 text-green-700 rounded text-xs font-bold hover:bg-green-100">
+ <FileText size={14} /> Salary Slip
  </a>
  )}
  {selectedApp.experienceLetterUrl && (
- <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.experienceLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-indigo-50 text-indigo-700 rounded text-xs font-bold mb-2 hover:bg-indigo-100">
- <FileText size={14} /> View Experience Letter
+ <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.experienceLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-indigo-50 text-indigo-700 rounded text-xs font-bold hover:bg-indigo-100">
+ <FileText size={14} /> Experience Letter
  </a>
  )}
  {selectedApp.relievingLetterUrl && (
- <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.relievingLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-amber-50 text-amber-700 rounded text-xs font-bold mb-2 hover:bg-amber-100">
- <FileText size={14} /> View Relieving Letter
+ <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.relievingLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-amber-50 text-amber-700 rounded text-xs font-bold hover:bg-amber-100">
+ <FileText size={14} /> Relieving Letter
  </a>
  )}
  {selectedApp.coverLetterUrl && (
  <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${selectedApp.coverLetterUrl}`} target="_blank" rel="noreferrer" className="flex items-center gap-2 p-2 bg-purple-50 text-purple-700 rounded text-xs font-bold hover:bg-purple-100">
- <FileText size={14} /> View Cover Letter
+ <FileText size={14} /> Cover Letter
  </a>
  )}
- {!selectedApp.resumeUrl && !selectedApp.profilePhotoUrl && !selectedApp.salarySlipUrl && !selectedApp.experienceLetterUrl && !selectedApp.relievingLetterUrl && !selectedApp.coverLetterUrl && (
+ {selectedApp.employeeId?.documents && selectedApp.employeeId.documents.length > 0 && selectedApp.employeeId.documents.map((doc, dIdx) => (
+ <div key={dIdx} className="flex items-center justify-between p-2 bg-slate-50 border border-slate-200 rounded text-xs">
+ <div className="flex items-center gap-1.5 truncate">
+ <FileText size={13} className="text-slate-500 shrink-0" />
+ {doc.fileUrl ? (
+ <a href={`${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${doc.fileUrl}`} target="_blank" rel="noreferrer" className="font-bold text-blue-600 hover:underline truncate">
+ {doc.name || 'Document'}
+ </a>
+ ) : (
+ <span className="font-semibold text-slate-700 truncate">{doc.name || 'Document'}</span>
+ )}
+ </div>
+ <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded shrink-0 ${
+ doc.status === 'Verified' ? 'bg-green-100 text-green-700' :
+ doc.status === 'Rejected' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-800'
+ }`}>
+ {doc.status || 'Pending'}
+ </span>
+ </div>
+ ))}
+ {!selectedApp.resumeUrl && !selectedApp.profilePhotoUrl && !selectedApp.salarySlipUrl && !selectedApp.experienceLetterUrl && (!selectedApp.employeeId?.documents || selectedApp.employeeId.documents.length === 0) && (
  <p className="text-xs text-gray-400 italic">No documents attached.</p>
  )}
  </div>
  
  <div className="p-4 border border-gray-200 rounded-xl">
  <h4 className="text-sm font-bold text-gray-900 mb-2">Update Status</h4>
+ {(selectedApp.status === 'Hired' || selectedApp.status === 'Rejected') ? (
+   <div className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-bold ${
+     selectedApp.status === 'Hired'
+       ? 'bg-green-50 border-green-300 text-green-800'
+       : 'bg-red-50 border-red-300 text-red-800'
+   }`}>
+     <span>🔒</span>
+     <span>Status Locked: <span className="uppercase">{selectedApp.status}</span></span>
+     <span className="ml-auto text-xs font-normal opacity-70">Cannot be changed</span>
+   </div>
+ ) : (
  <select 
  value={selectedApp.status}
  onChange={(e) => handleUpdateAppStatus(selectedApp._id, e.target.value)}
@@ -1788,10 +1832,30 @@ export default function Recruitment() {
  <option value="Hired">Hired (Generates Onboarding)</option>
  <option value="Rejected">Rejected</option>
  </select>
+ )}
+ </div>
+
 
  {/* Onboarding Link Display if Hired */}
  {selectedApp.status === 'Hired' && (selectedApp.employeeId || selectedApp.onboardingStatus) && (
- <div className="mt-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg">
+ <div className={`mt-3 p-3 rounded-lg border ${
+ selectedApp.onboardingStatus === 'Done' 
+ ? 'bg-blue-50 border-blue-200' 
+ : 'bg-emerald-50 border-emerald-200'
+ }`}>
+ {selectedApp.onboardingStatus === 'Done' ? (
+ <div>
+ <p className="text-xs font-bold text-blue-800 flex items-center gap-1.5 mb-1">
+ <CheckCircle2 size={14} className="text-blue-600" /> Onboarding Completed
+ </p>
+ <div className="flex items-center gap-2 mt-2">
+ <span className="px-2.5 py-1 bg-blue-100 text-blue-700 font-bold rounded text-xs">
+ Form Submitted (Link Disabled)
+ </span>
+ </div>
+ </div>
+ ) : (
+ <div>
  <p className="text-xs font-bold text-emerald-800 flex items-center gap-1 mb-1">
  <CheckCircle2 size={13} /> Onboarding Link Generated
  </p>
@@ -1817,29 +1881,117 @@ export default function Recruitment() {
  </div>
  )}
  </div>
+ )}
  </div>
 
+
  {/* Right Col - Experience & Education */}
- <div className="col-span-2 space-y-6">
+          <div className="col-span-2 space-y-6">
+            
+            {/* Zone & Location Matching Comparison Banner */}
+            <div className="bg-gradient-to-r from-slate-50 via-blue-50/40 to-indigo-50/30 border border-blue-200/80 rounded-xl p-4 shadow-sm">
+              <div className="flex items-center justify-between border-b border-blue-100 pb-2 mb-3">
+                <span className="text-xs font-extrabold uppercase tracking-wider text-blue-900 flex items-center gap-1.5">
+                  <MapPin size={14} className="text-blue-600" /> Zone & Location Routing Mapping
+                </span>
+                <span className="text-[11px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded border border-blue-100">
+                  Target Zone vs Applicant Origin
+                </span>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Job Posting Target */}
+                <div className="bg-white rounded-lg p-3 border border-blue-200/70 shadow-2xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold uppercase text-gray-500">Job Target Zone</span>
+                    <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded border ${
+                      (selectedApp.jobId?.zone || selectedApp.zone) === 'NORTH' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                      (selectedApp.jobId?.zone || selectedApp.zone) === 'SOUTH' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      (selectedApp.jobId?.zone || selectedApp.zone) === 'EAST' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      (selectedApp.jobId?.zone || selectedApp.zone) === 'WEST' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                      'bg-slate-50 text-slate-700 border-slate-200'
+                    }`}>
+                      <Briefcase size={10} className="inline mr-1" />
+                      {selectedApp.jobId?.zone || selectedApp.zone || 'NORTH'} ZONE
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                    <Building size={13} className="text-blue-600 shrink-0" />
+                    <span>{selectedApp.jobId?.location || 'Base / Head Office'}</span>
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Job: <strong className="text-gray-700">{selectedApp.jobId?.title || 'Open Position'}</strong>
+                  </p>
+                </div>
+
+                {/* Candidate Origin Location */}
+                <div className="bg-white rounded-lg p-3 border border-indigo-200/70 shadow-2xs">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[11px] font-bold uppercase text-gray-500">Applicant Origin Zone</span>
+                    <span className={`text-[11px] font-extrabold px-2 py-0.5 rounded border ${
+                      (getZoneFromState(selectedApp.state) || selectedApp.zone) === 'NORTH' ? 'bg-sky-50 text-sky-700 border-sky-200' :
+                      (getZoneFromState(selectedApp.state) || selectedApp.zone) === 'SOUTH' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                      (getZoneFromState(selectedApp.state) || selectedApp.zone) === 'EAST' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                      (getZoneFromState(selectedApp.state) || selectedApp.zone) === 'WEST' ? 'bg-purple-50 text-purple-700 border-purple-200' :
+                      'bg-slate-50 text-slate-700 border-slate-200'
+                    }`}>
+                      <Users size={10} className="inline mr-1" />
+                      {getZoneFromState(selectedApp.state) || selectedApp.zone || 'NORTH'} ZONE
+                    </span>
+                  </div>
+                  <p className="text-xs font-bold text-gray-900 flex items-center gap-1.5">
+                    <MapPin size={13} className="text-indigo-600 shrink-0" />
+                    <span>{[selectedApp.district || selectedApp.area, selectedApp.state].filter(Boolean).join(', ') || selectedApp.state || 'Address not specified'}</span>
+                  </p>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    PIN: <strong className="text-gray-700">{selectedApp.pincode || 'N/A'}</strong> • State: <strong className="text-gray-700">{selectedApp.state || 'N/A'}</strong>
+                  </p>
+                </div>
+              </div>
+            </div>
  
  <div>
  <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Salary & Expectations</h3>
  <div className="grid grid-cols-2 gap-4">
  <div>
  <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Gross Yearly</p>
- {isEditingApp ? <input type="text" value={editAppForm.yearlyGrossSalary || ''} onChange={e=>setEditAppForm({...editAppForm, yearlyGrossSalary: e.target.value})} className="border border-blue-300 p-1.5 rounded text-sm w-full font-bold focus:ring-1 focus:ring-blue-500" /> : <p className="text-sm font-bold text-gray-900">{selectedApp.yearlyGrossSalary || 'N/A'}</p>}
+ {isEditingApp ? (
+ <input type="text" value={editAppForm.yearlyGrossSalary || ''} onChange={e=>setEditAppForm({...editAppForm, yearlyGrossSalary: e.target.value})} className="border border-blue-300 p-1.5 rounded text-sm w-full font-bold focus:ring-1 focus:ring-blue-500" />
+ ) : (
+ <p className="text-sm font-bold text-gray-900">
+ {selectedApp.yearlyGrossSalary ? (selectedApp.yearlyGrossSalary.startsWith('₹') ? selectedApp.yearlyGrossSalary : `₹${selectedApp.yearlyGrossSalary}`) : (selectedApp.experience?.[0]?.grossPay ? `₹${Number(selectedApp.experience[0].grossPay) * 12}/yr` : (selectedApp.candidateType === 'Fresher' ? 'Fresher (Standard)' : 'N/A'))}
+ </p>
+ )}
  </div>
  <div>
  <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Net Monthly</p>
- {isEditingApp ? <input type="text" value={editAppForm.monthlyNetSalary || ''} onChange={e=>setEditAppForm({...editAppForm, monthlyNetSalary: e.target.value})} className="border border-blue-300 p-1.5 rounded text-sm w-full font-bold focus:ring-1 focus:ring-blue-500" /> : <p className="text-sm font-bold text-gray-900">{selectedApp.monthlyNetSalary || 'N/A'}</p>}
+ {isEditingApp ? (
+ <input type="text" value={editAppForm.monthlyNetSalary || ''} onChange={e=>setEditAppForm({...editAppForm, monthlyNetSalary: e.target.value})} className="border border-blue-300 p-1.5 rounded text-sm w-full font-bold focus:ring-1 focus:ring-blue-500" />
+ ) : (
+ <p className="text-sm font-bold text-gray-900">
+ {selectedApp.monthlyNetSalary ? (selectedApp.monthlyNetSalary.startsWith('₹') ? selectedApp.monthlyNetSalary : `₹${selectedApp.monthlyNetSalary}/mo`) : (selectedApp.experience?.[0]?.netPay ? `₹${selectedApp.experience[0].netPay}/mo` : (selectedApp.candidateType === 'Fresher' ? 'Fresher (Standard)' : 'N/A'))}
+ </p>
+ )}
  </div>
  <div>
  <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Expected Salary</p>
- {isEditingApp ? <input type="text" value={editAppForm.expectedSalary || ''} onChange={e=>setEditAppForm({...editAppForm, expectedSalary: e.target.value})} className="border border-blue-300 p-1.5 rounded text-sm w-full font-bold text-blue-600 focus:ring-1 focus:ring-blue-500" /> : <p className="text-sm font-bold text-blue-600">{selectedApp.expectedSalary || 'N/A'}</p>}
+ {isEditingApp ? (
+ <input type="text" value={editAppForm.expectedSalary || editAppForm.expectedMonthlySalary || ''} onChange={e=>setEditAppForm({...editAppForm, expectedSalary: e.target.value, expectedMonthlySalary: e.target.value})} className="border border-blue-300 p-1.5 rounded text-sm w-full font-bold text-blue-600 focus:ring-1 focus:ring-blue-500" />
+ ) : (
+ <p className="text-sm font-bold text-blue-600">
+ {selectedApp.expectedSalary || selectedApp.expectedMonthlySalary ? ((selectedApp.expectedSalary || selectedApp.expectedMonthlySalary).startsWith('₹') ? (selectedApp.expectedSalary || selectedApp.expectedMonthlySalary) : `₹${selectedApp.expectedSalary || selectedApp.expectedMonthlySalary}/mo`) : 'Negotiable / Standard'}
+ </p>
+ )}
  </div>
  <div>
  <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Notice Period</p>
- {isEditingApp ? <input type="text" value={editAppForm.noticePeriod || ''} onChange={e=>setEditAppForm({...editAppForm, noticePeriod: e.target.value})} className="border border-blue-300 p-1.5 rounded text-sm w-full font-bold text-orange-600 focus:ring-1 focus:ring-blue-500" /> : <p className="text-sm font-bold text-orange-600">{selectedApp.noticePeriod || 'N/A'}</p>}
+ {isEditingApp ? (
+ <input type="text" value={editAppForm.noticePeriod || ''} onChange={e=>setEditAppForm({...editAppForm, noticePeriod: e.target.value})} className="border border-blue-300 p-1.5 rounded text-sm w-full font-bold text-orange-600 focus:ring-1 focus:ring-blue-500" />
+ ) : (
+ <p className="text-sm font-bold text-orange-600">
+ {selectedApp.noticePeriod || selectedApp.experience?.[0]?.noticePeriod || (selectedApp.joinedComfortableDate ? `Immediate (From ${selectedApp.joinedComfortableDate})` : (selectedApp.candidateType === 'Fresher' ? 'Immediate Joiner' : 'Immediate'))}
+ </p>
+ )}
  </div>
  </div>
  </div>
@@ -1847,14 +1999,54 @@ export default function Recruitment() {
  <div>
  <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3 flex items-center gap-2"><Briefcase size={16}/> Experience</h3>
  {selectedApp.experience && selectedApp.experience.length > 0 ? selectedApp.experience.map((exp, idx) => (
- <div key={idx} className="mb-4 last:mb-0">
+ <div key={idx} className="mb-4 last:mb-0 bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2">
+ <div className="flex justify-between items-start">
+ <div>
  <h4 className="font-bold text-gray-900">{exp.title} <span className="text-gray-500 font-normal">at</span> {exp.company}</h4>
- <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
- <Calendar size={12}/> {exp.startDate} - {exp.endDate}
- <span className="mx-1">•</span>
- <MapPin size={12}/> {exp.location}
+ {(exp.industry || exp.location) && (
+ <p className="text-xs text-gray-500">{[exp.industry, exp.location].filter(Boolean).join(' • ')}</p>
+ )}
+ </div>
+ {(exp.startDate || exp.endDate) && (
+ <span className="text-xs font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1">
+ <Calendar size={12}/> {exp.startDate} {exp.endDate ? `- ${exp.endDate}` : ''}
+ </span>
+ )}
+ </div>
+
+ {(exp.grossPay || exp.netPay || exp.startingSalary || exp.endingSalary) && (
+ <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-white p-2.5 rounded-lg border border-slate-200 text-xs">
+ {exp.grossPay && <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Gross Pay</span><span className="font-bold text-gray-800">₹{exp.grossPay}/mo</span></div>}
+ {exp.netPay && <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Net Pay</span><span className="font-bold text-gray-800">₹{exp.netPay}/mo</span></div>}
+ {exp.startingSalary && <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Start Salary</span><span className="font-bold text-gray-800">₹{exp.startingSalary}</span></div>}
+ {exp.endingSalary && <div><span className="text-gray-400 block text-[10px] uppercase font-bold">End Salary</span><span className="font-bold text-gray-800">₹{exp.endingSalary}</span></div>}
+ </div>
+ )}
+
+ {(exp.rmName || exp.rmPhone || exp.rmEmail) && (
+ <div className="bg-sky-50/60 border border-sky-100 rounded-lg p-2 text-xs text-slate-700">
+ <span className="font-bold text-sky-900 block text-[10px] uppercase">Reporting Manager (RM)</span>
+ <p className="font-medium text-slate-800">{exp.rmName} {exp.rmDesignation ? `(${exp.rmDesignation})` : ''}</p>
+ <p className="text-slate-500 text-[11px]">{[exp.rmPhone, exp.rmEmail].filter(Boolean).join(' • ')}</p>
+ </div>
+ )}
+
+ {exp.responsibilitiesSummary && (
+ <div>
+ <span className="text-[10px] uppercase font-bold text-gray-500 block mb-0.5">Responsibilities</span>
+ <p className="text-xs text-gray-700 bg-white p-2 rounded border border-gray-100">{exp.responsibilitiesSummary}</p>
+ </div>
+ )}
+
+ {exp.summary && !exp.responsibilitiesSummary && (
+ <p className="text-xs text-gray-700 bg-white p-2 rounded border border-gray-100">{exp.summary}</p>
+ )}
+
+ {exp.reasonOfLeaving && (
+ <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200/60 rounded p-1.5">
+ <strong>Reason of Leaving:</strong> {exp.reasonOfLeaving}
  </p>
- {exp.summary && <p className="text-sm text-gray-700 mt-2 bg-gray-50 p-2 rounded">{exp.summary}</p>}
+ )}
  </div>
  )) : (
  <div className="bg-slate-50 border border-dashed border-slate-200 rounded-lg p-3 text-center">
@@ -1870,14 +2062,21 @@ export default function Recruitment() {
  <div>
  <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3 flex items-center gap-2"><Building size={16}/> Education</h3>
  {selectedApp.education && selectedApp.education.length > 0 ? selectedApp.education.map((edu, idx) => (
- <div key={idx} className="mb-4 last:mb-0">
- <h4 className="font-bold text-gray-900">{edu.degree}</h4>
- <p className="text-sm font-medium text-gray-700">{edu.institution}</p>
- <p className="text-xs text-gray-500 mt-1 flex items-center gap-2">
- <Calendar size={12}/> {edu.startDate} - {edu.endDate}
- <span className="mx-1">•</span>
- <MapPin size={12}/> {edu.location} ({edu.districtState})
- </p>
+ <div key={idx} className="mb-3 last:mb-0 bg-slate-50 border border-slate-200/80 rounded-xl p-3.5">
+ <div className="flex justify-between items-start">
+ <h4 className="font-bold text-gray-900 text-sm">{edu.degree} {edu.subject ? <span className="text-xs font-semibold text-blue-600 ml-1">({edu.subject})</span> : ''}</h4>
+ {edu.passingYear && <span className="text-xs font-bold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">Passing: {edu.passingYear}</span>}
+ </div>
+ <p className="text-xs font-semibold text-gray-700 mt-0.5">{edu.institution}</p>
+ <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 mt-1.5">
+ {(edu.percentage || edu.grade) && (
+ <span className="font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 text-[11px]">
+ {edu.percentage ? `Marks: ${edu.percentage}` : ''} {edu.grade ? `Grade: ${edu.grade}` : ''}
+ </span>
+ )}
+ {(edu.startDate || edu.endDate) && <span className="flex items-center gap-1"><Calendar size={12}/> {edu.startDate} {edu.endDate ? `- ${edu.endDate}` : ''}</span>}
+ {(edu.location || edu.districtState) && <span className="flex items-center gap-1"><MapPin size={12}/> {[edu.location, edu.districtState].filter(Boolean).join(', ')}</span>}
+ </div>
  </div>
  )) : <p className="text-sm text-gray-500 italic">No education added.</p>}
  </div>
@@ -1887,15 +2086,72 @@ export default function Recruitment() {
  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
  <div>
  <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Present Address</p>
- {isEditingApp ? <textarea value={editAppForm.presentAddress || ''} onChange={e=>setEditAppForm({...editAppForm, presentAddress: e.target.value})} className="border border-blue-300 p-2 rounded text-sm w-full focus:ring-1 focus:ring-blue-500" rows="2" /> : <p className="text-sm text-gray-800">{selectedApp.presentAddress || 'N/A'}</p>}
+ {isEditingApp ? (
+ <textarea value={editAppForm.presentAddress || ''} onChange={e=>setEditAppForm({...editAppForm, presentAddress: e.target.value})} className="border border-blue-300 p-2 rounded text-sm w-full focus:ring-1 focus:ring-blue-500" rows="2" />
+ ) : (
+ <p className="text-sm text-gray-800 bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+ {selectedApp.presentAddress || [selectedApp.flatHouseFloor, selectedApp.societyName, selectedApp.landmark, selectedApp.area, selectedApp.district, selectedApp.state, selectedApp.pincode ? `PIN - ${selectedApp.pincode}` : ''].filter(Boolean).join(', ') || 'N/A'}
+ </p>
+ )}
  </div>
  <div>
- <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Permanent Address</p>
- {isEditingApp ? <textarea value={editAppForm.permanentAddress || ''} onChange={e=>setEditAppForm({...editAppForm, permanentAddress: e.target.value})} className="border border-blue-300 p-2 rounded text-sm w-full focus:ring-1 focus:ring-blue-500" rows="2" /> : <p className="text-sm text-gray-800">{selectedApp.permanentAddress || 'N/A'}</p>}
+
+ {/* Bank & Settlement Details - Unified display */}
+ <div>
+ <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">Bank Details</h3>
+ {selectedApp.employeeId?.bankAccNum ? (
+ <div className="grid grid-cols-2 md:grid-cols-3 gap-3 bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs">
+ <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Bank Name</span><span className="font-bold text-gray-800">{selectedApp.employeeId.bankName || 'N/A'}</span></div>
+ <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Account Holder</span><span className="font-bold text-gray-800">{selectedApp.employeeId.bankAccName || selectedApp.name}</span></div>
+ <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Account Number</span><span className="font-mono font-bold text-gray-800">{selectedApp.employeeId.bankAccNum}</span></div>
+ <div><span className="text-gray-400 block text-[10px] uppercase font-bold">IFSC Code</span><span className="font-mono font-bold text-blue-700">{selectedApp.employeeId.bankIfsc || 'N/A'}</span></div>
+ <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Account Type</span><span className="font-semibold text-gray-800">{selectedApp.employeeId.bankAccType || 'Savings'}</span></div>
+ <div><span className="text-gray-400 block text-[10px] uppercase font-bold">Branch</span><span className="font-semibold text-gray-800">{selectedApp.employeeId.bankBranch || 'N/A'}</span></div>
  </div>
+ ) : (
+ <div className="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center text-xs text-slate-400 italic">
+ No bank details available yet (Pending submission by candidate)
  </div>
+ )}
  </div>
 
+ {/* Emergency & Professional References */}
+ <div>
+ <h3 className="text-sm font-bold text-gray-900 border-b border-gray-200 pb-2 mb-3">References</h3>
+ {(selectedApp.employeeId?.ref1Name || selectedApp.employeeId?.ref2Name) ? (
+ <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+ {selectedApp.employeeId.ref1Name && (
+ <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+ <span className="text-[10px] font-bold text-blue-600 uppercase block mb-1">Reference 1 ({selectedApp.employeeId.ref1Rel || 'Contact'})</span>
+ <p className="font-bold text-gray-800">{selectedApp.employeeId.ref1Name} - {selectedApp.employeeId.ref1Mobile}</p>
+ <p className="text-gray-500 text-[11px] mt-0.5">{selectedApp.employeeId.ref1Address}</p>
+ </div>
+ )}
+ {selectedApp.employeeId.ref2Name && (
+ <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs">
+ <span className="text-[10px] font-bold text-blue-600 uppercase block mb-1">Reference 2 ({selectedApp.employeeId.ref2Rel || 'Contact'})</span>
+ <p className="font-bold text-gray-800">{selectedApp.employeeId.ref2Name} - {selectedApp.employeeId.ref2Mobile}</p>
+ <p className="text-gray-500 text-[11px] mt-0.5">{selectedApp.employeeId.ref2Address}</p>
+ </div>
+ )}
+ </div>
+ ) : (
+ <div className="p-3 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center text-xs text-slate-400 italic">
+ No references added yet (Pending submission by candidate)
+ </div>
+ )}
+ </div>
+ <p className="text-xs text-gray-500 font-semibold uppercase mb-1">Permanent Address</p>
+ {isEditingApp ? (
+ <textarea value={editAppForm.permanentAddress || ''} onChange={e=>setEditAppForm({...editAppForm, permanentAddress: e.target.value})} className="border border-blue-300 p-2 rounded text-sm w-full focus:ring-1 focus:ring-blue-500" rows="2" />
+ ) : (
+ <p className="text-sm text-gray-800 bg-slate-50 border border-slate-200 rounded-lg p-2.5">
+ {selectedApp.permanentAddress || selectedApp.presentAddress || [selectedApp.flatHouseFloor, selectedApp.societyName, selectedApp.landmark, selectedApp.area, selectedApp.district, selectedApp.state, selectedApp.pincode ? `PIN - ${selectedApp.pincode}` : ''].filter(Boolean).join(', ') || 'N/A'}
+ </p>
+ )}
+ </div>
+ </div>
+ </div>
  </div>
  </div>
  </div>
@@ -1903,38 +2159,61 @@ export default function Recruitment() {
  </div>
  )}
 
+
  {/* Assignment Modal (Single or Bulk) */}
  {showAssignModal && (
- <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
- <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
- <div className="flex justify-between items-center mb-4">
- <h3 className="text-base font-bold text-gray-900">
- {assigningApp ? `Assign ${assigningApp.name}` : `Bulk Assign (${selectedAppIds.length})`}
- </h3>
- <button onClick={() => { setShowAssignModal(false); setAssigningApp(null); }} className="text-gray-400 hover:text-gray-600">
- <X size={18} />
- </button>
- </div>
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+              <div className="flex justify-between items-center mb-4">
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">
+                    {assigningApp ? `Assign ${assigningApp.name}` : `Bulk Assign (${selectedAppIds.length})`}
+                  </h3>
+                  <p className="text-xs text-blue-600 font-semibold mt-0.5">
+                    {isHRHead ? 'Assign candidates to HR Manager' : isHRManager ? 'Assign candidates to HR Executive' : 'Assign candidates'}
+                  </p>
+                </div>
+                <button onClick={() => { setShowAssignModal(false); setAssigningApp(null); }} className="text-gray-400 hover:text-gray-600">
+                  <X size={18} />
+                </button>
+              </div>
 
- <p className="text-xs text-gray-500 mb-4">
- Select the employee/HR responsible for processing {assigningApp ? 'this candidate' : 'these selected candidates'}.
- </p>
+              <p className="text-xs text-gray-500 mb-4">
+                {isHRHead
+                  ? 'As HR Head, assign applications to an HR Manager for their team/zone.'
+                  : isHRManager
+                  ? 'As HR Manager, assign applications to an HR Executive in your team.'
+                  : 'Select staff member to process candidate application(s).'
+                }
+              </p>
 
- <div className="mb-5">
- <label className="block text-xs font-bold text-gray-700 mb-1.5">Assign To Employee / HR *</label>
- <select
- value={targetEmployeeId}
- onChange={(e) => setTargetEmployeeId(e.target.value)}
- className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 font-medium"
- >
- <option value="">Select HR Executive / Manager / Employee...</option>
- {employees.map(emp => (
- <option key={emp._id} value={emp._id}>
- {emp.name} ({emp.designation || emp.role || 'Employee'}) - Zone: {emp.zone || 'ALL'}
- </option>
- ))}
- </select>
- </div>
+              <div className="mb-5">
+                <label className="block text-xs font-bold text-gray-700 mb-1.5">
+                  {isHRHead ? 'Select HR Manager *' : isHRManager ? 'Select HR Executive *' : 'Assign To *'}
+                </label>
+                <select
+                  value={targetEmployeeId}
+                  onChange={(e) => setTargetEmployeeId(e.target.value)}
+                  className="w-full border border-gray-300 rounded-lg p-2.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 font-medium"
+                >
+                  <option value="">
+                    {isHRHead ? '-- Select HR Manager --' : isHRManager ? '-- Select HR Executive --' : '-- Select Staff --'}
+                  </option>
+                  {employees.map(emp => (
+                    <option key={emp._id} value={emp._id}>
+                      {emp.name} ({emp.designation || emp.role || 'Staff'}) {emp.zone ? `- Zone: ${emp.zone}` : ''}
+                    </option>
+                  ))}
+                </select>
+                {employees.length === 0 && (
+                  <p className="text-[11px] text-amber-600 mt-1.5 font-medium">
+                    {isHRHead 
+                      ? 'No active HR Managers found. Please ensure HR Managers exist.' 
+                      : 'No active HR Executives found in your team.'
+                    }
+                  </p>
+                )}
+              </div>
 
  <div className="flex justify-end gap-2">
  <button

@@ -39,6 +39,7 @@ export default function EmployeeDetails() {
             phone: data.mobile || 'Not provided',
             manager: data.reportsToManagerName || data.reportsToHeadName || data.reportingManager || 'Management',
             location: data.city || data.state || 'Not specified',
+            avatar: data.avatar || (data.documents?.find(d => (d.key && (d.key.toLowerCase().includes('photo') || d.key === 'Passport Photo')) || (d.name && d.name.toLowerCase().includes('photo')) || d.key === 'photo')?.fileUrl) || '',
             raw: data // Keep raw data for extensive tabs
           });
         } else {
@@ -225,7 +226,22 @@ export default function EmployeeDetails() {
         <div className="h-24 bg-[var(--color-brand-sky-pale)]"></div>
         <div className="px-6 pb-6 relative">
           <div className="flex flex-col md:flex-row gap-6 items-start md:items-end -mt-10 mb-4">
-            <div className="w-24 h-24 rounded-full border-4 border-white bg-[var(--color-brand-sky-light)] flex items-center justify-center text-[var(--color-brand-blue-dark)] font-bold text-3xl shadow-sm shrink-0">
+            {employee.avatar ? (
+              <img 
+                src={employee.avatar.startsWith('http') ? employee.avatar : `${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${employee.avatar.replace(/^\//, '')}`} 
+                alt={employee.name}
+                className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md shrink-0 bg-white"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.style.display = 'none';
+                  if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                }}
+              />
+            ) : null}
+            <div 
+              className="w-24 h-24 rounded-full border-4 border-white bg-[var(--color-brand-sky-light)] flex items-center justify-center text-[var(--color-brand-blue-dark)] font-bold text-3xl shadow-sm shrink-0"
+              style={{ display: employee.avatar ? 'none' : 'flex' }}
+            >
               {employee.name.charAt(0)}
             </div>
             <div className="flex-1 pb-1">
@@ -237,9 +253,14 @@ export default function EmployeeDetails() {
                       {employee.status}
                     </span>
                   </h2>
-                  <p className="text-[14px] text-[var(--color-brand-text-secondary)] font-medium mt-1">
-                    {employee.designation} • {employee.department}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 mt-1">
+                    <p className="text-[14px] text-[var(--color-brand-text-secondary)] font-medium">
+                      {employee.designation} • {employee.department}
+                    </p>
+                    <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                      <MapPin size={10} className="text-amber-600" /> Zone: {(employee.raw?.zone || employee.zone || 'NORTH').toUpperCase()}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button

@@ -281,14 +281,21 @@ export default function ManageUsers() {
     });
   };
 
-  // Render Dynamic Avatar Helper (NO hardcoded placeholder URLs!)
+  // Render Dynamic Avatar Helper (handles full URLs, base64, and backend relative uploads)
   const renderAvatar = (user) => {
-    if (user?.avatar && typeof user.avatar === 'string' && (user.avatar.startsWith('http') || user.avatar.startsWith('data:'))) {
+    let avatarSrc = user?.avatar;
+    if (avatarSrc && typeof avatarSrc === 'string' && avatarSrc.trim() !== '') {
+      if (!avatarSrc.startsWith('http') && !avatarSrc.startsWith('data:')) {
+        const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace('/api', '');
+        const cleanPath = avatarSrc.startsWith('/') ? avatarSrc.slice(1) : avatarSrc;
+        avatarSrc = `${apiBase}/${cleanPath}`;
+      }
       return (
         <img
-          src={user.avatar}
+          src={avatarSrc}
           alt={user.name}
           className="w-10 h-10 rounded-full object-cover border border-slate-200 shrink-0"
+          onError={(e) => { e.currentTarget.style.display = 'none'; }}
         />
       );
     }

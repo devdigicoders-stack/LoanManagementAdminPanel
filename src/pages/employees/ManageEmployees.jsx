@@ -22,18 +22,14 @@ export default function ManageEmployees() {
  const [staffData, setStaffData] = useState({ hrs: [], telecallers: [] });
 
  // Filters
- const [hrFilter, setHrFilter] = useState('all'); // 'all', 'unassigned', or specific hrId
  const [onboardingFilter, setOnboardingFilter] = useState('all'); // 'all', 'Done', 'Pending'
- const [onlyMyAssigned, setOnlyMyAssigned] = useState(false);
- const [lateLockFilter, setLateLockFilter] = useState('all'); // 'all', 'locked', 'pendingQuery'
+   const [lateLockFilter, setLateLockFilter] = useState('all'); // 'all', 'locked', 'pendingQuery'
+  const [zoneFilter, setZoneFilter] = useState('all'); // 'all', 'NORTH', 'SOUTH', 'EAST', 'WEST', 'CENTRAL'
 
  // Modals state
- const [assignHrModal, setAssignHrModal] = useState({ isOpen: false, employee: null, selectedHrId: '' });
  const [assignTelecallerModal, setAssignTelecallerModal] = useState({ isOpen: false, employee: null, selectedTelecallerId: '', notes: '' });
  const [unblockModalState, setUnblockModalState] = useState({ isOpen: false, employee: null, hrRemark: '', isProcessing: false });
  const [isSubmittingModal, setIsSubmittingModal] = useState(false);
- const [hrSearchText, setHrSearchText] = useState('');
- const [isHrDropdownOpen, setIsHrDropdownOpen] = useState(false);
  const [telecallerSearchText, setTelecallerSearchText] = useState('');
  const [isTelecallerDropdownOpen, setIsTelecallerDropdownOpen] = useState(false);
 
@@ -71,9 +67,7 @@ export default function ManageEmployees() {
  const params = new URLSearchParams();
 
  if (searchTerm) params.append('search', searchTerm);
- if (hrFilter !== 'all') params.append('assignedHRId', hrFilter);
  if (onboardingFilter !== 'all') params.append('onboardingStatus', onboardingFilter);
- if (onlyMyAssigned) params.append('myAssigned', 'true');
 
  const queryString = params.toString();
  if (queryString) url += `?${queryString}`;
@@ -92,6 +86,7 @@ export default function ManageEmployees() {
  mobile: emp.mobile || '',
  role: emp.role,
  designation: emp.designation,
+    zone: (emp.zone || 'NORTH').toUpperCase(),
  status: emp.status,
  isLateLocked: !!emp.isLateLocked,
  lateLockReason: emp.lateLockReason || '',
@@ -106,6 +101,7 @@ export default function ManageEmployees() {
  assignedTelecallerName: emp.assignedTelecallerName || null,
  telecallerChaserNotes: emp.telecallerChaserNotes || '',
  documents: emp.documents || [],
+					avatar: emp.avatar || (emp.documents?.find(d => (d.key && (d.key.toLowerCase().includes('photo') || d.key === 'Passport Photo')) || (d.name && d.name.toLowerCase().includes('photo')) || d.key === 'photo')?.fileUrl) || '',
  grossMonthly: emp.grossMonthly || 0
  })) : [];
 
@@ -116,7 +112,16 @@ export default function ManageEmployees() {
  });
  }
 
- setEmployees(formatted);
+    const currentAdminId = localStorage.getItem('adminId') || (JSON.parse(localStorage.getItem('user') || '{}')._id);
+    const currentAdminEmail = (localStorage.getItem('adminEmail') || (JSON.parse(localStorage.getItem('user') || '{}').email) || '').toLowerCase();
+    
+    // Exclude logged in HR / Admin profile
+    formatted = formatted.filter(emp => {
+      if (currentAdminId && (emp.id === currentAdminId || emp._id === currentAdminId)) return false;
+      if (currentAdminEmail && emp.email && emp.email.toLowerCase() === currentAdminEmail) return false;
+      return true;
+    });
+    setEmployees(formatted);
  }
  } catch (error) {
  console.error(error);
@@ -135,7 +140,7 @@ export default function ManageEmployees() {
  fetchEmployees();
  }, 350);
  return () => clearTimeout(timeoutId);
- }, [searchTerm, hrFilter, onboardingFilter, onlyMyAssigned]);
+  }, [searchTerm, onboardingFilter]);
 
  const getRoleBadgeStyle = (role) => {
  switch(role) {
@@ -387,47 +392,6 @@ export default function ManageEmployees() {
  });
  };
 
- // Assign HR submission
- const handleSaveHrAssignment = async () => {
- if (!assignHrModal.employee) return;
- setIsSubmittingModal(true);
- try {
- const token = localStorage.getItem('token');
- const selectedHrObj = staffData.hrs.find(h => h._id === assignHrModal.selectedHrId);
-
- const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${assignHrModal.employee.id}/assign-hr`, {
- method: 'PUT',
- headers: {
- 'Content-Type': 'application/json',
- 'Authorization': `Bearer ${token}`
- },
- body: JSON.stringify({
- hrId: assignHrModal.selectedHrId || null,
- hrName: selectedHrObj ? selectedHrObj.name : null
- })
- });
-
- if (res.ok) {
- toast.success(selectedHrObj ? `Assigned to HR ${selectedHrObj.name}` : 'HR assignment removed');
- setEmployees(prev => prev.map(emp => 
- emp.id === assignHrModal.employee.id ? {
- ...emp,
- assignedHRId: assignHrModal.selectedHrId || null,
- assignedHRName: selectedHrObj ? selectedHrObj.name : null
- } : emp
- ));
- setAssignHrModal({ isOpen: false, employee: null, selectedHrId: '' });
- } else {
- const err = await res.json();
- toast.error(err.message || 'Failed to assign HR');
- }
- } catch (error) {
- console.error(error);
- toast.error('Server error updating HR assignment');
- } finally {
- setIsSubmittingModal(false);
- }
- };
 
  // Assign Telecaller Chaser submission
  const handleSaveTelecallerAssignment = async () => {
@@ -494,22 +458,24 @@ export default function ManageEmployees() {
 
  // Counts for KPI pills
  const totalCount = employees.length;
- const unassignedHrCount = useMemo(() => employees.filter(e => !e.assignedHRId).length, [employees]);
  const pendingOnboardingCount = useMemo(() => employees.filter(e => e.onboarding !== 'Done').length, [employees]);
  const pendingQueriesCount = useMemo(() => employees.filter(e => e.isLateLocked || e.unblockRequest?.status === 'Pending').length, [employees]);
 
  // Filtered employees
- const filteredEmployees = useMemo(() => {
- return employees.filter(emp => {
- if (lateLockFilter === 'locked') {
- return emp.isLateLocked;
- }
- if (lateLockFilter === 'pendingQuery') {
- return emp.unblockRequest?.status === 'Pending' || emp.isLateLocked;
- }
- return true;
- });
- }, [employees, lateLockFilter]);
+  const filteredEmployees = useMemo(() => {
+    return employees.filter(emp => {
+      if (zoneFilter !== 'all' && (emp.zone || 'NORTH').toUpperCase() !== zoneFilter.toUpperCase()) {
+        return false;
+      }
+      if (lateLockFilter === 'locked') {
+        return emp.isLateLocked;
+      }
+      if (lateLockFilter === 'pendingQuery') {
+        return emp.unblockRequest?.status === 'Pending' || emp.isLateLocked;
+      }
+      return true;
+    });
+  }, [employees, lateLockFilter, zoneFilter]);
 
  return (
  <div className="w-full bg-slate-50/50 min-h-screen pb-16">
@@ -523,33 +489,15 @@ export default function ManageEmployees() {
  <Users size={20} />
  </div>
  <div>
- <h1 className="text-xl font-bold text-gray-900 tracking-tight">Employees & HR Delegation</h1>
+              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Employees Management</h1>
  <p className="text-xs text-gray-500 font-medium mt-0.5">
- Assign HRs to employees, review late login queries, delegate pending onboardings, and manage staff.
+                Manage staff records, review late login queries, and delegate onboarding chasers.
  </p>
  </div>
  </div>
  </div>
 
  <div className="flex items-center gap-3 flex-wrap">
- {/* HR quick filter toggle */}
- {isHR && isMasterAdmin && (
- <div className="inline-flex p-1 bg-gray-100 rounded-lg border border-gray-200 text-xs font-semibold">
- <button
- onClick={() => setOnlyMyAssigned(false)}
- className={`px-3 py-1.5 rounded-md transition-all ${!onlyMyAssigned ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
- >
- All Employees
- </button>
- <button
- onClick={() => setOnlyMyAssigned(true)}
- className={`px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all ${onlyMyAssigned ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
- >
- <UserCheck size={13} />
- My Assigned Only
- </button>
- </div>
- )}
 
  <button 
  onClick={() => navigate('/hr/recruitment')}
@@ -562,7 +510,7 @@ export default function ManageEmployees() {
  </div>
 
  {/* Quick KPI summary counters */}
- <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-5">
+ <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5">
  <div 
  onClick={() => setLateLockFilter('all')}
  className={`border rounded-lg p-3 cursor-pointer transition-all ${lateLockFilter === 'all' ? 'bg-white border-gray-300 ring-2 ring-purple-100' : 'bg-gray-50 border-gray-200/70 hover:bg-white'}`}
@@ -592,16 +540,6 @@ export default function ManageEmployees() {
  </div>
  </div>
 
- <div 
- onClick={() => setHrFilter(hrFilter === 'unassigned' ? 'all' : 'unassigned')}
- className={`border rounded-lg p-3 cursor-pointer transition-all ${hrFilter === 'unassigned' ? 'bg-amber-50 border-amber-300 ring-2 ring-amber-200' : 'bg-white border-gray-200/70 hover:border-amber-200'}`}
- >
- <div className="flex items-center justify-between">
- <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider">Unassigned HR</span>
- <span className="w-2 h-2 rounded-full bg-amber-500" />
- </div>
- <span className="text-lg font-bold text-amber-900 mt-0.5 block">{unassignedHrCount}</span>
- </div>
 
  <div 
  onClick={() => setOnboardingFilter(onboardingFilter === 'PendingOrSubmitted' ? 'all' : 'PendingOrSubmitted')}
@@ -643,24 +581,24 @@ export default function ManageEmployees() {
  </div>
 
  <div className="flex items-center gap-2 flex-wrap">
- {/* Filter by HR */}
- <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
- <User size={13} className="text-gray-400" />
- <span className="text-gray-500 font-medium">HR:</span>
- <select
- value={hrFilter}
- onChange={(e) => setHrFilter(e.target.value)}
- className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer"
- >
- <option value="all">All HRs</option>
- <option value="unassigned">Unassigned Only</option>
- {staffData.hrs.map(h => (
- <option key={h._id} value={h._id}>
- {h.name}
- </option>
- ))}
- </select>
- </div>
+
+        {/* Filter by Zone */}
+        <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
+          <Filter size={13} className="text-gray-400" />
+          <span className="text-gray-500 font-medium">Zone:</span>
+          <select
+            value={zoneFilter}
+            onChange={(e) => setZoneFilter(e.target.value)}
+            className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer"
+          >
+            <option value="all">All Zones</option>
+            <option value="NORTH">North Zone</option>
+            <option value="SOUTH">South Zone</option>
+            <option value="EAST">East Zone</option>
+            <option value="WEST">West Zone</option>
+            <option value="CENTRAL">Central Zone</option>
+          </select>
+        </div>
 
  {/* Filter by Onboarding Status */}
  <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
@@ -692,14 +630,12 @@ export default function ManageEmployees() {
  </select>
  </div>
 
- {(hrFilter !== 'all' || onboardingFilter !== 'all' || lateLockFilter !== 'all' || searchTerm || onlyMyAssigned) && (
+        {(onboardingFilter !== 'all' || lateLockFilter !== 'all' || zoneFilter !== 'all' || searchTerm) && (
  <button
  onClick={() => {
- setHrFilter('all');
  setOnboardingFilter('all');
  setLateLockFilter('all');
  setSearchTerm('');
- setOnlyMyAssigned(false);
  }}
  className="text-xs text-purple-700 hover:text-purple-900 font-semibold px-2 py-1"
  >
@@ -719,7 +655,6 @@ export default function ManageEmployees() {
  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Employee</th>
  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Employee ID</th>
  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Role & Designation</th>
- <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Assigned HR</th>
  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Onboarding & Chaser</th>
  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status & Login Lock</th>
  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
@@ -736,9 +671,24 @@ export default function ManageEmployees() {
  {/* Employee Info */}
  <td className="py-3.5 px-4">
  <div className="flex items-center gap-3">
- <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0">
- {emp.name?.charAt(0).toUpperCase() || 'E'}
- </div>
+ {emp.avatar ? (
+                      <img 
+                        src={emp.avatar.startsWith('http') ? emp.avatar : `${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${emp.avatar.replace(/^\//, '')}`} 
+                        alt={emp.name}
+                        className="w-8 h-8 rounded-full object-cover border border-purple-200 shadow-xs shrink-0"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.style.display = 'none';
+                          if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                        }}
+                      />
+                    ) : null}
+                    <div 
+                      className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0"
+                      style={{ display: emp.avatar ? 'none' : 'flex' }}
+                    >
+                      {emp.name?.charAt(0).toUpperCase() || 'E'}
+                    </div>
  <div>
  <p 
  className="text-[13px] font-bold text-gray-900 cursor-pointer hover:text-purple-600 transition-colors"
@@ -771,41 +721,6 @@ export default function ManageEmployees() {
  </span>
  <p className="text-[12px] text-gray-600 font-medium mt-1">{emp.designation}</p>
  </div>
- </td>
-
- {/* Assigned HR */}
- <td className="py-3.5 px-4">
- {hasHR ? (
- <div className="flex items-center gap-2">
- <div className="flex items-center gap-1.5 px-2.5 py-1 bg-purple-50 text-purple-700 border border-purple-100 rounded-md text-xs font-semibold">
- <UserCheck size={13} className="text-purple-600" />
- <span>{emp.assignedHRName}</span>
- </div>
- {(isMasterAdmin || isHR) && (
- <button
- onClick={() => setAssignHrModal({ isOpen: true, employee: emp, selectedHrId: emp.assignedHRId || '' })}
- className="text-[11px] text-gray-400 hover:text-purple-600 underline font-medium"
- title="Change Assigned HR"
- >
- Edit
- </button>
- )}
- </div>
- ) : (
- <div className="flex items-center gap-2">
- <span className="px-2 py-0.5 bg-gray-100 text-gray-500 rounded text-[11px] font-medium">
- Unassigned
- </span>
- {(isMasterAdmin || isHR) && (
- <button
- onClick={() => setAssignHrModal({ isOpen: true, employee: emp, selectedHrId: '' })}
- className="px-2 py-1 text-[11px] font-bold text-purple-700 bg-purple-50 border border-purple-200 hover:bg-purple-100 rounded transition-colors"
- >
- + Assign HR
- </button>
- )}
- </div>
- )}
  </td>
 
  {/* Onboarding & Chaser */}
@@ -1021,148 +936,6 @@ export default function ManageEmployees() {
  </div>
  </div>
  </div>
-
- {/* ================= MODAL: ASSIGN HR ================= */}
- {assignHrModal.isOpen && (
- <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
- <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
- <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-purple-50 to-indigo-50">
- <div className="flex items-center gap-2">
- <div className="w-8 h-8 rounded-lg bg-purple-600 text-white flex items-center justify-center">
- <UserCheck size={16} />
- </div>
- <div>
- <h3 className="font-bold text-gray-900 text-sm">Assign HR to Employee</h3>
- <p className="text-[11px] text-gray-500">Select which HR will manage this employee</p>
- </div>
- </div>
- <button 
- onClick={() => setAssignHrModal({ isOpen: false, employee: null, selectedHrId: '' })}
- className="text-gray-400 hover:text-gray-600 p-1 rounded-lg hover:bg-white"
- >
- <X size={18} />
- </button>
- </div>
-
- <div className="p-6 space-y-4">
- {/* Target employee card */}
- <div className="p-3 bg-gray-50 rounded-xl border border-gray-200/70">
- <p className="text-xs font-bold text-gray-900">{assignHrModal.employee?.name}</p>
- <p className="text-[11px] text-gray-500 mt-0.5">{assignHrModal.employee?.role} &bull; {assignHrModal.employee?.empId}</p>
- <p className="text-[11px] text-gray-400">{assignHrModal.employee?.email}</p>
- </div>
-
- {/* HR Selector */}
- <div>
- <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-2">
- Select HR Specialist
- </label>
- 
- <div className="relative">
- {/* Selected Value Display */}
- <div 
- onClick={() => setIsHrDropdownOpen(!isHrDropdownOpen)}
- className="w-full bg-white border border-gray-200 hover:border-purple-300 rounded-xl px-4 py-3 text-sm flex items-center justify-between cursor-pointer transition-colors"
- >
- {assignHrModal.selectedHrId ? (
- <div className="flex items-center gap-2">
- <div className="w-6 h-6 rounded-full bg-purple-100 text-purple-700 font-bold flex items-center justify-center text-xs">
- {staffData.hrs.find(h => h._id === assignHrModal.selectedHrId)?.name.charAt(0).toUpperCase()}
- </div>
- <span className="font-semibold text-gray-800">
- {staffData.hrs.find(h => h._id === assignHrModal.selectedHrId)?.name}
- </span>
- </div>
- ) : (
- <span className="text-gray-500 font-medium">None / Unassigned</span>
- )}
- <ChevronDown size={16} className={`text-gray-400 transition-transform ${isHrDropdownOpen ? 'rotate-180' : ''}`} />
- </div>
-
- {/* Dropdown Menu */}
- {isHrDropdownOpen && (
- <div className="absolute z-10 w-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden animate-in fade-in slide-in-from-top-2">
- <div className="p-2 border-b border-gray-50">
- <div className="relative">
- <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
- <input 
- type="text"
- placeholder="Search HR by name or email..."
- value={hrSearchText}
- onChange={(e) => setHrSearchText(e.target.value)}
- onClick={(e) => e.stopPropagation()}
- className="w-full bg-gray-50 border-none rounded-lg py-2 pl-9 pr-4 text-xs focus:ring-2 focus:ring-purple-100 focus:outline-none"
- />
- </div>
- </div>
- 
- <div className="max-h-56 overflow-y-auto">
- <div
- onClick={() => {
- setAssignHrModal(prev => ({ ...prev, selectedHrId: '' }));
- setIsHrDropdownOpen(false);
- setHrSearchText('');
- }}
- className={`px-4 py-3 cursor-pointer transition-colors flex items-center justify-between ${!assignHrModal.selectedHrId ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
- >
- <div>
- <p className="text-xs font-bold text-gray-700">None / Unassigned</p>
- <p className="text-[11px] text-gray-400">Remove current HR assignment</p>
- </div>
- {!assignHrModal.selectedHrId && <Check size={16} className="text-purple-600" />}
- </div>
-
- {staffData.hrs.filter(h => h.name.toLowerCase().includes(hrSearchText.toLowerCase()) || h.email.toLowerCase().includes(hrSearchText.toLowerCase())).map(h => (
- <div
- key={h._id}
- onClick={() => {
- setAssignHrModal(prev => ({ ...prev, selectedHrId: h._id }));
- setIsHrDropdownOpen(false);
- setHrSearchText('');
- }}
- className={`px-4 py-3 border-t border-gray-50 cursor-pointer transition-colors flex items-center justify-between ${assignHrModal.selectedHrId === h._id ? 'bg-purple-50' : 'hover:bg-gray-50'}`}
- >
- <div className="flex items-center gap-2.5">
- <div className="w-7 h-7 rounded-full bg-purple-200 text-purple-800 font-bold text-xs flex items-center justify-center">
- {h.name?.charAt(0).toUpperCase()}
- </div>
- <div>
- <p className="text-xs font-bold text-gray-900">{h.name}</p>
- <p className="text-[11px] text-gray-500">{h.email}</p>
- </div>
- </div>
- {assignHrModal.selectedHrId === h._id && <Check size={16} className="text-purple-600" />}
- </div>
- ))}
- 
- {staffData.hrs.filter(h => h.name.toLowerCase().includes(hrSearchText.toLowerCase()) || h.email.toLowerCase().includes(hrSearchText.toLowerCase())).length === 0 && (
- <p className="text-xs text-gray-400 italic p-4 text-center">No HRs found matching "{hrSearchText}"</p>
- )}
- </div>
- </div>
- )}
- </div>
- </div>
- </div>
-
- <div className="px-6 py-3.5 bg-gray-50 border-t border-gray-100 flex items-center justify-end gap-2">
- <button
- onClick={() => setAssignHrModal({ isOpen: false, employee: null, selectedHrId: '' })}
- className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
- >
- Cancel
- </button>
- <button
- disabled={isSubmittingModal}
- onClick={handleSaveHrAssignment}
- className="px-5 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg text-xs font-bold shadow transition-colors disabled:opacity-50"
- >
- {isSubmittingModal ? 'Saving...' : 'Confirm Assignment'}
- </button>
- </div>
- </div>
- </div>
- )}
 
  {/* ================= MODAL: ASSIGN TELECALLER CHASER ================= */}
  {assignTelecallerModal.isOpen && (

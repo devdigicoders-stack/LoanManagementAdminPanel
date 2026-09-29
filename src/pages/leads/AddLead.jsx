@@ -6,6 +6,7 @@ import {
   Mail, IndianRupee, FileText, Check
 } from "lucide-react";
 import toast from 'react-hot-toast';
+import { sanitize, validate } from '../../utils/validation';
 
 export default function AddLead() {
   const navigate = useNavigate();
@@ -56,12 +57,19 @@ export default function AddLead() {
   const [localities, setLocalities] = useState([]);
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    let finalValue = value;
+    if (name === 'mobile' || name === 'altMobile') {
+      finalValue = sanitize.mobile(value);
+    } else if (name === 'pincode') {
+      finalValue = sanitize.pincode(value);
+    }
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
   };
 
   // Live Auto PIN Code Fetcher
   const handlePincodeChange = async (e) => {
-    const pin = e.target.value.replace(/\D/g, '').slice(0, 6);
+    const pin = sanitize.pincode(e.target.value);
     setFormData(prev => ({ ...prev, pincode: pin }));
 
     if (pin.length === 6) {
@@ -132,6 +140,16 @@ export default function AddLead() {
     e.preventDefault();
     if (!formData.name || !formData.mobile || !formData.source || !formData.loanPurpose || !formData.expectedAmount || !formData.preferredBranch) {
       toast.error('Please fill all required fields');
+      return;
+    }
+
+    if (formData.mobile && !validate.mobile(formData.mobile)) {
+      toast.error('Mobile Number must be a valid 10-digit number starting with 6-9');
+      return;
+    }
+
+    if (formData.altMobile && !validate.mobile(formData.altMobile)) {
+      toast.error('Alternate Mobile must be a valid 10-digit number');
       return;
     }
 

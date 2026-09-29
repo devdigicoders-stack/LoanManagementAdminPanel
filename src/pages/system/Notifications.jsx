@@ -39,6 +39,10 @@ export default function Notifications() {
   // Send Form State
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [targetAudience, setTargetAudience] = useState("all");
+  const [selectedRecipientId, setSelectedRecipientId] = useState("");
+  const [employeesList, setEmployeesList] = useState([]);
+  const [customersList, setCustomersList] = useState([]);
+  const [searchRecipient, setSearchRecipient] = useState("");
   const [priority, setPriority] = useState("info");
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
@@ -46,7 +50,34 @@ export default function Notifications() {
 
   useEffect(() => {
     fetchNotifications();
+    fetchRecipients();
   }, []);
+
+  const fetchRecipients = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      // 1. Fetch Employees
+      const empRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (empRes.ok) {
+        const empData = await empRes.json();
+        setEmployeesList(Array.isArray(empData) ? empData : []);
+      }
+
+      // 2. Fetch Customers
+      const custRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (custRes.ok) {
+        const custData = await custRes.json();
+        const users = Array.isArray(custData) ? custData : (custData.users || []);
+        setCustomersList(users);
+      }
+    } catch (e) {
+      console.warn("Could not load recipients list:", e.message);
+    }
+  };
 
   const fetchNotifications = async () => {
     try {
@@ -129,8 +160,12 @@ export default function Notifications() {
 
   const handleSendNotification = async (e) => {
     e.preventDefault();
-    if (!title) {
-      toast.error("Please fill in the title");
+    if (!title.trim()) {
+      toast.error("Please fill in the notification title");
+      return;
+    }
+    if ((targetAudience === 'specific_employee' || targetAudience === 'specific_customer') && !selectedRecipientId) {
+      toast.error("Please select a recipient");
       return;
     }
 
@@ -144,28 +179,32 @@ export default function Notifications() {
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          title,
-          message,
-          type: priority
+          title: title.trim(),
+          message: message.trim(),
+          type: priority,
+          targetAudience,
+          targetId: selectedRecipientId || null
         })
       });
 
-      if (res.ok) {
+      const data = await res.json();
+
+      if (res.ok && data.success !== false) {
         Swal.fire({
-          title: 'Sent!',
-          text: 'Notification broadcasted successfully.',
+          title: 'Dispatched Successfully! 🚀',
+          text: data.message || `Notification sent to ${targetAudience.replace('_', ' ')} (${data.tokensNotifiedCount || 0} mobile devices alerted).`,
           icon: 'success',
           confirmButtonColor: '#489b0d'
         });
         
         setTitle("");
         setMessage("");
-        setTargetAudience("all");
-        setPriority("info");
+        setSelectedRecipientId("");
+        setSearchRecipient("");
         setActiveTab("inbox");
         fetchNotifications();
       } else {
-        toast.error('Failed to send notification');
+        toast.error(data.message || 'Failed to send notification');
       }
     } catch (error) {
       toast.error('Error sending notification');
@@ -337,16 +376,100 @@ export default function Notifications() {
                       <Users size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                       <select 
                         value={targetAudience}
-                        onChange={(e) => setTargetAudience(e.target.value)}
+                        onChange={(e) => {
+                          setTargetAudience(e.target.value);
+                          setSelectedRecipientId("");
+                          setSearchRecipient("");
+                        }}
                         className="w-full h-11 pl-10 pr-4 rounded-lg border border-slate-200 text-[13px] font-semibold text-slate-700 focus:outline-none focus:border-[#489b0d] bg-white appearance-none cursor-pointer"
                       >
-                        <option value="all">All Users & Employees</option>
-                        <option value="employees">All Employees</option>
-                        <option value="customers">All Customers</option>
-                        <option value="loan_officers">Loan Officers Only</option>
+                        <option value="all">🌐 All Users & Employees (Global Broadcast)</option>
+                        <option value="all_employees">👥 All Employees (Mobile App Staff)</option>
+                        <option value="specific_employee">👤 Specific Employee (Individual Staff)</option>
+                        <option value="all_customers">📱 All Customers (Mobile App Users)</option>
+                        <option value="specific_customer">🙋 Specific Customer (Individual User)</option>
                       </select>
                     </div>
                   </div>
+
+                  {/* Specific Employee Selection */}
+                  {targetAudience === 'specific_employee' && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                      <label className="block text-[12px] font-bold text-slate-700">
+                        Select Employee <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="Search employee by name, empId, or email..."
+                        value={searchRecipient}
+                        onChange={(e) => setSearchRecipient(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg border border-slate-200 text-[12px] bg-white focus:outline-none focus:border-[#489b0d]"
+                      />
+                      <select
+                        value={selectedRecipientId}
+                        onChange={(e) => setSelectedRecipientId(e.target.value)}
+                        className="w-full h-11 px-3 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 bg-white focus:outline-none focus:border-[#489b0d]"
+                      >
+                        <option value="">-- Choose Employee --</option>
+                        {employeesList
+                          .filter(emp => {
+                            if (!searchRecipient) return true;
+                            const query = searchRecipient.toLowerCase();
+                            return (
+                              (emp.name && emp.name.toLowerCase().includes(query)) ||
+                              (emp.email && emp.email.toLowerCase().includes(query)) ||
+                              (emp.empId && emp.empId.toLowerCase().includes(query))
+                            );
+                          })
+                          .map(emp => (
+                            <option key={emp._id || emp.empId} value={emp._id || emp.empId}>
+                              {emp.name} ({emp.empId || 'Staff'}) - {emp.designation || emp.role || 'Employee'} [{emp.zone || 'Zone'}]
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Specific Customer Selection */}
+                  {targetAudience === 'specific_customer' && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                      <label className="block text-[12px] font-bold text-slate-700">
+                        Select Customer <span className="text-red-500">*</span>
+                      </label>
+                      <input 
+                        type="text"
+                        placeholder="Search customer by name, phone, or email..."
+                        value={searchRecipient}
+                        onChange={(e) => setSearchRecipient(e.target.value)}
+                        className="w-full h-10 px-3 rounded-lg border border-slate-200 text-[12px] bg-white focus:outline-none focus:border-[#489b0d]"
+                      />
+                      <select
+                        value={selectedRecipientId}
+                        onChange={(e) => setSelectedRecipientId(e.target.value)}
+                        className="w-full h-11 px-3 rounded-lg border border-slate-200 text-[13px] font-medium text-slate-700 bg-white focus:outline-none focus:border-[#489b0d]"
+                      >
+                        <option value="">-- Choose Customer --</option>
+                        {customersList
+                          .filter(cust => {
+                            if (!searchRecipient) return true;
+                            const query = searchRecipient.toLowerCase();
+                            return (
+                              (cust.name && cust.name.toLowerCase().includes(query)) ||
+                              (cust.phone && cust.phone.includes(query)) ||
+                              (cust.email && cust.email.toLowerCase().includes(query)) ||
+                              (cust.userId && cust.userId.toLowerCase().includes(query))
+                            );
+                          })
+                          .map(cust => (
+                            <option key={cust._id || cust.userId} value={cust._id || cust.userId}>
+                              {cust.name} ({cust.phone || cust.email || cust.userId})
+                            </option>
+                          ))
+                        }
+                      </select>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-[12px] font-bold text-slate-700 mb-2">

@@ -19,7 +19,6 @@ const navItems = [
   { name: "Refunds",              icon: RefreshCcw,      path: "/accountant/refunds" },
   { name: "Expenses",             icon: FileMinus,       path: "/accountant/expenses" },
   { name: "Reconciliation",       icon: CheckSquare,     path: "/accountant/reconciliation" },
-  { name: "Financial Reports",    icon: BarChart3,       path: "/accountant/reports" },
   { name: "Notifications",        icon: Bell,            path: "/accountant/notifications" },
   { name: "My Profile",           icon: User,            path: "/accountant/profile" },
   { name: "Change Password",      icon: Lock,            path: "/accountant/change-password" },

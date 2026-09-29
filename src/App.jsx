@@ -31,6 +31,7 @@ import HRReports from "./pages/hr/HRReports";
 import HRNotifications from "./pages/hr/HRNotifications";
 import EmployeeOnboardingPage from "./pages/EmployeeOnboardingPage";
 import Onboarding from "./pages/hr/Onboarding";
+import OnboardingReviewPage from "./pages/hr/OnboardingReviewPage";
 import Payroll from "./pages/hr/Payroll";
 import Targets from "./pages/hr/Targets";
 import ESS from "./pages/hr/ESS";
@@ -359,6 +360,7 @@ function App() {
           <Route path="hr/reports" element={<HRReports />} />
           <Route path="hr/notifications" element={<HRNotifications />} />
           <Route path="hr/onboarding" element={<Onboarding />} />
+          <Route path="hr/onboarding/:id" element={<OnboardingReviewPage />} />
           <Route path="hr/recruitment" element={<Recruitment />} />
           <Route path="hr/payroll" element={<Payroll />} />
           <Route path="hr/targets" element={<Targets />} />

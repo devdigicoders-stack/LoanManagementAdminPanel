@@ -488,7 +488,7 @@ export default function HRPermissions() {
  { value: 'all', label: ` All ${selectedRole} Staff`, sublabel: `${staffInRole.length} Members` },
  ...staffInRole.map(emp => ({
  value: emp._id,
- label: `${emp.name} ${emp.empId ? `[${emp.empId}]` : ''}`,
+ label: `${(emp.name && emp.name !== 'undefined' ? emp.name : (emp.email ? emp.email.split('@')[0] : 'Staff'))} ${emp.empId ? `[${emp.empId}]` : ''}`.trim(),
  sublabel: emp.email
  }))
  ]}

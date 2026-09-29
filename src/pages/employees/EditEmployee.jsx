@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  ChevronRight, ArrowLeft, Upload, Mail, Phone, Briefcase, 
+import {
+  ChevronRight, Camera, Loader2, ArrowLeft, Upload, Mail, Phone, Briefcase, 
   User, Shield, Lock, FileText, Building2, Check, X, 
   ExternalLink, Copy, CheckCircle2, AlertCircle, Eye, EyeOff, 
   MapPin, Plus, Trash2, KeyRound, DollarSign, GraduationCap, 
@@ -54,6 +54,51 @@ export default function EditEmployee() {
   // New document modal / form state
   const [showAddDocModal, setShowAddDocModal] = useState(false);
   const [newDocData, setNewDocData] = useState({ name: '', key: 'other', fileUrl: '' });
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const avatarInputRef = React.useRef(null);
+
+  const handleAvatarFileChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('Image size must be less than 10MB');
+      return;
+    }
+
+    try {
+      setIsUploadingAvatar(true);
+      const token = localStorage.getItem('token');
+      const uploadData = new FormData();
+      uploadData.append('avatar', file);
+
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: uploadData
+      });
+
+      if (res.ok) {
+        const resData = await res.json();
+        const newAvatarUrl = resData.avatar;
+        setFormData(prev => ({
+          ...prev,
+          avatar: newAvatarUrl,
+          documents: resData.employee?.documents || prev.documents
+        }));
+        toast.success('Employee photo updated successfully!');
+      } else {
+        toast.error('Failed to upload photo');
+      }
+    } catch (err) {
+      toast.error('Error uploading photo');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
 
   const [formData, setFormData] = useState({
     empId: '',
@@ -132,6 +177,7 @@ export default function EditEmployee() {
     pan: '',
     aadhar: '',
     documents: [],
+    avatar: '',
 
     // Permissions
     permissions: []
@@ -230,6 +276,7 @@ export default function EditEmployee() {
             pan: data.pan || '',
             aadhar: data.aadhar || '',
             documents: Array.isArray(data.documents) ? data.documents : [],
+            avatar: data.avatar || (data.documents?.find(d => (d.key && (d.key.toLowerCase().includes('photo') || d.key === 'Passport Photo')) || (d.name && d.name.toLowerCase().includes('photo')) || d.key === 'photo')?.fileUrl) || '',
 
             // Permissions
             permissions: Array.isArray(data.permissions) ? data.permissions : []
@@ -445,8 +492,45 @@ export default function EditEmployee() {
           <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden sticky top-24">
 
             <div className="p-6 flex flex-col items-center border-b border-slate-100 text-center bg-gradient-to-b from-slate-50 to-white">
-              <div className="w-24 h-24 rounded-full border-4 border-white shadow-md mb-3 bg-[#489b0d]/10 text-[#489b0d] font-extrabold text-3xl flex items-center justify-center">
-                {formData.name?.charAt(0)?.toUpperCase() || 'E'}
+              <div className="relative group mb-3">
+                <input 
+                  type="file" 
+                  ref={avatarInputRef}
+                  onChange={handleAvatarFileChange}
+                  accept="image/*" 
+                  className="hidden" 
+                />
+                
+                {formData.avatar ? (
+                  <img 
+                    src={formData.avatar.startsWith('http') ? formData.avatar : `${import.meta.env.VITE_API_BASE_URL.replace('/api', '')}/${formData.avatar.replace(/^\//, '')}`} 
+                    alt={formData.name}
+                    className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md bg-white"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.style.display = 'none';
+                      if (e.target.nextSibling) e.target.nextSibling.style.display = 'flex';
+                    }}
+                  />
+                ) : null}
+
+                <div 
+                  className="w-24 h-24 rounded-full border-4 border-white shadow-md bg-[#489b0d]/10 text-[#489b0d] font-extrabold text-3xl flex items-center justify-center"
+                  style={{ display: formData.avatar ? 'none' : 'flex' }}
+                >
+                  {formData.name?.charAt(0)?.toUpperCase() || 'E'}
+                </div>
+
+                {/* Edit Photo Overlay Button for Admin / HR */}
+                <button
+                  type="button"
+                  disabled={isUploadingAvatar}
+                  onClick={() => avatarInputRef.current?.click()}
+                  title="Change / Upload Employee Photo"
+                  className="absolute bottom-0 right-0 p-2 bg-[#489b0d] hover:bg-[#3e850b] text-white rounded-full shadow-md transition-all hover:scale-110 flex items-center justify-center border-2 border-white"
+                >
+                  {isUploadingAvatar ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
+                </button>
               </div>
               <h2 className="text-lg font-extrabold text-slate-800 mb-0.5">{formData.name || 'Employee Name'}</h2>
               <p className="text-[13px] font-medium text-slate-500 mb-2">{formData.designation || 'Staff Member'}</p>
@@ -1163,6 +1247,7 @@ export default function EditEmployee() {
                               onChange={(e) => setNewDocData({ ...newDocData, key: e.target.value })} 
                               className="w-full px-3 py-2 border border-slate-200 rounded-md text-[13px]"
                             >
+                              <option value="photo">Passport / Employee Photo</option>
                               <option value="aadhar">Aadhar Card</option>
                               <option value="pan">PAN Card</option>
                               <option value="degree">Degree / Educational Certificate</option>

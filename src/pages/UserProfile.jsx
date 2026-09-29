@@ -143,17 +143,29 @@ export default function UserProfile() {
 
         {/* Left Side: Avatar & Details */}
         <div className="flex-1 flex flex-col sm:flex-row gap-6">
-          {user.avatar && (user.avatar.startsWith('http') || user.avatar.startsWith('data:')) ? (
-            <img 
-              src={user.avatar} 
-              alt={user.name} 
-              className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-slate-50 shadow-md shrink-0" 
-            />
-          ) : (
-            <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full text-white flex items-center justify-center font-black text-3xl sm:text-4xl shadow-md shrink-0 uppercase border-4 border-slate-50 ${isStaff ? 'bg-gradient-to-tr from-emerald-600 via-teal-600 to-indigo-700' : 'bg-gradient-to-tr from-blue-600 to-cyan-500'}`}>
-              {(user.name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('')}
-            </div>
-          )}
+          {(() => {
+            let avatarSrc = user.avatar;
+            if (avatarSrc && typeof avatarSrc === 'string' && avatarSrc.trim() !== '') {
+              if (!avatarSrc.startsWith('http') && !avatarSrc.startsWith('data:')) {
+                const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace('/api', '');
+                const cleanPath = avatarSrc.startsWith('/') ? avatarSrc.slice(1) : avatarSrc;
+                avatarSrc = `${apiBase}/${cleanPath}`;
+              }
+              return (
+                <img 
+                  src={avatarSrc} 
+                  alt={user.name} 
+                  className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-slate-50 shadow-md shrink-0" 
+                  onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                />
+              );
+            }
+            return (
+              <div className={`w-28 h-28 sm:w-32 sm:h-32 rounded-full text-white flex items-center justify-center font-black text-3xl sm:text-4xl shadow-md shrink-0 uppercase border-4 border-slate-50 ${isStaff ? 'bg-gradient-to-tr from-emerald-600 via-teal-600 to-indigo-700' : 'bg-gradient-to-tr from-blue-600 to-cyan-500'}`}>
+                {(user.name || 'U').split(' ').map(n => n[0]).slice(0, 2).join('')}
+              </div>
+            );
+          })()}
 
           <div className="flex-1 flex flex-col justify-center">
             <div className="flex flex-wrap items-center gap-3 mb-2">
@@ -390,7 +402,7 @@ export default function UserProfile() {
                   <MapPin size={16} className="text-emerald-600" /> Operational Territory & Hierarchy
                 </h3>
                 <div className="space-y-3">
-                  <InfoRow label="Assigned Zone" value={user.zone || 'NORTH'} />
+                  <InfoRow label="Assigned Zone" value={user.zone || (isStaff ? 'All Zones / Pan-India' : 'Not Assigned')} />
                   <InfoRow label="Department" value={user.department || (isHR ? 'Human Resources (HR)' : 'Operations')} />
                   <InfoRow label="Designation / Role" value={user.designation || user.role || 'HR Head'} />
                   <InfoRow label="Reports Directly To" value={user.reportsToHeadName || 'Super Admin'} />
@@ -810,7 +822,7 @@ export default function UserProfile() {
                   <InfoRow label="Full Name" value={user.name} />
                   <InfoRow label="Employee ID" value={user.empId || user.userId} />
                   <InfoRow label="Department" value={user.department || (isHR ? 'Human Resources (HR)' : 'Operations')} />
-                  <InfoRow label="Assigned Zone" value={user.zone || 'NORTH'} />
+                  <InfoRow label="Assigned Zone" value={user.zone || (isStaff ? 'All Zones / Pan-India' : 'Not Assigned')} />
                   <InfoRow label="Designation" value={user.designation || user.role} />
                   <InfoRow label="Head of Department" value={isHead ? "Yes (Territory Head)" : "No"} />
                   <InfoRow label="Reporting Manager" value={user.reportsToHeadName || 'Super Admin'} />

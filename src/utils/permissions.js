@@ -141,7 +141,6 @@ export const ROLE_SIDEBAR_PAGES = {
     { name: 'Refunds', path: '/accountant/refunds', description: 'Excess payment & fee refunds' },
     { name: 'Expenses', path: '/accountant/expenses', description: 'Company branch & operational expenses' },
     { name: 'Reconciliation', path: '/accountant/reconciliation', description: 'Bank statement & book matching' },
-    { name: 'Financial Reports', path: '/accountant/reports', description: 'Balance sheet, P&L & collection trends' },
     { name: 'Notifications', path: '/accountant/notifications', description: 'Payment notices & dues alerts' }
   ],
   'Credit Admin': [

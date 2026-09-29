@@ -91,6 +91,7 @@ export default function Payroll() {
 
   const filteredStaff = hiredStaffList.filter(emp => 
     emp.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    (emp.empId && emp.empId.toLowerCase().includes(searchTerm.toLowerCase())) ||
     emp.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     emp.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -354,7 +355,7 @@ export default function Payroll() {
                           <td className="py-3 px-4">
                             <div>
                               <p className="text-[13px] font-bold text-gray-800">{emp.name}</p>
-                              <p className="text-[11px] text-gray-400 mt-0.5">{emp.id}</p>
+                              <p className="text-[11px] font-semibold text-blue-600 font-mono mt-0.5">{emp.empId || emp.id}</p>
                             </div>
                           </td>
                           <td className="py-3 px-4">
