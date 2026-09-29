@@ -332,23 +332,25 @@ const LoginPage = () => {
  }
  };
 
- const roles = [
- 'Super Admin',
- 'Admin',
- 'Telecaller',
- 'Field Officer (RE/RO)',
- 'Reporting Manager (RM)',
- 'Area Reporting Manager (ARM)',
- 'Regional Reporting Manager (RRM)',
- 'Sales Head',
- 'Operation Admin',
- 'HR Head',
- 'HR Manager',
- 'HR Executive',
- 'HR Admin',
- 'Accountant Admin',
- 'Credit Admin'
- ];
+  const roles = [
+    'Super Admin',
+    'Admin',
+    'Telecaller',
+    'Field Officer (RE/RO)',
+    'Relationship Executive (RE)',
+    'Relationship Officer (RO)',
+    'Reporting Manager (RM)',
+    'Area Reporting Manager (ARM)',
+    'Regional Reporting Manager (RRM)',
+    'Sales Head',
+    'Operation Admin',
+    'HR Head',
+    'HR Manager',
+    'HR Executive',
+    'HR Admin',
+    'Accountant Admin',
+    'Credit Admin'
+  ];
 
  return (
  <div className="h-screen w-full flex flex-col lg:flex-row bg-[var(--color-brand-page-bg)] text-[var(--color-brand-text)] font-sans overflow-hidden relative">
