@@ -106,7 +106,8 @@ export default function EmployeeOnboardingPage() {
     email: '', mobile: '', pan: '', aadhar: '',
     fathersName: '', mothersName: '', fathersMobile: '',
     maritalStatus: '', spouseName: '', drivingLicence: '', vehicleNumber: '',
-    pincode: '', area: '', district: '', state: '', presentAddress: '', permanentAddress: '', landmark: '',
+    pincode: '', area: '', district: '', state: '', presentAddress: '', landmark: '',
+    permAddress: '', permArea: '', permPincode: '', permDistrict: '', permState: '',
     bankAccType: '', bankAccName: '', bankName: '', bankBranch: '',
     bankAccNum: '', bankAccNumConfirm: '', bankIfsc: '',
     qual1Type: '', qual1Inst: '', qual1Dist: '', qual1Year: '', qual1Perc: '',
@@ -120,6 +121,8 @@ export default function EmployeeOnboardingPage() {
   const [files, setFiles] = useState({}); // { key: File }
   const [pincodeInfo, setPincodeInfo] = useState({ state: '', district: '', city: '' });
   const [fetchingPin, setFetchingPin] = useState(false);
+  const [fetchingPermPin, setFetchingPermPin] = useState(false);
+  const [sameAddress, setSameAddress] = useState(false);
   const [prefilledFields, setPrefilledFields] = useState({});
 
   useEffect(() => {
@@ -145,7 +148,7 @@ export default function EmployeeOnboardingPage() {
         [
           'email', 'mobile', 'pan', 'aadhar', 'fathersName', 'mothersName',
           'fathersMobile', 'maritalStatus', 'spouseName', 'drivingLicence', 'vehicleNumber',
-          'pincode', 'presentAddress', 'permanentAddress', 'landmark',
+          'pincode', 'presentAddress', 'landmark', 'permAddress', 'permPincode',
           'bankAccType', 'bankAccName', 'bankName', 'bankBranch', 'bankIfsc',
           'qual1Type', 'qual1Inst', 'qual1Dist', 'qual1Year', 'qual1Perc',
           'expCompany', 'expPosition', 'expPhone', 'expStart', 'expEnd',
@@ -179,8 +182,12 @@ export default function EmployeeOnboardingPage() {
           district: data.district || '',
           state: data.state || '',
           presentAddress: data.presentAddress || '',
-          permanentAddress: data.permanentAddress || data.presentAddress || '',
           landmark: data.landmark || '',
+          permAddress: data.permAddress || data.permanentAddress || '',
+          permArea: data.permArea || '',
+          permPincode: data.permPincode || '',
+          permDistrict: data.permDistrict || '',
+          permState: data.permState || '',
           bankAccType: data.bankAccType || 'Savings',
           bankAccName: data.bankAccName || data.name || '',
           bankName: data.bankName || '',
@@ -230,7 +237,7 @@ export default function EmployeeOnboardingPage() {
       finalValue = sanitize.pan(value);
     } else if (name === 'aadhar') {
       finalValue = sanitize.aadhaar(value);
-    } else if (name === 'pincode') {
+    } else if (name === 'pincode' || name === 'permPincode') {
       finalValue = sanitize.pincode(value);
     } else if (name === 'bankIfsc') {
       finalValue = sanitize.ifsc(value);
@@ -260,6 +267,41 @@ export default function EmployeeOnboardingPage() {
       }
     } catch { /* ignore */ }
     finally { setFetchingPin(false); }
+  };
+
+  const fetchPermPincode = async (pincode) => {
+    if (pincode?.length !== 6) return;
+    setFetchingPermPin(true);
+    try {
+      const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+      const data = await res.json();
+      if (data[0]?.Status === 'Success') {
+        const info = data[0].PostOffice[0];
+        setForm(f => ({
+          ...f,
+          permArea: f.permArea || info.Name,
+          permDistrict: info.District,
+          permState: info.State,
+          permAddress: f.permAddress || `${info.Name}, ${info.District}, ${info.State} - ${pincode}`
+        }));
+        toast.success(`📍 ${info.Name}, ${info.District}, ${info.State}`);
+      }
+    } catch { /* ignore */ }
+    finally { setFetchingPermPin(false); }
+  };
+
+  const handleSameAddress = (checked) => {
+    setSameAddress(checked);
+    if (checked) {
+      setForm(f => ({
+        ...f,
+        permAddress: f.presentAddress,
+        permArea: f.area,
+        permPincode: f.pincode,
+        permDistrict: f.district,
+        permState: f.state,
+      }));
+    }
   };
 
   const getCurrentLocation = () => {
@@ -581,15 +623,18 @@ export default function EmployeeOnboardingPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <SectionHeader icon={Home} title="Address Details" />
 
-            {/* Pincode row */}
+            {/* ── Present Address ────────────────────────────────── */}
+            <p className="text-xs font-bold text-[#0EA5E9] uppercase tracking-widest mb-3">Present / Current Address</p>
+
+            {/* Pincode + Location Button */}
             <div className="flex gap-3 mb-4">
               <div className="flex-1">
-                <Input 
-                  label="Pincode" 
-                  name="pincode" 
-                  value={form.pincode || ''} 
-                  onChange={e => { handleChange(e); if (e.target.value.length === 6) fetchPincode(e.target.value); }} 
-                  placeholder="6-digit pincode" 
+                <Input
+                  label="Pincode"
+                  name="pincode"
+                  value={form.pincode || ''}
+                  onChange={e => { handleChange(e); if (e.target.value.length === 6) fetchPincode(e.target.value); }}
+                  placeholder="6-digit pincode"
                 />
               </div>
               <button type="button" onClick={getCurrentLocation}
@@ -598,45 +643,123 @@ export default function EmployeeOnboardingPage() {
               </button>
             </div>
 
-            {/* Area / Locality | District | State Row */}
+            {/* Area / District / State */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
-              <Input 
-                label="Area / Locality" 
-                name="area" 
-                value={form.area || ''} 
-                onChange={handleChange} 
-                placeholder="e.g. Amaon / Colony" 
+              <Input
+                label="Area / Locality"
+                name="area"
+                value={form.area || ''}
+                onChange={handleChange}
+                placeholder="e.g. Amaon / Colony"
               />
-              <Input 
-                label="District" 
-                name="district" 
-                value={form.district || pincodeInfo.district || ''} 
-                placeholder="District" 
-                readOnly 
-                disabled 
+              <Input
+                label="District"
+                name="district"
+                value={form.district || pincodeInfo.district || ''}
+                placeholder="Auto-filled from pincode"
+                readOnly
+                disabled
               />
-              <Input 
-                label="State" 
-                name="state" 
-                value={form.state || pincodeInfo.state || ''} 
-                placeholder="State" 
-                readOnly 
-                disabled 
+              <Input
+                label="State"
+                name="state"
+                value={form.state || pincodeInfo.state || ''}
+                placeholder="Auto-filled from pincode"
+                readOnly
+                disabled
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Field label="Present Address" required>
+            {/* Present Address textarea + Landmark */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+              <Field label="Street / House No." required>
                 <textarea required name="presentAddress" value={form.presentAddress} onChange={handleChange} rows={3}
-                  placeholder="Current full address"
-                  className="w-full px-5 py-4 border border-gray-200 rounded-xl text-base bg-white outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all resize-none" />
-              </Field>
-              <Field label="Permanent Address" required>
-                <textarea required name="permanentAddress" value={form.permanentAddress} onChange={handleChange} rows={3}
-                  placeholder="Permanent/home address"
+                  placeholder="House No., Street, Colony..."
                   className="w-full px-5 py-4 border border-gray-200 rounded-xl text-base bg-white outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all resize-none" />
               </Field>
               <Input label="Landmark" name="landmark" value={form.landmark} onChange={handleChange} placeholder="Nearby landmark (optional)" />
+            </div>
+
+            {/* ── Permanent Address ──────────────────────────────── */}
+            <div className="border-t border-gray-100 pt-5">
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Permanent / Residential Address</p>
+                {/* Same as Present Checkbox */}
+                <label className="flex items-center gap-2 cursor-pointer select-none group">
+                  <div
+                    onClick={() => handleSameAddress(!sameAddress)}
+                    className={`w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all ${
+                      sameAddress ? 'bg-[#0EA5E9] border-[#0EA5E9]' : 'border-gray-300 bg-white group-hover:border-[#0EA5E9]'
+                    }`}>
+                    {sameAddress && (
+                      <svg viewBox="0 0 12 10" fill="none" className="w-3 h-3">
+                        <path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    )}
+                  </div>
+                  <span className="text-xs font-semibold text-slate-600">Same as Present Address</span>
+                </label>
+              </div>
+
+              {/* Perm Pincode */}
+              <div className="flex gap-3 mb-4">
+                <div className="flex-1">
+                  <Input
+                    label="Pincode"
+                    name="permPincode"
+                    value={form.permPincode || ''}
+                    onChange={e => { handleChange(e); if (e.target.value.length === 6) fetchPermPincode(e.target.value); }}
+                    placeholder="6-digit pincode"
+                    disabled={sameAddress}
+                    readOnly={sameAddress}
+                  />
+                </div>
+                {fetchingPermPin && <div className="mt-7 flex items-center text-xs text-gray-400 gap-1"><Loader2 size={14} className="animate-spin" /> Fetching...</div>}
+              </div>
+
+              {/* Perm Area / District / State */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                <Input
+                  label="Area / Locality"
+                  name="permArea"
+                  value={form.permArea || ''}
+                  onChange={handleChange}
+                  placeholder="e.g. Amaon / Colony"
+                  disabled={sameAddress}
+                  readOnly={sameAddress}
+                />
+                <Input
+                  label="District"
+                  name="permDistrict"
+                  value={form.permDistrict || ''}
+                  placeholder="Auto-filled from pincode"
+                  readOnly
+                  disabled
+                />
+                <Input
+                  label="State"
+                  name="permState"
+                  value={form.permState || ''}
+                  placeholder="Auto-filled from pincode"
+                  readOnly
+                  disabled
+                />
+              </div>
+
+              {/* Perm Address textarea */}
+              <Field label="Street / House No." required>
+                <textarea
+                  required
+                  name="permAddress"
+                  value={form.permAddress || ''}
+                  onChange={handleChange}
+                  rows={3}
+                  disabled={sameAddress}
+                  placeholder="House No., Street, Colony..."
+                  className={`w-full px-5 py-4 border border-gray-200 rounded-xl text-base outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all resize-none ${
+                    sameAddress ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : 'bg-white'
+                  }`} />
+              </Field>
             </div>
           </div>
 
