@@ -105,7 +105,7 @@ export default function EmployeeOnboardingPage() {
   const [form, setForm] = useState({
     email: '', mobile: '', pan: '', aadhar: '',
     fathersName: '', mothersName: '', fathersMobile: '',
-    maritalStatus: '', drivingLicence: '', vehicleNumber: '',
+    maritalStatus: '', spouseName: '', drivingLicence: '', vehicleNumber: '',
     pincode: '', area: '', district: '', state: '', presentAddress: '', permanentAddress: '', landmark: '',
     bankAccType: '', bankAccName: '', bankName: '', bankBranch: '',
     bankAccNum: '', bankAccNumConfirm: '', bankIfsc: '',
@@ -144,7 +144,7 @@ export default function EmployeeOnboardingPage() {
         const prefilled = {};
         [
           'email', 'mobile', 'pan', 'aadhar', 'fathersName', 'mothersName',
-          'fathersMobile', 'maritalStatus', 'drivingLicence', 'vehicleNumber',
+          'fathersMobile', 'maritalStatus', 'spouseName', 'drivingLicence', 'vehicleNumber',
           'pincode', 'presentAddress', 'permanentAddress', 'landmark',
           'bankAccType', 'bankAccName', 'bankName', 'bankBranch', 'bankIfsc',
           'qual1Type', 'qual1Inst', 'qual1Dist', 'qual1Year', 'qual1Perc',
@@ -171,6 +171,7 @@ export default function EmployeeOnboardingPage() {
           mothersName: data.mothersName || '',
           fathersMobile: data.fathersMobile || '',
           maritalStatus: data.maritalStatus || 'Single',
+          spouseName: data.spouseName || '',
           drivingLicence: data.drivingLicence || '',
           vehicleNumber: data.vehicleNumber || '',
           pincode: data.pincode || '',
@@ -517,6 +518,17 @@ export default function EmployeeOnboardingPage() {
                 readOnly={prefilledFields.maritalStatus}
                 disabled={prefilledFields.maritalStatus}
               />
+              {form.maritalStatus === 'Married' && (
+                <Input
+                  label="Spouse Name"
+                  name="spouseName"
+                  value={form.spouseName}
+                  onChange={handleChange}
+                  placeholder="Enter spouse's full name"
+                  readOnly={prefilledFields.spouseName}
+                  disabled={prefilledFields.spouseName}
+                />
+              )}
               <Input 
                 label="Driving Licence No." 
                 name="drivingLicence" 
