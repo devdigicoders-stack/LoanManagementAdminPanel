@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import {
   User, Mail, Phone, Home, CreditCard, Briefcase, GraduationCap,
   Building2, FileText, CheckCircle2, Upload, Shield, ArrowLeft, Loader2,
-  BadgeCheck, Landmark, Users2, ChevronDown, Navigation
+  BadgeCheck, Landmark, Users2, ChevronDown, Navigation, Plus, Trash2
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { sanitize, validate } from '../utils/validation';
@@ -125,6 +125,10 @@ export default function EmployeeOnboardingPage() {
   const [sameAddress, setSameAddress] = useState(false);
   const [prefilledFields, setPrefilledFields] = useState({});
 
+  // Dynamic qualifications list
+  const EMPTY_QUAL = { degree: '', institution: '', subject: '', passingYear: '', percentage: '', grade: '' };
+  const [qualifications, setQualifications] = useState([{ ...EMPTY_QUAL }]);
+
   useEffect(() => {
     window.scrollTo(0, 0);
     fetch(`${API}/api/employees/onboarding/${id}`)
@@ -223,6 +227,28 @@ export default function EmployeeOnboardingPage() {
           ref2Mobile: data.ref2Mobile || '',
           ref2Address: data.ref2Address || '',
         }));
+
+        // Pre-fill qualifications from saved records or from application education
+        if (data.qualifications && data.qualifications.length > 0) {
+          setQualifications(data.qualifications.map(q => ({
+            degree: q.degree || '',
+            institution: q.institution || '',
+            subject: q.subject || '',
+            passingYear: q.passingYear || '',
+            percentage: q.percentage || '',
+            grade: q.grade || '',
+          })));
+        } else if (data.applicationEducation && data.applicationEducation.length > 0) {
+          setQualifications(data.applicationEducation.map(e => ({
+            degree: e.degree || '',
+            institution: e.institution || '',
+            subject: e.subject || '',
+            passingYear: e.passingYear || e.endDate || '',
+            percentage: e.percentage || '',
+            grade: e.grade || '',
+          })));
+        }
+
         setLoading(false);
       })
       .catch(() => setLoading(false));
@@ -303,6 +329,12 @@ export default function EmployeeOnboardingPage() {
       }));
     }
   };
+
+  // Qualifications handlers
+  const addQual = () => setQualifications(prev => [...prev, { ...EMPTY_QUAL }]);
+  const removeQual = (i) => setQualifications(prev => prev.filter((_, idx) => idx !== i));
+  const updateQual = (i, field, value) =>
+    setQualifications(prev => prev.map((q, idx) => idx === i ? { ...q, [field]: value } : q));
 
   const getCurrentLocation = () => {
     if (!navigator.geolocation) { toast.error('Geolocation not supported'); return; }
@@ -395,7 +427,6 @@ export default function EmployeeOnboardingPage() {
       // Append all text fields
       Object.entries(form).forEach(([k, v]) => {
         if (v !== undefined && v !== null) {
-          // If it is city/area, send to city
           if (k === 'area') {
             fd.append('city', v);
           } else {
@@ -403,6 +434,9 @@ export default function EmployeeOnboardingPage() {
           }
         }
       });
+
+      // Append qualifications array
+      fd.append('qualifications', JSON.stringify(qualifications.filter(q => q.degree || q.institution)));
 
       // Append files
       const docsMeta = [];
@@ -777,15 +811,101 @@ export default function EmployeeOnboardingPage() {
             </div>
           </div>
 
-          {/* Qualification */}
+          {/* Qualifications – dynamic list */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <SectionHeader icon={GraduationCap} title="Highest Qualification" />
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Select label="Qualification" required name="qual1Type" value={form.qual1Type} onChange={handleChange} options={QUALIFICATIONS} readOnly={prefilledFields.qual1Type} disabled={prefilledFields.qual1Type} />
-              <Input label="Institution / College" required name="qual1Inst" value={form.qual1Inst} onChange={handleChange} placeholder="Name of institution" readOnly={prefilledFields.qual1Inst} disabled={prefilledFields.qual1Inst} />
-              <Input label="District" name="qual1Dist" value={form.qual1Dist} onChange={handleChange} placeholder="District of institution" readOnly={prefilledFields.qual1Dist} disabled={prefilledFields.qual1Dist} />
-              <Input label="Passing Year" name="qual1Year" value={form.qual1Year} onChange={handleChange} placeholder="e.g. 2020" type="number" readOnly={prefilledFields.qual1Year} disabled={prefilledFields.qual1Year} />
-              <Input label="Percentage / CGPA" name="qual1Perc" value={form.qual1Perc} onChange={handleChange} placeholder="e.g. 75% or 7.5 CGPA" readOnly={prefilledFields.qual1Perc} disabled={prefilledFields.qual1Perc} />
+            <div className="flex items-center justify-between mb-4">
+              <SectionHeader icon={GraduationCap} title="Educational Qualifications" />
+              <button
+                type="button"
+                onClick={addQual}
+                className="flex items-center gap-1.5 text-xs font-bold text-[#0EA5E9] border border-[#0EA5E9] px-3 py-1.5 rounded-lg hover:bg-[#0EA5E9]/10 transition-colors"
+              >
+                <Plus size={13} /> Add Qualification
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {qualifications.map((q, i) => (
+                <div key={i} className="bg-slate-50 border border-slate-200 rounded-xl p-5 relative">
+                  {/* Row header */}
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Qualification #{i + 1}</span>
+                    {qualifications.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeQual(i)}
+                        className="text-red-400 hover:text-red-600 transition-colors p-1"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Row 1: Degree | Institution | Subject */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+                    <Field label="Degree / Examination">
+                      <input
+                        type="text"
+                        value={q.degree}
+                        onChange={e => updateQual(i, 'degree', e.target.value)}
+                        placeholder="e.g. Graduation / 12th / MBA"
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all"
+                      />
+                    </Field>
+                    <Field label="University / Institute">
+                      <input
+                        type="text"
+                        value={q.institution}
+                        onChange={e => updateQual(i, 'institution', e.target.value)}
+                        placeholder="Name of institution"
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all"
+                      />
+                    </Field>
+                    <Field label="Subject / Stream">
+                      <input
+                        type="text"
+                        value={q.subject}
+                        onChange={e => updateQual(i, 'subject', e.target.value)}
+                        placeholder="e.g. Commerce / Science"
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all"
+                      />
+                    </Field>
+                  </div>
+
+                  {/* Row 2: Passing Year | Percentage | Grade */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <Field label="Passing Year">
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        maxLength={4}
+                        value={q.passingYear}
+                        onChange={e => updateQual(i, 'passingYear', e.target.value)}
+                        placeholder="e.g. 2020"
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all"
+                      />
+                    </Field>
+                    <Field label="% Marks">
+                      <input
+                        type="text"
+                        value={q.percentage}
+                        onChange={e => updateQual(i, 'percentage', e.target.value)}
+                        placeholder="e.g. 75%"
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all"
+                      />
+                    </Field>
+                    <Field label="Grade / Division">
+                      <input
+                        type="text"
+                        value={q.grade}
+                        onChange={e => updateQual(i, 'grade', e.target.value)}
+                        placeholder="e.g. First Division / A+"
+                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-white outline-none focus:border-[#0EA5E9] focus:ring-2 focus:ring-[#0EA5E9]/10 transition-all"
+                      />
+                    </Field>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

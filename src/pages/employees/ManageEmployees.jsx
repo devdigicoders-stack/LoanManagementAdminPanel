@@ -25,6 +25,7 @@ export default function ManageEmployees() {
  const [onboardingFilter, setOnboardingFilter] = useState('all'); // 'all', 'Done', 'Pending'
    const [lateLockFilter, setLateLockFilter] = useState('all'); // 'all', 'locked', 'pendingQuery'
   const [zoneFilter, setZoneFilter] = useState('all'); // 'all', 'NORTH', 'SOUTH', 'EAST', 'WEST', 'CENTRAL'
+  const [roleFilter, setRoleFilter] = useState('all'); // 'all' or specific role/designation
 
  // Modals state
  const [assignTelecallerModal, setAssignTelecallerModal] = useState({ isOpen: false, employee: null, selectedTelecallerId: '', notes: '' });
@@ -461,11 +462,25 @@ export default function ManageEmployees() {
  const pendingOnboardingCount = useMemo(() => employees.filter(e => e.onboarding !== 'Done').length, [employees]);
  const pendingQueriesCount = useMemo(() => employees.filter(e => e.isLateLocked || e.unblockRequest?.status === 'Pending').length, [employees]);
 
- // Filtered employees
+ // Unique roles/designations derived from loaded employees
+  const uniqueRoles = useMemo(() => {
+    const set = new Set();
+    employees.forEach(emp => {
+      if (emp.designation) set.add(emp.designation.trim());
+      else if (emp.role) set.add(emp.role.trim());
+    });
+    return Array.from(set).sort();
+  }, [employees]);
+
+  // Filtered employees
   const filteredEmployees = useMemo(() => {
     return employees.filter(emp => {
       if (zoneFilter !== 'all' && (emp.zone || 'NORTH').toUpperCase() !== zoneFilter.toUpperCase()) {
         return false;
+      }
+      if (roleFilter !== 'all') {
+        const empRole = (emp.designation || emp.role || '').trim();
+        if (empRole !== roleFilter) return false;
       }
       if (lateLockFilter === 'locked') {
         return emp.isLateLocked;
@@ -475,7 +490,7 @@ export default function ManageEmployees() {
       }
       return true;
     });
-  }, [employees, lateLockFilter, zoneFilter]);
+  }, [employees, lateLockFilter, zoneFilter, roleFilter]);
 
  return (
  <div className="w-full bg-slate-50/50 min-h-screen pb-16">
@@ -600,6 +615,22 @@ export default function ManageEmployees() {
           </select>
         </div>
 
+        {/* Filter by Role / Designation */}
+        <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
+          <User size={13} className="text-gray-400" />
+          <span className="text-gray-500 font-medium">Role:</span>
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer max-w-[140px]"
+          >
+            <option value="all">All Roles</option>
+            {uniqueRoles.map(r => (
+              <option key={r} value={r}>{r}</option>
+            ))}
+          </select>
+        </div>
+
  {/* Filter by Onboarding Status */}
  <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
  <Hourglass size={13} className="text-gray-400" />
@@ -630,11 +661,13 @@ export default function ManageEmployees() {
  </select>
  </div>
 
-        {(onboardingFilter !== 'all' || lateLockFilter !== 'all' || zoneFilter !== 'all' || searchTerm) && (
+        {(onboardingFilter !== 'all' || lateLockFilter !== 'all' || zoneFilter !== 'all' || roleFilter !== 'all' || searchTerm) && (
  <button
  onClick={() => {
  setOnboardingFilter('all');
  setLateLockFilter('all');
+ setZoneFilter('all');
+ setRoleFilter('all');
  setSearchTerm('');
  }}
  className="text-xs text-purple-700 hover:text-purple-900 font-semibold px-2 py-1"
