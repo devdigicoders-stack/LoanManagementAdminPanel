@@ -96,6 +96,13 @@ const ALL_HR_MODULE_PAGES = [
  category: 'Financial / HR'
  },
  {
+ name: 'Manage Payroll Headings',
+ label: 'Manage Dynamic Payroll Headings',
+ path: '/hr/payroll',
+ description: 'Permission to add, customize, and delete dynamic salary components & payroll table columns.',
+ category: 'Financial / HR'
+ },
+ {
  name: 'Departments',
  label: 'Company Departments & Branches',
  path: '/employees/departments',

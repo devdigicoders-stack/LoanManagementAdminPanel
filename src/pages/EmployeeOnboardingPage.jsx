@@ -8,7 +8,7 @@ import {
 import toast from 'react-hot-toast';
 import { sanitize, validate } from '../utils/validation';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-wu4y.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
 const API = API_BASE.replace('/api', '');
 
 // ── Small helpers ─────────────────────────────────────────────────────────────
@@ -96,11 +96,17 @@ const DOC_LIST = [
 
 export default function EmployeeOnboardingPage() {
   const { id } = useParams();
+  // ?reupload=TOKEN aaya to sirf rejected-docs mode (baki sab locked)
+  const reuploadToken = new URLSearchParams(window.location.search).get('reupload') || '';
 
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [reuploadMode, setReuploadMode] = useState(false);
+  const [rejectedDocs, setRejectedDocs] = useState([]);
+  const [reuploadDone, setReuploadDone] = useState(false);
+  const [reuploadError, setReuploadError] = useState('');
 
   const [form, setForm] = useState({
     email: '', mobile: '', pan: '', aadhar: '',
@@ -131,12 +137,39 @@ export default function EmployeeOnboardingPage() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    // Re-upload link se aaya hai → sirf rejected docs fetch karo, full form lock rahega
+    if (reuploadToken) {
+      fetch(`${API}/api/employees/onboarding/${id}/rejected?token=${encodeURIComponent(reuploadToken)}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.rejectedDocs) {
+            setReuploadMode(true);
+            setRejectedDocs(data.rejectedDocs || []);
+            setEmployee({ name: data.name, empId: data.empId });
+            if (!data.rejectedDocs.length) setReuploadError('Koi rejected document pending nahi hai.');
+          } else {
+            setReuploadMode(true);
+            setReuploadError(data.message || 'Invalid/expired link.');
+          }
+          setLoading(false);
+        })
+        .catch(() => { setReuploadMode(true); setReuploadError('Link load nahi hua.'); setLoading(false); });
+      return;
+    }
     fetch(`${API}/api/employees/onboarding/${id}`)
       .then(r => r.json())
       .then(data => {
         if (data.message) { setLoading(false); return; }
         setEmployee(data);
-        if (data.onboardingStatus === 'Submitted' || data.onboardingStatus === 'Done') {
+        const pendingRejectedDocs = (data.documents || [])
+          .filter(d => d.status === 'Rejected' || d.status === 'Re-upload Required')
+          .map(d => ({ _id: d._id, key: d.key, name: d.name, status: d.status, rejectReason: d.rejectReason || '' }));
+
+        // Agar senior ne document reject kar rakha hai, to normal link par bhi automatic Re-upload page khulega
+        if (pendingRejectedDocs.length > 0 && data.onboardingStatus !== 'Done') {
+          setReuploadMode(true);
+          setRejectedDocs(pendingRejectedDocs);
+        } else if (data.onboardingStatus === 'Submitted' || data.onboardingStatus === 'Done') {
           setSubmitted(true);
         }
         if (data.state || data.district || data.city) {
@@ -270,7 +303,17 @@ export default function EmployeeOnboardingPage() {
     } else if (name === 'bankAccNum' || name === 'bankAccNumConfirm') {
       finalValue = sanitize.bankAccount(value);
     }
-    setForm(f => ({ ...f, [name]: finalValue }));
+    setForm(f => {
+      const updated = { ...f, [name]: finalValue };
+      if (sameAddress) {
+        if (name === 'presentAddress') updated.permAddress = finalValue;
+        if (name === 'area') updated.permArea = finalValue;
+        if (name === 'pincode') updated.permPincode = finalValue;
+        if (name === 'district') updated.permDistrict = finalValue;
+        if (name === 'state') updated.permState = finalValue;
+      }
+      return updated;
+    });
   };
 
   const fetchPincode = async (pincode) => {
@@ -282,13 +325,27 @@ export default function EmployeeOnboardingPage() {
       if (data[0]?.Status === 'Success') {
         const info = data[0].PostOffice[0];
         setPincodeInfo({ state: info.State, district: info.District, city: info.Name });
-        setForm(f => ({
-          ...f,
-          area: f.area || info.Name,
-          district: info.District,
-          state: info.State,
-          presentAddress: f.presentAddress || `${info.Name}, ${info.District}, ${info.State} - ${pincode}`
-        }));
+        setForm(f => {
+          const areaVal = f.area || info.Name;
+          const distVal = info.District;
+          const stateVal = info.State;
+          const addrVal = f.presentAddress || `${info.Name}, ${info.District}, ${info.State} - ${pincode}`;
+          const updated = {
+            ...f,
+            area: areaVal,
+            district: distVal,
+            state: stateVal,
+            presentAddress: addrVal
+          };
+          if (sameAddress) {
+            updated.permArea = areaVal;
+            updated.permDistrict = distVal;
+            updated.permState = stateVal;
+            updated.permPincode = pincode;
+            updated.permAddress = addrVal;
+          }
+          return updated;
+        });
         toast.success(`📍 ${info.Name}, ${info.District}, ${info.State}`);
       }
     } catch { /* ignore */ }
@@ -468,7 +525,109 @@ export default function EmployeeOnboardingPage() {
     }
   };
 
-  // ── Loading / Error / Success states ──────────────────────────────────────────
+  const handleReuploadSubmit = async (e) => {
+    e.preventDefault();
+    const missing = rejectedDocs.filter(d => !files[d.key]);
+    if (missing.length > 0) {
+      toast.error('Upload karo: ' + missing.map(d => d.name).join(', '));
+      return;
+    }
+    const activeToken = reuploadToken || employee?.reuploadToken || '';
+    setSubmitting(true);
+    try {
+      const fd = new FormData();
+      fd.append('token', activeToken);
+      const docsMeta = rejectedDocs.map(d => ({ key: d.key, name: d.name }));
+      rejectedDocs.forEach(d => { if (files[d.key]) fd.append(d.key, files[d.key]); });
+      fd.append('documents', JSON.stringify(docsMeta));
+      const url = `${API}/api/employees/onboarding/${id}/reupload?token=` + encodeURIComponent(activeToken);
+      const res = await fetch(url, { method: 'POST', body: fd });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        setReuploadDone(true);
+        toast.success('Re-uploaded! Senior verify karega.');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else { toast.error(data.message || 'Re-upload failed'); }
+    } catch { toast.error('Server error.'); }
+    finally { setSubmitting(false); }
+  };
+
+  // REUPLOAD-UI-PLACEHOLDER
+  if (reuploadMode) {
+    if (loading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-[#FDFBF7]">
+          <Loader2 size={32} className="animate-spin text-[#0EA5E9]" />
+        </div>
+      );
+    }
+    if (reuploadDone) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#FDFBF7] text-center px-6 pt-20">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+            <BadgeCheck size={40} className="text-green-600" />
+          </div>
+          <h1 className="text-3xl font-extrabold text-slate-900 mb-3">Documents Re-uploaded!</h1>
+          <p className="text-gray-500 max-w-md mb-8">Thank you <strong>{employee?.name}</strong>! Senior verify karega.</p>
+          <Link to="/" className="bg-[#0EA5E9] text-white font-bold px-8 py-3 rounded-full hover:bg-[#0284C7] transition-colors shadow-md">
+            Back to Home
+          </Link>
+        </div>
+      );
+    }
+    if (reuploadError && !rejectedDocs.length) {
+      return (
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#FDFBF7] text-center px-6">
+          <Shield size={48} className="text-red-400 mb-4" />
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">Invalid / Expired Link</h1>
+          <p className="text-gray-500 mb-6">{reuploadError} HR se naya link mango.</p>
+          <Link to="/" className="bg-[#0EA5E9] text-white font-bold px-6 py-3 rounded-full hover:bg-[#0284C7] transition-colors">
+            Go to Home
+          </Link>
+        </div>
+      );
+    }
+    return (
+      <div className="min-h-screen bg-[#FDFBF7] font-sans pt-24 pb-20">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="bg-gradient-to-br from-[#F59E0B] to-[#D97706] rounded-2xl p-6 mb-6 text-white shadow-lg">
+            <p className="text-sm font-semibold opacity-80 mb-1">Document Re-upload Required</p>
+            <h1 className="text-2xl font-extrabold mb-1">{employee?.name}</h1>
+            <p className="text-xs mt-1 opacity-70">Employee ID: {employee?.empId}</p>
+            <div className="mt-4 bg-white/15 rounded-xl p-3 text-sm">
+              <p>Sirf rejected docs upload karo — baki sab locked hai.</p>
+            </div>
+          </div>
+          <form onSubmit={handleReuploadSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
+            {rejectedDocs.map(d => (
+              <div key={d._id || d.key} className="border border-red-200 bg-red-50/40 rounded-xl p-4">
+                <div className="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <p className="text-[14px] font-bold text-slate-800">{d.name}</p>
+                    {d.rejectReason && <p className="text-[12px] text-red-600 mt-1">Reason: {d.rejectReason}</p>}
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 bg-red-100 text-red-700 rounded uppercase">{d.status}</span>
+                </div>
+                <label className="cursor-pointer block">
+                  <input type="file" className="hidden" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    onChange={e => { const f = e.target.files[0]; if (f) setFiles(p => ({ ...p, [d.key]: f })); }} />
+                  <div className={'flex items-center gap-2 px-3 py-2.5 rounded-lg text-xs font-bold border ' + (files[d.key] ? 'bg-green-100 border-green-300 text-green-700' : 'bg-white border-red-300 text-red-600')}>
+                    {files[d.key] ? <CheckCircle2 size={14} /> : <Upload size={14} />}
+                    {files[d.key] ? files[d.key].name.slice(0, 28) : ('Upload ' + d.name)}
+                  </div>
+                </label>
+              </div>
+            ))}
+            <button type="submit" disabled={submitting}
+              className="w-full flex items-center justify-center gap-3 bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold py-4 rounded-2xl text-base shadow-lg disabled:opacity-70">
+              {submitting ? <Loader2 size={20} className="animate-spin" /> : <CheckCircle2 size={20} />}
+              {submitting ? 'Uploading...' : 'Re-upload Rejected Documents'}
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

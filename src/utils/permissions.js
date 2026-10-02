@@ -239,9 +239,9 @@ const PERMISSION_ALIASES = {
   'Departments': ['Departments', 'Manage Departments'],
   'Manage Employees': ['Manage Employees', 'Employees', 'Employee Directory'],
   'Employee Directory': ['Manage Employees', 'Employees', 'Employee Directory'],
-  'Employees': ['Manage Employees', 'Employees'],
   'Payroll & Salary': ['Payroll/Salary', 'Payroll & Salary', 'Payroll'],
   'Payroll/Salary': ['Payroll & Salary', 'Payroll/Salary', 'Payroll'],
+  'Manage Payroll Headings': ['Manage Payroll Headings', 'Manage Payroll', 'Payroll Headings', 'Custom Payroll Headings'],
   'Reports & Analytics': ['View Reports', 'Export Data', 'Reports & Analytics', 'Reports', 'HR Reports & Analytics'],
   'View Reports': ['Reports & Analytics', 'View Reports'],
   'Loan Applications': ['View Loan Applications', 'Loan Applications', 'Loan Application', 'Approve / Reject Loans', 'Approve/Reject/Hold Loan', 'Applications'],
@@ -326,7 +326,7 @@ export const syncPermissionsWithServer = async () => {
   try {
     const token = localStorage.getItem('token');
     if (!token) return null;
-    const API_URL = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-wu4y.onrender.com/api';
+    const API_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
     const res = await fetch(`${API_URL}/admin/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     });

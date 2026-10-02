@@ -4,11 +4,11 @@ import {
   User, Mail, Phone, Home, CreditCard, Briefcase, GraduationCap,
   Building2, FileText, CheckCircle2, Shield, ArrowLeft, Loader2,
   BadgeCheck, Landmark, Users2, Eye, Check, X, AlertCircle, CheckSquare,
-  Crown, ExternalLink, Calendar, MapPin
+  Crown, ExternalLink, Calendar, MapPin, Copy, Link2, RefreshCw
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-wu4y.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
 const API = API_BASE.replace('/api', '');
 
 const DOC_LABEL = {
@@ -64,6 +64,39 @@ export default function OnboardingReviewPage() {
   const [loading, setLoading] = useState(true);
   const [updatingDoc, setUpdatingDoc] = useState(null);
   const [markingDone, setMarkingDone] = useState(false);
+  const [reuploadInfo, setReuploadInfo] = useState({ link: null, docs: [] });
+  const [rejectingDoc, setRejectingDoc] = useState(null);
+  const [rejectReason, setRejectReason] = useState('');
+
+  const isLocked = employee?.onboardingStatus === 'Done';
+
+  const fetchReuploadLink = async () => {
+    try {
+      const res = await fetch(`${API}/api/employees/${id}/reupload-link`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setReuploadInfo({ link: data.reuploadLink || null, docs: data.rejectedDocs || [] });
+      }
+    } catch { /* ignore */ }
+  };
+
+  const copyReuploadLink = async () => {
+    // Generate fresh browser-based link using employee._id and reupload token
+    let targetLink = reuploadInfo.link;
+    if (!targetLink && employee?.reuploadToken) {
+      targetLink = `${window.location.origin}/onboarding/${id}?reupload=${employee.reuploadToken}`;
+    } else if (targetLink && targetLink.includes('?reupload=')) {
+      const tokenVal = targetLink.split('?reupload=')[1];
+      targetLink = `${window.location.origin}/onboarding/${id}?reupload=${tokenVal}`;
+    }
+    if (!targetLink) { toast.error('Pehle koi document reject karo'); return; }
+    try {
+      await navigator.clipboard.writeText(targetLink);
+      toast.success('Re-upload link copied! Employee ko WhatsApp/Email karo.');
+    } catch { toast.error('Copy failed — link manually copy karo'); }
+  };
 
   const fetchEmployeeData = async () => {
     try {
@@ -84,26 +117,36 @@ export default function OnboardingReviewPage() {
   useEffect(() => {
     window.scrollTo(0, 0);
     fetchEmployeeData();
+    fetchReuploadLink();
   }, [id]);
 
-  const handleDocStatus = async (docId, newStatus) => {
+  const handleDocStatus = async (docId, newStatus, reason = '') => {
+    if (isLocked) { toast.error('Onboarding verified — Reject/Re-upload disabled'); return; }
     setUpdatingDoc(docId);
     try {
       const res = await fetch(`${API}/api/employees/${id}/documents/${docId}/status`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, rejectReason: reason }),
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         toast.success(`Document marked as ${newStatus}`);
+        if (data.reuploadLink) {
+          setReuploadInfo({ link: data.reuploadLink, docs: data.rejectedDocs || [] });
+        } else {
+          fetchReuploadLink();
+        }
         fetchEmployeeData();
       } else {
-        toast.error('Failed to update document status');
+        toast.error(data.message || 'Failed to update document status');
       }
     } catch {
       toast.error('Server error');
     } finally {
       setUpdatingDoc(null);
+      setRejectingDoc(null);
+      setRejectReason('');
     }
   };
 
@@ -217,11 +260,12 @@ export default function OnboardingReviewPage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {employee.onboardingStatus !== 'Done' ? (
+            {!isLocked ? (
               <button
                 onClick={markComplete}
-                disabled={markingDone}
-                className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold shadow-md transition-all disabled:opacity-50"
+                disabled={markingDone || !allVerified}
+                title={!allVerified ? 'Pehle saare documents verify karein' : 'Mark Onboarding as Complete'}
+                className="flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-xs font-bold shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <CheckCircle2 size={16} />
                 {markingDone ? 'Completing...' : 'Approve & Mark Onboarding Complete'}
@@ -233,6 +277,33 @@ export default function OnboardingReviewPage() {
             )}
           </div>
         </div>
+
+        {/* Re-upload link bar — reject ke baad senior copy karke employee ko bhejega */}
+        {!isLocked && reuploadInfo.link && reuploadInfo.docs.length > 0 && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl p-4 flex flex-col md:flex-row md:items-center gap-3">
+            <div className="flex items-center gap-2 text-amber-800 text-xs font-bold">
+              <Link2 size={15} />
+              Rejected ({reuploadInfo.docs.length}): {reuploadInfo.docs.map(d => d.name).join(', ')}
+            </div>
+            <div className="flex-1 text-[11px] font-mono bg-white border border-amber-200 rounded-lg px-3 py-2 text-amber-900 break-all select-all">
+              {reuploadInfo.link}
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={copyReuploadLink}
+                className="flex items-center gap-1.5 px-3 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-[11px] font-bold transition-colors"
+              >
+                <Copy size={13} /> Copy Re-upload Link
+              </button>
+              <button
+                onClick={fetchReuploadLink}
+                className="flex items-center gap-1.5 px-3 py-2 bg-white border border-amber-300 text-amber-700 hover:bg-amber-100 rounded-lg text-[11px] font-bold transition-colors"
+              >
+                <RefreshCw size={13} /> Refresh
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Grid Layout ─────────────────────────────────────────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -265,16 +336,38 @@ export default function OnboardingReviewPage() {
 
             {/* 3. Address Details */}
             <SectionCard icon={Home} title="Address Details">
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 p-3.5 bg-blue-50/60 rounded-xl border border-blue-100">
-                  <DetailItem label="Pincode" value={employee.pincode} isMonospace />
-                  <DetailItem label="District / City" value={employee.district || employee.city} />
-                  <DetailItem label="State" value={employee.state} />
+              <div className="space-y-5">
+                {/* Present Address */}
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-bold text-[#0EA5E9] uppercase tracking-wider">Present / Current Address</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <DetailItem label="Pincode" value={employee.pincode} isMonospace />
+                    <DetailItem label="Area / Locality" value={employee.city || employee.area} />
+                    <DetailItem label="District" value={employee.district} />
+                    <DetailItem label="State" value={employee.state} />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                    <DetailItem label="Street / House Address" value={employee.presentAddress} />
+                    <DetailItem label="Landmark" value={employee.landmark} />
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
-                  <DetailItem label="Present / Current Address" value={employee.presentAddress} />
-                  <DetailItem label="Permanent Address" value={employee.permanentAddress} />
-                  <DetailItem label="Nearby Landmark" value={employee.landmark} />
+
+                {/* Permanent Address */}
+                <div className="p-4 bg-slate-50 rounded-xl border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                    <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Permanent Address</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <DetailItem label="Pincode" value={employee.permPincode || employee.pincode} isMonospace />
+                    <DetailItem label="Area / Locality" value={employee.permArea || employee.city || employee.area} />
+                    <DetailItem label="District" value={employee.permDistrict || employee.district} />
+                    <DetailItem label="State" value={employee.permState || employee.state} />
+                  </div>
+                  <div className="pt-1">
+                    <DetailItem label="Permanent Street Address" value={employee.permanentAddress || employee.permAddress || employee.presentAddress} />
+                  </div>
                 </div>
               </div>
             </SectionCard>
@@ -291,15 +384,44 @@ export default function OnboardingReviewPage() {
               </div>
             </SectionCard>
 
-            {/* 5. Highest Qualification */}
-            <SectionCard icon={GraduationCap} title="Highest Educational Qualification">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
-                <DetailItem label="Degree / Course" value={employee.qual1Type} isBadge />
-                <DetailItem label="College / University" value={employee.qual1Inst} />
-                <DetailItem label="District" value={employee.qual1Dist} />
-                <DetailItem label="Passing Year" value={employee.qual1Year} isMonospace />
-                <DetailItem label="Percentage / CGPA" value={employee.qual1Perc} isMonospace />
-              </div>
+            {/* 5. Educational Qualifications */}
+            <SectionCard icon={GraduationCap} title="Educational Qualifications" badge={employee.qualifications?.length ? `${employee.qualifications.length} Listed` : undefined}>
+              {employee.qualifications && employee.qualifications.length > 0 ? (
+                <div className="space-y-3">
+                  {employee.qualifications.map((q, idx) => (
+                    <div key={idx} className="p-3.5 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                      <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-black flex items-center justify-center">
+                            {idx + 1}
+                          </span>
+                          {q.degree || 'Degree'}
+                        </span>
+                        {q.passingYear && (
+                          <span className="text-[11px] font-mono font-bold text-slate-500 bg-white px-2 py-0.5 rounded border border-slate-200">
+                            {q.passingYear}
+                          </span>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-2 gap-x-4">
+                        <DetailItem label="Institution / College" value={q.institution} />
+                        <DetailItem label="Subject / Stream" value={q.subject} />
+                        <DetailItem label="Percentage / Grade" value={q.percentage ? `${q.percentage}${q.grade ? ` (${q.grade})` : ''}` : q.grade} isMonospace />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : employee.qual1Type || employee.qual1Inst ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+                  <DetailItem label="Degree / Course" value={employee.qual1Type} isBadge />
+                  <DetailItem label="College / University" value={employee.qual1Inst} />
+                  <DetailItem label="District" value={employee.qual1Dist} />
+                  <DetailItem label="Passing Year" value={employee.qual1Year} isMonospace />
+                  <DetailItem label="Percentage / CGPA" value={employee.qual1Perc} isMonospace />
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">No qualifications added.</p>
+              )}
             </SectionCard>
 
             {/* 6. Previous Work Experience */}
@@ -410,27 +532,38 @@ export default function OnboardingReviewPage() {
                           <p className="text-[11px] text-gray-400 italic">No file URL attached</p>
                         )}
 
-                        {/* Verify / Reject Buttons */}
+                        {/* Verify / Reject Buttons — Done ke baad + Verified doc par disable */}
                         <div className="flex items-center gap-2 pt-1 border-t border-gray-200/60">
-                          {doc.status !== 'Verified' && (
-                            <button
-                              disabled={updatingDoc === doc._id}
-                              onClick={() => handleDocStatus(doc._id, 'Verified')}
-                              className="flex-1 flex items-center justify-center gap-1 py-1 px-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition-colors disabled:opacity-50"
-                            >
-                              <Check size={12} /> Verify
-                            </button>
-                          )}
-                          {doc.status !== 'Rejected' && doc.status !== 'Verified' && (
-                            <button
-                              disabled={updatingDoc === doc._id}
-                              onClick={() => handleDocStatus(doc._id, 'Rejected')}
-                              className="flex-1 flex items-center justify-center gap-1 py-1 px-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-[11px] font-bold transition-colors disabled:opacity-50"
-                            >
-                              <X size={12} /> Reject
-                            </button>
+                          {isLocked || doc.status === 'Verified' ? (
+                            <p className="w-full text-center text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 rounded-lg py-1.5">
+                              {isLocked ? 'Verified & Locked' : 'Verified — Reject disabled'}
+                            </p>
+                          ) : (
+                            <>
+                              <button
+                                disabled={updatingDoc === doc._id}
+                                onClick={() => handleDocStatus(doc._id, 'Verified')}
+                                className="flex-1 flex items-center justify-center gap-1 py-1 px-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-[11px] font-bold shadow-xs transition-colors disabled:opacity-50"
+                              >
+                                <Check size={12} /> Verify
+                              </button>
+                              {doc.status !== 'Rejected' && (
+                                <button
+                                  disabled={updatingDoc === doc._id}
+                                  onClick={() => { setRejectingDoc(doc); setRejectReason(''); }}
+                                  className="flex-1 flex items-center justify-center gap-1 py-1 px-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg text-[11px] font-bold transition-colors disabled:opacity-50"
+                                >
+                                  <X size={12} /> Reject
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
+                        {doc.rejectReason && (
+                          <p className="text-[10px] text-red-600 bg-red-50 border border-red-100 rounded-lg px-2 py-1.5">
+                            Reject reason: {doc.rejectReason}
+                          </p>
+                        )}
                       </div>
                     );
                   })}
@@ -439,13 +572,18 @@ export default function OnboardingReviewPage() {
 
               {/* Complete Onboarding Button in Sidebar */}
               <div className="mt-6 pt-4 border-t border-gray-200">
+                {!allVerified && !isLocked && (
+                  <p className="text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-2 mb-3 text-center font-semibold">
+                    Saare documents verify hone ke baad hi Complete button enable hoga.
+                  </p>
+                )}
                 <button
                   onClick={markComplete}
-                  disabled={markingDone || employee.onboardingStatus === 'Done'}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={markingDone || isLocked || !allVerified}
+                  className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md transition-all disabled:opacity-40 disabled:cursor-not-allowed"
                 >
                   <CheckSquare size={15} />
-                  {markingDone ? 'Completing...' : employee.onboardingStatus === 'Done' ? 'Already Completed' : 'Mark Onboarding Complete'}
+                  {markingDone ? 'Completing...' : isLocked ? 'Already Completed' : 'Mark Onboarding Complete'}
                 </button>
               </div>
             </div>
@@ -453,6 +591,42 @@ export default function OnboardingReviewPage() {
 
         </div>
       </div>
+
+      {/* Reject reason popup */}
+      {rejectingDoc && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <h4 className="text-[15px] font-bold text-slate-800">
+              Reject: {DOC_LABEL[rejectingDoc.key] || rejectingDoc.name}
+            </h4>
+            <p className="text-[12px] text-slate-500">
+              Document reject karne ka reason enter karein (ye candidate ko re-upload page par dikhega).
+            </p>
+            <textarea
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+              rows={3}
+              placeholder="e.g. Photo blur hai, clear copy upload karein"
+              className="w-full px-3 py-2 border border-slate-200 rounded-lg text-[13px] focus:outline-none focus:border-red-400"
+            />
+            <div className="flex items-center justify-end gap-2 pt-1">
+              <button
+                onClick={() => { setRejectingDoc(null); setRejectReason(''); }}
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg text-[12px] font-bold hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={updatingDoc === rejectingDoc._id}
+                onClick={() => handleDocStatus(rejectingDoc._id, 'Rejected', rejectReason.trim())}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[12px] font-bold disabled:opacity-50"
+              >
+                {updatingDoc === rejectingDoc._id ? 'Rejecting...' : 'Confirm Reject'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

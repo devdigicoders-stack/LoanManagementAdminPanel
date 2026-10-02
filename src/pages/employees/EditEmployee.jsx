@@ -50,6 +50,9 @@ export default function EditEmployee() {
   const [activeTab, setActiveTab] = useState('Personal');
   const [showPassword, setShowPassword] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [reuploadLink, setReuploadLink] = useState(null);
+  const [rejectedDocs, setRejectedDocs] = useState([]);
+  const [copiedReupload, setCopiedReupload] = useState(false);
 
   // New document modal / form state
   const [showAddDocModal, setShowAddDocModal] = useState(false);
@@ -293,6 +296,20 @@ export default function EditEmployee() {
     };
     
     fetchEmployee();
+    // Existing re-upload link bhi load karo (agar pehle reject hua tha)
+    (async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const r = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/reupload-link`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (r.ok) {
+          const d = await r.json();
+          setReuploadLink(d.reuploadLink || null);
+          setRejectedDocs(d.rejectedDocs || []);
+        }
+      } catch { /* ignore */ }
+    })();
   }, [id, navigate]);
 
   const handleChange = (e) => {
@@ -343,7 +360,7 @@ export default function EditEmployee() {
     toast.success('All permissions cleared');
   };
 
-  const handleDocumentStatusChange = async (docId, status) => {
+  const handleDocumentStatusChange = async (docId, status, reason = '') => {
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}/documents/${docId}/status`, {
@@ -352,20 +369,47 @@ export default function EditEmployee() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}` 
         },
-        body: JSON.stringify({ status })
+        body: JSON.stringify({ status, rejectReason: reason })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
         toast.success(`Document marked as ${status}`);
         setFormData(prev => ({
           ...prev,
-          documents: prev.documents.map(d => d._id === docId ? { ...d, status } : d)
+          documents: prev.documents.map(d => d._id === docId ? { ...d, status, rejectReason: reason } : d)
         }));
+        // Reject par new re-upload link auto-copy
+        if (data.reuploadLink) {
+          try { await navigator.clipboard.writeText(data.reuploadLink); } catch { /* ignore */ }
+          setReuploadLink(data.reuploadLink);
+          setRejectedDocs(data.rejectedDocs || []);
+          toast.success('Re-upload LINK auto-copied! Employee ko bhejo.', { duration: 5000 });
+        }
       } else {
-        toast.error('Failed to update document status');
+        toast.error(data.message || 'Failed to update document status');
       }
     } catch (e) {
       toast.error('Server error');
     }
+  };
+
+  const handleRejectWithReason = async (doc) => {
+    if (formData.onboardingStatus === 'Done' || doc.status === 'Verified') {
+      toast.error('Verified — Reject disabled');
+      return;
+    }
+    const { value: reason } = await Swal.fire({
+      title: `Reject: ${doc.name || 'Document'}`,
+      text: 'Reason likho (employee ko dikhega). Reject par new re-upload link auto-generate hoga.',
+      input: 'textarea',
+      inputPlaceholder: 'e.g. Photo blur hai, clear copy upload karo',
+      showCancelButton: true,
+      confirmButtonText: 'Reject + Generate Link',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#dc2626',
+    });
+    if (reason === undefined) return; // cancel
+    await handleDocumentStatusChange(doc._id, 'Rejected', (reason || '').trim());
   };
 
   const handleAddDocument = () => {
@@ -1012,6 +1056,32 @@ export default function EditEmployee() {
                         </a>
                       </div>
                     </div>
+
+                    {/* Re-upload link — reject ke baad yaha copy button milega */}
+                    {formData.onboardingStatus !== 'Done' && rejectedDocs.length > 0 && reuploadLink && (
+                      <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl p-4 space-y-2">
+                        <p className="text-[12px] font-bold text-amber-800">
+                          Rejected ({rejectedDocs.length}): {rejectedDocs.map(d => d.name).join(', ')} — sirf yehi docs re-upload honge
+                        </p>
+                        <div className="text-[11px] font-mono bg-white border border-amber-200 px-3 py-2 rounded-md text-amber-900 break-all select-all">
+                          {reuploadLink}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            navigator.clipboard.writeText(reuploadLink).then(() => {
+                              setCopiedReupload(true);
+                              toast.success('Re-upload link copied! Employee ko bhejo.');
+                              setTimeout(() => setCopiedReupload(false), 3000);
+                            });
+                          }}
+                          className="flex items-center gap-2 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-md text-[12px] font-bold transition-colors"
+                        >
+                          {copiedReupload ? <Check size={15} /> : <Copy size={15} />}
+                          {copiedReupload ? 'Copied!' : 'Copy Re-upload Link'}
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -1168,34 +1238,47 @@ export default function EditEmployee() {
                               )}
 
                               <div className="flex items-center gap-1.5">
-                                <button
-                                  type="button"
-                                  onClick={() => handleDocumentStatusChange(doc._id, 'Verified')}
-                                  className="px-2 py-1 text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
-                                  title="Approve & Verify Document"
-                                >
-                                  Verify
-                                </button>
-                                <span className="text-slate-300">|</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDocumentStatusChange(doc._id, 'Rejected')}
-                                  className="px-2 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded transition-colors"
-                                  title="Reject Document"
-                                >
-                                  Reject
-                                </button>
-                                <span className="text-slate-300">|</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleDocumentStatusChange(doc._id, 'Re-upload Required')}
-                                  className="px-2 py-1 text-[11px] font-bold text-amber-600 hover:bg-amber-50 rounded transition-colors"
-                                  title="Request Re-upload"
-                                >
-                                  Re-upload
-                                </button>
+                                {formData.onboardingStatus === 'Done' || doc.status === 'Verified' ? (
+                                  <span className="px-2 py-1 text-[11px] font-bold text-emerald-600 bg-emerald-50 rounded">
+                                    {formData.onboardingStatus === 'Done' ? 'Locked' : 'Verified — Locked'}
+                                  </span>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDocumentStatusChange(doc._id, 'Verified')}
+                                      className="px-2 py-1 text-[11px] font-bold text-emerald-600 hover:bg-emerald-50 rounded transition-colors"
+                                      title="Approve & Verify Document"
+                                    >
+                                      Verify
+                                    </button>
+                                    <span className="text-slate-300">|</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleRejectWithReason(doc)}
+                                      className="px-2 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded transition-colors"
+                                      title="Reject Document"
+                                    >
+                                      Reject
+                                    </button>
+                                    <span className="text-slate-300">|</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleDocumentStatusChange(doc._id, 'Re-upload Required')}
+                                      className="px-2 py-1 text-[11px] font-bold text-amber-600 hover:bg-amber-50 rounded transition-colors"
+                                      title="Request Re-upload"
+                                    >
+                                      Re-upload
+                                    </button>
+                                  </>
+                                )}
                               </div>
                             </div>
+                            {doc.rejectReason && (
+                              <p className="text-[11px] text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-1.5">
+                                Reject reason: {doc.rejectReason}
+                              </p>
+                            )}
                           </div>
                         ))}
                       </div>

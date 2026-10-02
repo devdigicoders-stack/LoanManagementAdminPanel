@@ -581,30 +581,30 @@ export default function ManageEmployees() {
  </div>
 
  {/* Filter & Search Bar */}
- <div className="px-6 my-4 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
- <div className="relative flex-1 max-w-lg">
+ <div className="px-6 my-3 flex items-center gap-2 flex-nowrap overflow-x-auto pb-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+ <div className="relative shrink-0 w-[160px] xl:w-[200px]">
  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
  <Search size={15} />
  </div>
  <input
  type="text"
- placeholder="Search by name, ID, role, HR, telecaller..."
+ placeholder="Search..."
  value={searchTerm}
  onChange={(e) => setSearchTerm(e.target.value)}
- className="w-full bg-white border border-gray-200 rounded-lg py-2 pl-10 pr-4 text-[13px] text-gray-800 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all shadow-sm placeholder:text-gray-400"
+ className="w-full bg-white border border-gray-200 rounded-lg py-1.5 pl-9 pr-3 text-[12px] text-gray-800 focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-100 transition-all shadow-sm placeholder:text-gray-400"
  />
  </div>
 
- <div className="flex items-center gap-2 flex-wrap">
+ <div className="flex items-center gap-1.5 shrink-0 whitespace-nowrap">
 
         {/* Filter by Zone */}
-        <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
-          <Filter size={13} className="text-gray-400" />
-          <span className="text-gray-500 font-medium">Zone:</span>
+        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 shadow-sm text-[11px] shrink-0 whitespace-nowrap">
+          <Filter size={12} className="text-gray-400 shrink-0" />
+          <span className="text-gray-500 font-medium whitespace-nowrap">Zone:</span>
           <select
             value={zoneFilter}
             onChange={(e) => setZoneFilter(e.target.value)}
-            className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer"
+            className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer max-w-[100px]"
           >
             <option value="all">All Zones</option>
             <option value="NORTH">North Zone</option>
@@ -616,13 +616,13 @@ export default function ManageEmployees() {
         </div>
 
         {/* Filter by Role / Designation */}
-        <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
-          <User size={13} className="text-gray-400" />
-          <span className="text-gray-500 font-medium">Role:</span>
+        <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 shadow-sm text-[11px] shrink-0 whitespace-nowrap">
+          <User size={12} className="text-gray-400 shrink-0" />
+          <span className="text-gray-500 font-medium whitespace-nowrap">Role:</span>
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer max-w-[140px]"
+            className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer max-w-[105px]"
           >
             <option value="all">All Roles</option>
             {uniqueRoles.map(r => (
@@ -632,13 +632,13 @@ export default function ManageEmployees() {
         </div>
 
  {/* Filter by Onboarding Status */}
- <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
- <Hourglass size={13} className="text-gray-400" />
- <span className="text-gray-500 font-medium">Onboarding:</span>
+ <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 shadow-sm text-[11px] shrink-0 whitespace-nowrap">
+ <Hourglass size={12} className="text-gray-400 shrink-0" />
+ <span className="text-gray-500 font-medium whitespace-nowrap">Onboarding:</span>
  <select
  value={onboardingFilter}
  onChange={(e) => setOnboardingFilter(e.target.value)}
- className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer"
+ className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer max-w-[90px]"
  >
  <option value="all">All</option>
  <option value="PendingOrSubmitted">Pending / Chasing</option>
@@ -647,16 +647,16 @@ export default function ManageEmployees() {
  </div>
 
  {/* Filter by Unlock Query Status */}
- <div className="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2.5 py-1.5 shadow-sm text-xs">
- <Lock size={13} className="text-gray-400" />
- <span className="text-gray-500 font-medium">Unlock Queries:</span>
+ <div className="flex items-center gap-1 bg-white border border-gray-200 rounded-lg px-2 py-1.5 shadow-sm text-[11px] shrink-0 whitespace-nowrap">
+ <Lock size={12} className="text-gray-400 shrink-0" />
+ <span className="text-gray-500 font-medium whitespace-nowrap">Unlock:</span>
  <select
  value={lateLockFilter}
  onChange={(e) => setLateLockFilter(e.target.value)}
- className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer"
+ className="bg-transparent text-gray-800 font-semibold focus:outline-none cursor-pointer max-w-[90px]"
  >
  <option value="all">All Status</option>
- <option value="pendingQuery">Pending Queries / Locked ({pendingQueriesCount})</option>
+ <option value="pendingQuery">Pending ({pendingQueriesCount})</option>
  <option value="locked">All Locked IDs</option>
  </select>
  </div>

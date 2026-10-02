@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-wu4y.onrender.com/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
 const API = API_BASE.replace('/api', '');
 
 const DOC_LABEL = {
@@ -77,16 +77,23 @@ function EmployeeTableRow({ emp, token, onRefresh }) {
   const isSuperOrAdmin = ['superadmin', 'admin', 'administrator', 'super_admin'].includes(cleanRole) || rawRole.includes('super admin') || rawRole === 'admin';
   const isHeadCandidate = isDepartmentHead(emp);
 
-  const [expanded, setExpanded] = useState(false);
-  const [updatingDoc, setUpdatingDoc] = useState(null);
   const [markingDone, setMarkingDone] = useState(false);
   const step = calcStep(emp);
   const completion = Math.round((step / 4) * 100);
+  const docs = emp.documents || [];
+  const allVerified = docs.length > 0 && docs.every(d => d.status === 'Verified');
+  const hasRejectedDocs = docs.some(d => d.status === 'Rejected' || d.status === 'Re-upload Required');
 
   const copyLink = () => {
-    const link = `${window.location.origin}/onboarding/${emp._id}`;
-    navigator.clipboard.writeText(link);
-    toast.success('Onboarding link copied!');
+    let link = `${window.location.origin}/onboarding/${emp._id}`;
+    if (hasRejectedDocs && emp.reuploadToken) {
+      link = `${window.location.origin}/onboarding/${emp._id}?reupload=${emp.reuploadToken}`;
+      navigator.clipboard.writeText(link);
+      toast.success('Re-upload link copied (for rejected documents)!');
+    } else {
+      navigator.clipboard.writeText(link);
+      toast.success('Onboarding link copied!');
+    }
   };
 
   const verifyDoc = async (docId, newStatus) => {
@@ -224,6 +231,14 @@ function EmployeeTableRow({ emp, token, onRefresh }) {
               >
                 <Link2 size={10} /> Link (Done)
               </span>
+            ) : hasRejectedDocs ? (
+              <button 
+                onClick={copyLink} 
+                className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-amber-800 border border-amber-300 bg-amber-50 rounded hover:bg-amber-100 transition-colors shadow-2xs"
+                title="Copy Re-upload Link for rejected documents"
+              >
+                <Link2 size={11} className="text-amber-600" /> Copy Re-upload Link
+              </button>
             ) : (
               <button 
                 onClick={copyLink} 
@@ -234,18 +249,12 @@ function EmployeeTableRow({ emp, token, onRefresh }) {
               </button>
             )}
 
-            <button 
-              onClick={() => setExpanded(!expanded)} 
-              className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-gray-700 border border-gray-200 bg-white rounded hover:bg-gray-50 transition-colors"
-            >
-              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />} {expanded ? 'Hide Quick Docs' : 'Quick Docs'}
-            </button>
-
             {emp.onboardingStatus !== 'Done' && (
               <button
-                disabled={markingDone}
+                disabled={markingDone || !allVerified}
+                title={!allVerified ? 'Pehle "View Full Form" me jaakar saare documents verify karein' : 'Mark Onboarding as Complete'}
                 onClick={markComplete}
-                className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-green-700 border border-green-300 bg-green-50 rounded hover:bg-green-100 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold text-green-700 border border-green-300 bg-green-50 rounded hover:bg-green-100 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 <Check size={12} /> {markingDone ? 'Completing...' : 'Mark Done'}
               </button>
@@ -253,77 +262,6 @@ function EmployeeTableRow({ emp, token, onRefresh }) {
           </div>
         </td>
       </tr>
-
-      {/* Quick Docs Dropdown */}
-      {expanded && (
-        <tr className="bg-gray-50/60 border-b border-gray-100">
-          <td colSpan={3} className="px-6 py-4">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <p className="text-xs font-bold text-gray-700 uppercase tracking-wider">Uploaded Documents ({emp.documents?.length || 0})</p>
-                <button 
-                  onClick={() => navigate(`/hr/onboarding/${emp._id}`)} 
-                  className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center gap-1"
-                >
-                  Go to full review page <ExternalLink size={11} />
-                </button>
-              </div>
-
-              {!emp.documents || emp.documents.length === 0 ? (
-                <p className="text-xs text-gray-400 italic py-2">No documents uploaded yet by the candidate.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {emp.documents.map((doc) => {
-                    const isUpdating = updatingDoc === doc._id;
-                    const docName = DOC_LABEL[doc.name] || doc.name;
-                    return (
-                      <div key={doc._id} className="p-3 bg-white border border-gray-200/80 rounded-lg shadow-2xs space-y-2">
-                        <div className="flex items-center justify-between">
-                          <p className="text-xs font-bold text-gray-800 truncate" title={docName}>{docName}</p>
-                          <DocStatusBadge status={doc.status} />
-                        </div>
-                        {doc.url && (
-                          <a
-                            href={doc.url.startsWith('http') ? doc.url : `${API}/${doc.url}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline"
-                          >
-                            <FileText size={11} /> View Uploaded File
-                          </a>
-                        )}
-                        <div className="flex items-center gap-1 pt-1 border-t border-gray-100">
-                          <button
-                            disabled={isUpdating || doc.status === 'Verified'}
-                            onClick={() => verifyDoc(doc._id, 'Verified')}
-                            className="flex-1 py-1 text-[10px] font-bold text-green-700 bg-green-50 border border-green-200 rounded hover:bg-green-100 disabled:opacity-40"
-                          >
-                            Verify
-                          </button>
-                          <button
-                            disabled={isUpdating || doc.status === 'Rejected'}
-                            onClick={() => verifyDoc(doc._id, 'Rejected')}
-                            className="flex-1 py-1 text-[10px] font-bold text-red-700 bg-red-50 border border-red-200 rounded hover:bg-red-100 disabled:opacity-40"
-                          >
-                            Reject
-                          </button>
-                          <button
-                            disabled={isUpdating || doc.status === 'Re-upload Required'}
-                            onClick={() => verifyDoc(doc._id, 'Re-upload Required')}
-                            className="flex-1 py-1 text-[10px] font-bold text-orange-700 bg-orange-50 border border-orange-200 rounded hover:bg-orange-100 disabled:opacity-40"
-                          >
-                            Re-upload
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </td>
-        </tr>
-      )}
     </React.Fragment>
   );
 }
