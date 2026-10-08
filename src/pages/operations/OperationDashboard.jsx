@@ -12,7 +12,7 @@ import {
 } from 'recharts';
 import toast from 'react-hot-toast';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
 const PIE_COLORS = ['#f59e0b', '#3b82f6', '#8b5cf6', '#10b981', '#f43f5e'];
 

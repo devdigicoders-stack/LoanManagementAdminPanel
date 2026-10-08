@@ -24,7 +24,7 @@ import {
  CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
 const PIE_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 

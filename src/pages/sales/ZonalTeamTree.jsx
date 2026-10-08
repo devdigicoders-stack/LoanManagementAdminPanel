@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
 export default function ZonalTeamTree() {
   const navigate = useNavigate();

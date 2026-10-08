@@ -12,7 +12,7 @@ import { BANK_PARTNERS, NBFC_PARTNERS, ALL_PARTNERS, getLenderLogo, getLenderDet
 import { BankBrandLogo } from '../../components/BankBrandLogo';
 import TablePagination from '../../components/TablePagination';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
 export default function ApplicationVerification() {
   const navigate = useNavigate();

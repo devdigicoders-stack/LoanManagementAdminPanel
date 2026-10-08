@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router-dom';
 import { ALL_PARTNERS, ALL_LENDERS, LENDER_BANK_LIST, LENDER_NBFC_LIST, getLenderLogo, getLenderDetails } from '../../constants/lenders';
 import TablePagination from '../../components/TablePagination';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
 const ALL_PARTNER_LENDERS = [
   ...LENDER_BANK_LIST,
