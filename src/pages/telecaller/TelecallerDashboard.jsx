@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import SupervisorStaffFilter from '../../components/SupervisorStaffFilter';
 import toast from 'react-hot-toast';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 export default function TelecallerDashboard() {
  const rawRole = (localStorage.getItem('userRole') || '').trim().toLowerCase();
@@ -59,8 +60,8 @@ export default function TelecallerDashboard() {
  loanPurpose: l.productSubtype || l.loanPurpose || "Personal Loan",
  expectedAmount: l.expectedAmount || l.loanAmount || 500000,
  status: l.status || "New",
- workflowStage: l.workflowStage || "Field_Lead_Created",
- isRmApproved: l.workflowStage === 'RM_Telecaller_Review' || ['Contacted', 'Interested', 'Under Review'].includes(l.status),
+ workflowStage: l.workflowStage || "RM_Telecaller_Review",
+ isRmApproved: true,
  zone: l.zone || "NORTH",
  rmReviewedBy: l.rmReviewedBy || l.rmName || "Reporting Manager",
  rmReviewRemarks: l.rmReviewRemarks || "",
@@ -348,12 +349,7 @@ export default function TelecallerDashboard() {
  </thead>
  <tbody className="divide-y divide-slate-100 text-[13px]">
  {loading ? (
- <tr>
- <td colSpan={5} className="py-16 text-center text-slate-400">
- <Loader2 size={24} className="animate-spin mx-auto mb-2 text-purple-600" />
- Loading leads from database...
- </td>
- </tr>
+   <SkeletonTableRows rows={6} cols={5} />
  ) : filteredLeads.length === 0 ? (
  <tr>
  <td colSpan={5} className="py-12 text-center text-slate-400 font-medium">

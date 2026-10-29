@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, Filter, Download, Eye, Search, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { SkeletonTableRows } from "../../components/common/SkeletonLoader";
 
 export default function ActiveLoans() {
   const [loans, setLoans] = useState([]);
@@ -152,12 +153,7 @@ export default function ActiveLoans() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {loading ? (
-                <tr>
-                  <td colSpan={9} className="py-12 text-center text-slate-400">
-                    <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#489b0d]" />
-                    Loading live active loans...
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={9} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-10 text-center text-slate-400 text-[13px]">

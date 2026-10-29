@@ -4,6 +4,7 @@ import { Search, Filter, Eye, Phone, CalendarCheck, MessageSquare, RefreshCw, Fi
 import { statusColors, priorityColors } from "./telecallerData";
 import SupervisorStaffFilter from "../../components/SupervisorStaffFilter";
 import TablePagination from "../../components/TablePagination";
+import { SkeletonTableRows } from "../../components/common/SkeletonLoader";
 
 const statusOptions = ["All", "New", "Contacted", "Interested", "Follow-up", "Documents Pending", "Application Submitted", "Converted", "Lost", "Assigned", "Under Review", "Approved", "Rejected", "Disbursed"];
 const loanTypes = ["All", "Home Loan", "Personal Loan", "Business Loan", "Education Loan", "Loan Against Property", "Other"];
@@ -54,6 +55,7 @@ export default function AssignedLeads() {
             workflowStage: l.workflowStage || "Field_Lead_Created",
             isRmApproved: l.workflowStage === 'RM_Telecaller_Review' || l.status === 'Contacted' || l.status === 'Under Review' || l.status === 'Interested',
             zone: l.zone || "NORTH",
+            rmName: l.rmName || "Zonal RM",
             priority: l.priority || "Medium",
             source: l.source || "Employee App",
             generatorType: l.generatorType || (l.createdByName ? "Employee" : "Customer"),
@@ -164,12 +166,7 @@ export default function AssignedLeads() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-16 text-center">
-                    <div className="flex justify-center mb-4"><RefreshCw className="animate-spin text-purple-600" size={32} /></div>
-                    <p className="font-bold text-gray-700 text-[16px]">Loading leads...</p>
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={7} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-16 text-center">
@@ -185,13 +182,18 @@ export default function AssignedLeads() {
 
                 return (
                   <tr key={i} className="hover:bg-gray-50/80 transition-colors group cursor-pointer">
-                    {/* Lead ID & Zone */}
+                    {/* Lead ID, Zone & Assigned RM */}
                     <td className="px-5 py-4 whitespace-nowrap">
                       <div className="flex flex-col items-start gap-1">
                         <span className="text-[12px] font-bold text-purple-700 bg-purple-50 border border-purple-100 px-2.5 py-1 rounded-md">{lead.id}</span>
-                        <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
-                          Zone: {lead.zone || 'NORTH'}
-                        </span>
+                        <div className="flex items-center gap-1 flex-wrap">
+                          <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded">
+                            {lead.zone || 'NORTH'}
+                          </span>
+                          <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-1.5 py-0.5 rounded" title="Reporting Manager Reviewer">
+                            RM: {lead.rmName || 'Assigned RM'}
+                          </span>
+                        </div>
                       </div>
                     </td>
                     
@@ -271,8 +273,8 @@ export default function AssignedLeads() {
                         <Link to={`/telecaller/call/${lead.dbId}`} title="Call Customer" className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition-colors font-bold flex items-center gap-1.5 text-xs shadow-xs">
                           <Phone size={13} /> {isFormFilled ? "Confirm Details" : "Call Customer"}
                         </Link>
-                        <Link to={`/telecaller/documents`} title="Verify Documents" className="p-2 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 transition-colors">
-                          <FileText size={15} />
+                        <Link to={`/telecaller/documents`} title="Verify Documents & Forward" className="px-2.5 py-1.5 rounded-lg bg-purple-50 hover:bg-purple-100 text-purple-700 font-bold transition-colors flex items-center gap-1 text-xs">
+                          <FileText size={14} /> Docs {isFormFilled ? "Ready" : ""}
                         </Link>
                         <Link to={`/telecaller/followups/add?leadId=${lead.dbId}`} title="Add Follow-up" className="p-2 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-600 transition-colors">
                           <CalendarCheck size={15} />

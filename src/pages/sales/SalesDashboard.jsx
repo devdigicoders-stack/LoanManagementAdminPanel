@@ -23,6 +23,7 @@ import {
  AreaChart, Area, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis,
  CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts';
+import { SkeletonDashboard } from '../../components/common/SkeletonLoader';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
@@ -150,6 +151,10 @@ const SalesDashboard = () => {
  if (val >= 100000) return `₹${(val / 100000).toFixed(2)} L`;
  return `₹${val.toLocaleString()}`;
  };
+
+ if (loading) {
+   return <SkeletonDashboard />;
+ }
 
  return (
  <div className="p-6 space-y-6 bg-slate-50 min-h-screen text-slate-800">

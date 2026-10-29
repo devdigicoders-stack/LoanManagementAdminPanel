@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TablePagination from '../../components/TablePagination';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
@@ -157,41 +158,37 @@ export default function RMDashboard() {
  fetchTelecallers();
  }, [fetchMetrics, fetchLeads, activeTab]);
 
- // Handle RM Review (Approve to Telecaller OR Reject)
- const handleReviewSubmit = async (e) => {
- e.preventDefault();
- if (!selectedLead) return;
- try {
- setActionLoading(true);
- const chosenTc = telecallersList.find(t => t._id === selectedTelecaller);
- const res = await axios.put(
- `${API_BASE}/sales/${selectedLead._id}/rm-review`,
- { 
- action: reviewAction, 
- remarks: reviewRemarks,
- telecallerId: selectedTelecaller || null,
- telecallerName: chosenTc ? chosenTc.name : (selectedTelecaller ? 'Assigned Telecaller' : 'Telecaller Desk')
- },
- getHeaders()
- );
- if (res.data.success) {
- alert(res.data.message || 'Lead review updated!');
- setReviewModalOpen(false);
- setSelectedLead(null);
- setReviewRemarks('');
- setSelectedTelecaller('');
- fetchMetrics();
- fetchLeads(activeTab);
- }
- } catch (err) {
- alert(err.response?.data?.message || 'Failed to submit review');
- } finally {
- setActionLoading(false);
- }
- };
+ // Handle RM Review (Notes OR Reject)
+  const handleReviewSubmit = async (e) => {
+    e.preventDefault();
+    if (!selectedLead) return;
+    try {
+      setActionLoading(true);
+      const res = await axios.put(
+        `${API_BASE}/sales/${selectedLead._id}/rm-review`,
+        { 
+          action: reviewAction, 
+          remarks: reviewRemarks
+        },
+        getHeaders()
+      );
+      if (res.data.success) {
+        alert(res.data.message || 'Lead review updated!');
+        setReviewModalOpen(false);
+        setSelectedLead(null);
+        setReviewRemarks('');
+        fetchMetrics();
+        fetchLeads(activeTab);
+      }
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to submit review');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
- // Handle Assign to Operations
- const handleAssignToOps = async (e) => {
+  // Handle Assign to Operations
+  const handleAssignToOperations = async (e) => {
  e.preventDefault();
  if (!selectedLead) return;
  try {
@@ -381,12 +378,7 @@ export default function RMDashboard() {
  </thead>
  <tbody className="divide-y divide-slate-100">
  {loadingLeads ? (
- <tr>
- <td colSpan="6" className="py-12 text-center text-slate-400 font-medium">
- <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-blue-500" />
- Loading leads data...
- </td>
- </tr>
+   <SkeletonTableRows rows={6} cols={6} />
  ) : filteredLeads.length === 0 ? (
  <tr>
  <td colSpan="6" className="py-12 text-center text-slate-400 font-medium">
@@ -472,7 +464,7 @@ export default function RMDashboard() {
  ) : activeTab === 'pending' ? (
  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold rounded-lg">
  <Clock className="w-3 h-3" />
- Waiting RM Approval
+ In RM & Telecaller Review
  </span>
  ) : activeTab === 'telecaller' ? (
  <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-indigo-50 text-indigo-700 border border-indigo-200 text-xs font-bold rounded-lg">
@@ -494,19 +486,33 @@ export default function RMDashboard() {
  {/* Actions */}
  <td className="py-3.5 px-4 text-center">
  {activeTab === 'pending' && (
- <button
- onClick={() => {
- setSelectedLead(lead);
- setReviewAction('Approved');
- setReviewRemarks('');
- setReviewModalOpen(true);
- }}
- className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-sm"
- >
- <CheckCircle className="w-3.5 h-3.5" />
- Review & Forward to Telecaller
- </button>
- )}
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setReviewAction('Notes');
+                              setReviewRemarks(lead.rmReviewRemarks || lead.reviewRemarks || '');
+                              setReviewModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition shadow-sm"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            RM Notes
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedLead(lead);
+                              setReviewAction('Reject');
+                              setReviewRemarks('');
+                              setReviewModalOpen(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-bold rounded-xl border border-rose-200 transition"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                            Reject
+                          </button>
+                        </div>
+                      )}
 
  {activeTab === 'telecaller' && (
  <div className="flex items-center justify-center gap-2">
@@ -580,7 +586,7 @@ export default function RMDashboard() {
  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
  <h3 className="text-lg font-black text-slate-800 flex items-center gap-2">
  <ShieldCheck className="w-5 h-5 text-blue-600" />
- RM Lead Review & Forward Desk
+ RM Review Notes & Monitoring
  </h3>
  <button
  onClick={() => setReviewModalOpen(false)}
@@ -610,13 +616,13 @@ export default function RMDashboard() {
  type="button"
  onClick={() => setReviewAction('Approved')}
  className={`p-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-2 transition ${
- reviewAction === 'Approved'
+ reviewAction === 'Notes'
  ? 'border-emerald-500 bg-emerald-50 text-emerald-700 ring-2 ring-emerald-500/20'
  : 'border-slate-200 text-slate-600 hover:bg-slate-50'
  }`}
  >
  <CheckCircle className="w-4 h-4 text-emerald-600" />
- Approve & Forward to Telecaller
+ Save RM Review Notes
  </button>
 
  <button
@@ -680,7 +686,7 @@ export default function RMDashboard() {
  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl transition shadow-md shadow-blue-500/20 flex items-center gap-2"
  >
  {actionLoading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
- {reviewAction === 'Approved' ? 'Forward to Telecaller' : 'Reject Lead'}
+ {reviewAction === 'Notes' ? 'Save Review Notes' : 'Reject Lead'}
  </button>
  </div>
  </form>
@@ -786,7 +792,7 @@ export default function RMDashboard() {
  </button>
  </div>
 
- <form onSubmit={handleAssignToOps} className="mt-4 space-y-4">
+ <form onSubmit={handleAssignToOperations} className="mt-4 space-y-4">
  <div className="p-3.5 bg-emerald-50/50 border border-emerald-100 rounded-xl space-y-1 text-xs text-slate-600">
  <p>
  <strong className="text-slate-800">Customer:</strong> {selectedLead.name} ({selectedLead.mobile})

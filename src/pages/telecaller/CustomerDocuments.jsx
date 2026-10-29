@@ -10,6 +10,15 @@ import {
 import toast from "react-hot-toast";
 
 export default function CustomerDocuments() {
+
+  const getDocUrl = (url) => {
+    if (!url) return '';
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/api\/?$/, '');
+    const cleanPath = url.startsWith('/') ? url : '/' + url;
+    return base + cleanPath;
+  };
+
   const [leads, setLeads] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -319,7 +328,8 @@ export default function CustomerDocuments() {
                     <Phone size={13} /> Call Customer
                   </a>
                   <a
-                    href={`/api/apply/${selectedLead.id}`}
+                    href={`
+                    ${selectedLead.id}`}
                     target="_blank"
                     rel="noreferrer"
                     className="flex items-center gap-1 px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition"
@@ -503,57 +513,126 @@ export default function CustomerDocuments() {
 
       </div>
 
-      {/* Document Preview Modal */}
+            {/* Document Preview Modal (Scrollable & Responsive with Action Buttons) */}
       {previewDoc && (
-        <div className="fixed inset-0 z-50 bg-slate-950/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full max-h-[90vh] flex flex-col shadow-2xl border border-slate-100 overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4 bg-slate-50/50 flex-shrink-0">
               <div>
-                <h3 className="text-sm font-black text-slate-900">{previewDoc.type}</h3>
-                <p className="text-[11px] text-slate-400 font-medium">Customer: {previewDoc.customer} ({previewDoc.leadId})</p>
+                <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                  <FileText className="w-4 h-4 text-emerald-600" />
+                  {previewDoc.type}
+                </h3>
+                <p className="text-[11px] text-slate-400 font-medium mt-0.5">
+                  Customer: <span className="text-slate-700 font-bold">{previewDoc.customer}</span> ({previewDoc.leadId})
+                </p>
               </div>
               <button
                 onClick={() => setPreviewDoc(null)}
-                className="p-1 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                className="p-1.5 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-700 transition"
               >
                 <X size={18} />
               </button>
             </div>
 
-            <div className="space-y-3">
-              <div className="p-3 bg-slate-100 rounded-2xl text-center">
-                <img
-                  src={previewDoc.fileUrl}
-                  alt={previewDoc.type}
-                  className="max-h-60 mx-auto rounded-xl object-contain shadow-sm"
-                  onError={(e) => {
-                    e.target.src = "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=400";
-                  }}
-                />
-                <p className="text-[11px] text-slate-500 font-bold mt-2">Primary / Front Document</p>
+            {/* Scrollable Body */}
+            <div className="p-5 overflow-y-auto space-y-4 flex-1">
+              {/* Front Document */}
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 text-center space-y-2">
+                {previewDoc.fileUrl?.endsWith('.pdf') ? (
+                  <div className="py-8 flex flex-col items-center justify-center text-slate-500">
+                    <FileText className="w-12 h-12 text-rose-500 mb-2" />
+                    <p className="text-xs font-bold text-slate-800">{previewDoc.fileName || 'PDF Document'}</p>
+                    <a
+                      href={getDocUrl(previewDoc.fileUrl)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" /> Open PDF in New Tab
+                    </a>
+                  </div>
+                ) : (
+                  <>
+                    <img
+                      src={getDocUrl(previewDoc.fileUrl)}
+                      alt={previewDoc.type}
+                      className="max-h-56 mx-auto rounded-xl object-contain shadow-sm border border-slate-200/60 bg-white"
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = "https://placehold.co/600x400/f8fafc/64748b?text=Document+Preview";
+                      }}
+                    />
+                    <div className="flex items-center justify-between pt-1 px-1">
+                      <p className="text-[11px] text-slate-600 font-bold">Primary / Front Document</p>
+                      <a
+                        href={getDocUrl(previewDoc.fileUrl)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[11px] text-emerald-600 font-bold hover:underline flex items-center gap-1"
+                      >
+                        <ExternalLink size={12} /> Full View
+                      </a>
+                    </div>
+                  </>
+                )}
               </div>
 
+              {/* Back Document */}
               {previewDoc.fileUrlBack && (
-                <div className="p-3 bg-slate-100 rounded-2xl text-center">
-                  <img
-                    src={previewDoc.fileUrlBack}
-                    alt={`${previewDoc.type} Back`}
-                    className="max-h-60 mx-auto rounded-xl object-contain shadow-sm"
-                    onError={(e) => {
-                      e.target.src = "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&q=80&w=400";
-                    }}
-                  />
-                  <p className="text-[11px] text-slate-500 font-bold mt-2">Back Side Document (Address & Details)</p>
+                <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 text-center space-y-2">
+                  {previewDoc.fileUrlBack?.endsWith('.pdf') ? (
+                    <div className="py-8 flex flex-col items-center justify-center text-slate-500">
+                      <FileText className="w-12 h-12 text-rose-500 mb-2" />
+                      <p className="text-xs font-bold text-slate-800">{previewDoc.fileNameBack || 'Back Document PDF'}</p>
+                      <a
+                        href={getDocUrl(previewDoc.fileUrlBack)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" /> Open Back PDF
+                      </a>
+                    </div>
+                  ) : (
+                    <>
+                      <img
+                        src={getDocUrl(previewDoc.fileUrlBack)}
+                        alt={`${previewDoc.type} Back`}
+                        className="max-h-56 mx-auto rounded-xl object-contain shadow-sm border border-slate-200/60 bg-white"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = "https://placehold.co/600x400/f8fafc/64748b?text=Back+Side+Document";
+                        }}
+                      />
+                      <div className="flex items-center justify-between pt-1 px-1">
+                        <p className="text-[11px] text-slate-600 font-bold">Back Side Document (Address & Details)</p>
+                        <a
+                          href={getDocUrl(previewDoc.fileUrlBack)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-[11px] text-emerald-600 font-bold hover:underline flex items-center gap-1"
+                        >
+                          <ExternalLink size={12} /> Full View
+                        </a>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
             </div>
 
-            <button
-              onClick={() => setPreviewDoc(null)}
-              className="w-full py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl hover:bg-slate-800 transition"
-            >
-              Close Preview
-            </button>
+            {/* Footer Always Visible */}
+            <div className="border-t border-slate-100 p-4 bg-slate-50/50 flex-shrink-0">
+              <button
+                type="button"
+                onClick={() => setPreviewDoc(null)}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl transition shadow-sm active:scale-[0.99]"
+              >
+                Close Preview
+              </button>
+            </div>
           </div>
         </div>
       )}

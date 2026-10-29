@@ -25,6 +25,7 @@ import {
   Users
 } from "lucide-react";
 import TablePagination from "../../components/TablePagination";
+import { SkeletonTableRows } from "../../components/common/SkeletonLoader";
 
 export default function ManageLeads() {
   const [leadsList, setLeadsList] = useState([]);
@@ -302,7 +303,9 @@ export default function ManageLeads() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredLeads.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((lead) => (
+              {loading ? (
+                <SkeletonTableRows rows={6} cols={8} />
+              ) : filteredLeads.slice((currentPage - 1) * pageSize, currentPage * pageSize).map((lead) => (
                 <tr key={lead.id} className="hover:bg-slate-50/50 transition-colors group whitespace-nowrap">
                   <td className="py-3.5 px-5 whitespace-nowrap">
                     <span className="text-[13px] font-bold text-slate-700">{lead.leadId}</span>
@@ -357,7 +360,7 @@ export default function ManageLeads() {
               ))}
             </tbody>
           </table>
-          {filteredLeads.length === 0 && (
+          {!loading && filteredLeads.length === 0 && (
             <div className="text-center py-10">
               <p className="text-slate-500 font-medium text-[13px]">No leads found.</p>
             </div>

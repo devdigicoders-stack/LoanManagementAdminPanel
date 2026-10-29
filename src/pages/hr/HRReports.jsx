@@ -3,6 +3,7 @@ import Highcharts from 'highcharts';
 import HighchartsReactImport from 'highcharts-react-official';
 import { Download, Filter, Calendar, Users, FileText, CheckCircle2, TrendingUp, Award, Clock, Zap, AlertCircle, MapPin, ShieldCheck } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SkeletonDashboard } from '../../components/common/SkeletonLoader';
 
 const HighchartsReact = HighchartsReactImport.default || HighchartsReactImport;
 Highcharts.setOptions({ accessibility: { enabled: false } });
@@ -212,6 +213,10 @@ export default function HRReports() {
   const handleExport = (type) => {
     toast.success(`Exporting ${reportType} report as ${type}...`);
   };
+
+  if (isLoading) {
+    return <SkeletonDashboard />;
+  }
 
   return (
     <div className="w-full space-y-8 pb-12 bg-slate-50/50 min-h-screen">

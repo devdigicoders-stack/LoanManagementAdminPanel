@@ -4,6 +4,7 @@ import toast from "react-hot-toast";
 import Swal from "sweetalert2";
 import Cropper from "react-easy-crop";
 import { getCroppedImg } from "../../utils/cropImage";
+import { Skeleton, SkeletonCard } from "../../components/common/SkeletonLoader";
 
 export default function AdminProfile() {
   const [activeTab, setActiveTab] = useState("profile");
@@ -261,7 +262,22 @@ export default function AdminProfile() {
   }, [imageSrc, croppedAreaPixels]);
 
   if (isLoading) {
-    return <div className="p-8 text-center text-slate-500">Loading profile...</div>;
+    return (
+      <div className="w-full space-y-6 pb-10 animate-in fade-in duration-200">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-48 rounded" />
+          <Skeleton className="h-4 w-72 rounded" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <div className="lg:col-span-1 space-y-4">
+            <SkeletonCard height="h-64" />
+          </div>
+          <div className="lg:col-span-3 space-y-4">
+            <SkeletonCard height="h-96" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

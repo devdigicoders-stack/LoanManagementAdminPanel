@@ -8,6 +8,7 @@ import HighchartsReactPkg from "highcharts-react-official";
 const HighchartsReact = HighchartsReactPkg.default || HighchartsReactPkg.HighchartsReact || HighchartsReactPkg;
 import { statusColors } from "./accountantData";
 import toast from "react-hot-toast";
+import { SkeletonDashboard } from "../../components/common/SkeletonLoader";
 
 const tc = {
   bg: "#FAFCFD", card: "#FFFFFF", sky: "#DFF3FF", skyMid: "#BFE7F7",
@@ -156,6 +157,10 @@ export default function AccountantDashboard() {
     credits: { enabled: false },
     legend: { itemStyle: { color: tc.text } }
   };
+
+  if (loading) {
+    return <SkeletonDashboard />;
+  }
 
   return (
     <div className="space-y-6 w-full" style={{ color: tc.text }}>

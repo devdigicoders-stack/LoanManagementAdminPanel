@@ -8,6 +8,7 @@ import {
 import { useNavigate, useLocation } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 export default function ManageEmployees() {
  const navigate = useNavigate();
@@ -694,7 +695,9 @@ export default function ManageEmployees() {
  </tr>
  </thead>
  <tbody className="divide-y divide-gray-100">
- {filteredEmployees.map((emp) => {
+ {isLoading ? (
+   <SkeletonTableRows rows={6} cols={6} />
+ ) : filteredEmployees.map((emp) => {
  const isDone = emp.onboarding === 'Done';
  const hasHR = !!emp.assignedHRName;
  const hasChaser = !!emp.assignedTelecallerName;
@@ -948,22 +951,13 @@ export default function ManageEmployees() {
  );
  })}
 
- {isLoading ? (
+ {!isLoading && employees.length === 0 && (
  <tr>
- <td colSpan="7" className="py-12 text-center">
- <div className="flex flex-col items-center justify-center gap-2">
- <div className="w-7 h-7 border-2 border-purple-600 border-t-transparent rounded-full animate-spin" />
- <p className="text-gray-500 text-xs font-medium">Loading employee directory...</p>
- </div>
- </td>
- </tr>
- ) : employees.length === 0 ? (
- <tr>
- <td colSpan="7" className="py-12 text-center">
+ <td colSpan="6" className="py-12 text-center">
  <p className="text-gray-500 text-sm font-medium">No employees found matching the filters.</p>
  </td>
  </tr>
- ) : null}
+ )}
  </tbody>
  </table>
  </div>

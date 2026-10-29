@@ -37,6 +37,7 @@ import DocumentCenter from "./DocumentCenter";
 import ActiveLoans from "./ActiveLoans";
 import EMICollections from "./EMICollections";
 import ManageOffers from "./ManageOffers";
+import { SkeletonTableRows } from "../../components/common/SkeletonLoader";
 
 export default function ManageApplications() {
  const [searchParams, setSearchParams] = useSearchParams();
@@ -269,12 +270,7 @@ export default function ManageApplications() {
  </thead>
  <tbody className="divide-y divide-slate-100 text-xs">
  {loading ? (
- <tr>
- <td colSpan="6" className="py-12 text-center text-slate-400 font-medium">
- <RefreshCw size={20} className="animate-spin mx-auto mb-2 text-purple-600" />
- Loading loan applications...
- </td>
- </tr>
+ <SkeletonTableRows rows={6} cols={6} />
  ) : filteredApps.length === 0 ? (
  <tr>
  <td colSpan="6" className="py-12 text-center text-slate-400 font-medium">

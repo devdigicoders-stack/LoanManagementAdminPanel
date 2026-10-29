@@ -33,17 +33,14 @@ export default function ApplicationVerification() {
   const [salesHeadRemarks, setSalesHeadRemarks] = useState('');
   const [submittingToSalesHead, setSubmittingToSalesHead] = useState(false);
 
-  // Modal: Dispatch Sales-Head-Approved File to Partner Bank
+  // Modal: Dispatch Sales-Head-Approved File to Partner Bank & NBFCs (Bulk Multi-Select)
   const [activeLeadForDispatch, setActiveLeadForDispatch] = useState(null);
   const [isDispatchModalOpen, setIsDispatchModalOpen] = useState(false);
+  const [selectedLenders, setSelectedLenders] = useState([]); // Array of lender objects selected in bulk
   const [dispatchForm, setDispatchForm] = useState({
-    bankName: 'HDFC Bank Limited',
-    bankBranch: 'Connaught Place Main Branch',
-    bankIfsc: 'HDFC0000123',
-    bankCode: 'HDFC',
-    channel: 'Email',
+    channel: 'Email & WhatsApp',
     bankContactName: '',
-    bankOfficerDesignation: 'Branch Credit Manager',
+    bankOfficerDesignation: 'Credit Manager / ASM',
     bankContactEmail: '',
     bankContactPhone: '',
     remarks: ''
@@ -84,6 +81,7 @@ export default function ApplicationVerification() {
           salesHeadRemarks: l.salesHeadRemarks || '',
           dispatchedBankName: l.dispatchedBankName || '',
           dispatchedChannel: l.dispatchedChannel || '',
+          dispatchedLenders: l.dispatchedLenders || [],
           customerFormStatus: l.customerFormStatus || 'Pending',
           generatorType: l.generatorType || 'Employee',
           createdByDesignation: l.createdByDesignation || l.createdByRole || 'Staff',
@@ -139,34 +137,93 @@ export default function ApplicationVerification() {
     }
   };
 
-  // Handle Bank Dispatch (by Operations Manager after Sales Head Approval)
+  // Handle Bank & NBFC Bulk Dispatch (by Operations Manager after Sales Head Approval)
   const openDispatchModal = (lead) => {
     setActiveLeadForDispatch(lead);
+    // Pre-select top 2 commercial banks as default suggestion
+    const defaultSelection = ALL_PARTNERS.slice(0, 2);
+    setSelectedLenders(defaultSelection);
     setDispatchForm({
-      bankName: 'HDFC Bank Limited',
-      channel: 'Email',
+      channel: 'Email & WhatsApp',
       bankContactName: '',
+      bankOfficerDesignation: 'Credit Manager / ASM',
       bankContactEmail: '',
       bankContactPhone: '',
-      remarks: `Operations dispatching Sales-Head-Approved file for ${lead.name} (Amount: ₹${Number(lead.amount || 0).toLocaleString()})`
+      remarks: `Operations dispatching Sales-Head-Approved file for ${lead.name} (Amount: ₹${Number(lead.amount || 0).toLocaleString()}) to partner lenders for best sanction offer.`
     });
+    setBankSearchQuery('');
+    setBankCategoryFilter('ALL');
     setIsDispatchModalOpen(true);
+  };
+
+  const toggleLenderSelection = (lender) => {
+    setSelectedLenders(prev => {
+      const exists = prev.some(l => l.name === lender.name);
+      if (exists) {
+        return prev.filter(l => l.name !== lender.name);
+      } else {
+        return [...prev, lender];
+      }
+    });
+  };
+
+  const selectAllCategory = (category) => {
+    const listToSelect = category === 'ALL'
+      ? ALL_PARTNERS
+      : ALL_PARTNERS.filter(l => l.category === category);
+
+    setSelectedLenders(prev => {
+      const existingNames = new Set(prev.map(l => l.name));
+      const newlyAdded = listToSelect.filter(l => !existingNames.has(l.name));
+      return [...prev, ...newlyAdded];
+    });
+  };
+
+  const clearAllLenders = () => {
+    setSelectedLenders([]);
   };
 
   const handleConfirmDispatch = async (e) => {
     e.preventDefault();
     if (!activeLeadForDispatch) return;
 
+    if (selectedLenders.length === 0) {
+      toast.error('Please select at least 1 Bank or NBFC lender to dispatch the file!');
+      return;
+    }
+
     try {
       setDispatching(true);
+      const payload = {
+        selectedLenders: selectedLenders.map(l => ({
+          name: l.name,
+          shortName: l.shortName,
+          code: l.code || l.initials,
+          category: l.category,
+          defaultBranch: l.defaultBranch || `${activeLeadForDispatch.zone || 'North'} Zonal Credit Desk`,
+          defaultIfsc: l.defaultIfsc || ''
+        })),
+        bankName: selectedLenders[0].name,
+        bankBranch: selectedLenders[0].defaultBranch || `${activeLeadForDispatch.zone} Zonal Credit Desk`,
+        bankIfsc: selectedLenders[0].defaultIfsc || '',
+        bankCode: selectedLenders[0].code || selectedLenders[0].initials,
+        channel: dispatchForm.channel,
+        bankContactName: dispatchForm.bankContactName,
+        bankOfficerDesignation: dispatchForm.bankOfficerDesignation,
+        bankContactEmail: dispatchForm.bankContactEmail,
+        bankContactPhone: dispatchForm.bankContactPhone,
+        remarks: dispatchForm.remarks
+      };
+
       const res = await axios.put(
         `${API_BASE}/sales/${activeLeadForDispatch._id}/dispatch-bank`,
-        dispatchForm,
+        payload,
         getHeaders()
       );
 
       if (res.data.success) {
-        toast.success(`File successfully forwarded to ${dispatchForm.bankName} via ${dispatchForm.channel}!`);
+        const count = selectedLenders.length;
+        toast.success(`File successfully dispatched to ${count} Lender${count > 1 ? 's' : ''} via ${dispatchForm.channel}!`);
         setIsDispatchModalOpen(false);
         setActiveLeadForDispatch(null);
         fetchLeads();
@@ -486,9 +543,16 @@ export default function ApplicationVerification() {
                         )}
 
                         {isDispatched && (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-800 bg-blue-50 border border-blue-300 px-2.5 py-1 rounded-full whitespace-nowrap">
-                            <Building2 size={12} className="text-blue-600" /> Dispatched to {lead.dispatchedBankName || 'Bank'}
-                          </span>
+                          <div className="flex flex-col gap-0.5">
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-800 bg-blue-50 border border-blue-300 px-2.5 py-1 rounded-full whitespace-nowrap">
+                              <Building2 size={12} className="text-blue-600" /> Dispatched to {lead.dispatchedBankName || 'Bank'}
+                            </span>
+                            {lead.dispatchedLenders && lead.dispatchedLenders.length > 1 && (
+                              <span className="text-[10px] text-blue-600 font-bold px-1">
+                                &bull; Sent to {lead.dispatchedLenders.length} Lenders simultaneously
+                              </span>
+                            )}
+                          </div>
                         )}
                       </td>
 
@@ -525,13 +589,13 @@ export default function ApplicationVerification() {
                             </span>
                           )}
 
-                          {/* Stage 3: Sales Head Approved -> Send to Bank */}
+                          {/* Stage 3: Sales Head Approved -> Send to Banks / NBFCs */}
                           {isSalesHeadApproved && (
                             <button
                               onClick={() => openDispatchModal(lead)}
                               className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer whitespace-nowrap shrink-0"
                             >
-                              <Send size={13} /> Send to Bank (Email/WhatsApp) &rarr;
+                              <Send size={13} /> Send to Banks/NBFCs (Bulk) &rarr;
                             </button>
                           )}
 
@@ -640,21 +704,28 @@ export default function ApplicationVerification() {
         </div>
       )}
 
-      {/* ── MODAL 2: DISPATCH TO BANK (OPERATIONS MANAGER WITH REAL BANK LOGOS & DETAILS) ── */}
+      {/* ── MODAL 2: DISPATCH TO BANK & NBFCs (BULK MULTI-LENDER SELECTOR) ── */}
       {isDispatchModalOpen && activeLeadForDispatch && (
-        <div className="fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4">
+          <div className="bg-white rounded-3xl max-w-3xl w-full p-5 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto">
             
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-600 text-white flex items-center justify-center shadow-md shadow-emerald-500/20 shrink-0">
+                <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
                   <Building2 size={20} />
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-slate-900">
-                    Forward Loan File to Partner Bank
-                  </h3>
-                  <p className="text-xs text-slate-400 font-medium">Sales Head Approved &bull; Select Partner Bank with Official Details</p>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-slate-900">
+                      Bulk Dispatch File to Partner Lenders
+                    </h3>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-800 uppercase tracking-wider">
+                      Multi-Lender Select
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-500 font-medium">
+                    Sales Head Approved &bull; Select multiple Banks & NBFCs to send the file simultaneously
+                  </p>
                 </div>
               </div>
               <button 
@@ -668,26 +739,33 @@ export default function ApplicationVerification() {
             <form onSubmit={handleConfirmDispatch} className="space-y-4 text-xs">
               
               {/* Customer Dossier Snapshot */}
-              <div className="p-3.5 bg-emerald-50 rounded-2xl border border-emerald-200 flex items-center justify-between">
+              <div className="p-3.5 bg-gradient-to-r from-emerald-50 to-teal-50/60 rounded-2xl border border-emerald-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div>
                   <div className="font-black text-sm text-emerald-950">{activeLeadForDispatch.name} ({activeLeadForDispatch.mobile})</div>
-                  <div className="text-[11px] text-emerald-700 font-medium">{activeLeadForDispatch.leadId} &bull; {activeLeadForDispatch.zone} Zone &bull; PAN: {activeLeadForDispatch.pan}</div>
+                  <div className="text-[11px] text-emerald-700 font-medium">
+                    {activeLeadForDispatch.leadId} &bull; {activeLeadForDispatch.zone} Zone &bull; PAN: {activeLeadForDispatch.pan}
+                  </div>
                 </div>
-                <div className="text-right">
+                <div className="sm:text-right">
                   <div className="text-[10px] font-bold text-emerald-600 uppercase">Sanction Requested</div>
-                  <div className="text-base font-black text-emerald-800">₹{Number(activeLeadForDispatch.amount || 0).toLocaleString()}</div>
+                  <div className="text-base font-black text-emerald-900">₹{Number(activeLeadForDispatch.amount || 0).toLocaleString()}</div>
                 </div>
               </div>
 
-              {/* Real Bank Logos & Interactive Selection Grid with Search Filter */}
+              {/* Bulk Lender Selection Header & Action Controls */}
               <div>
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                  <label className="block text-xs font-black text-slate-900">
-                    Select Partner Bank / NBFC Lender *
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-black text-slate-900">
+                      Choose Partner Banks & NBFCs:
+                    </label>
+                    <span className="px-2 py-0.5 bg-emerald-600 text-white rounded-full font-black text-[11px] shadow-xs">
+                      {selectedLenders.length} Selected
+                    </span>
+                  </div>
 
-                  {/* Bank Search Bar */}
-                  <div className="relative w-full sm:w-60">
+                  {/* Search Bar */}
+                  <div className="relative w-full sm:w-64">
                     <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
@@ -699,25 +777,48 @@ export default function ApplicationVerification() {
                   </div>
                 </div>
 
-                {/* Category Filter Pills */}
-                <div className="flex items-center gap-1.5 mb-2 overflow-x-auto pb-1">
-                  {['ALL', 'Commercial Bank', 'NBFC', 'Housing Finance'].map(cat => (
+                {/* Bulk Select / Deselect Quick Action Toolbar */}
+                <div className="flex flex-wrap items-center justify-between gap-1.5 p-2 bg-slate-100/80 rounded-xl border border-slate-200 mb-2.5">
+                  <div className="flex items-center gap-1.5 overflow-x-auto">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase px-1">Filter:</span>
+                    {['ALL', 'Commercial Bank', 'NBFC', 'Housing Finance'].map(cat => (
+                      <button
+                        key={cat}
+                        type="button"
+                        onClick={() => setBankCategoryFilter(cat)}
+                        className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition whitespace-nowrap cursor-pointer ${
+                          bankCategoryFilter === cat
+                            ? 'bg-slate-900 text-white shadow-xs'
+                            : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
+                        }`}
+                      >
+                        {cat === 'ALL' ? 'All Partners' : cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="flex items-center gap-1.5">
                     <button
-                      key={cat}
                       type="button"
-                      onClick={() => setBankCategoryFilter(cat)}
-                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition whitespace-nowrap cursor-pointer ${
-                        bankCategoryFilter === cat
-                          ? 'bg-slate-900 text-white shadow-xs'
-                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                      }`}
+                      onClick={() => selectAllCategory(bankCategoryFilter)}
+                      className="px-2 py-1 rounded-lg text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition cursor-pointer"
                     >
-                      {cat === 'ALL' ? 'All Lenders' : cat}
+                      + Select All {bankCategoryFilter === 'ALL' ? '' : `(${bankCategoryFilter})`}
                     </button>
-                  ))}
+                    {selectedLenders.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={clearAllLenders}
+                        className="px-2 py-1 rounded-lg text-[10px] font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition cursor-pointer"
+                      >
+                        Clear All
+                      </button>
+                    )}
+                  </div>
                 </div>
                 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto p-1.5 bg-slate-50 rounded-2xl border border-slate-200">
+                {/* Checkbox Multi-Select Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-56 overflow-y-auto p-2 bg-slate-50 rounded-2xl border border-slate-200">
                   {ALL_PARTNERS.filter(bank => {
                     const q = bankSearchQuery.toLowerCase().trim();
                     const matchesQuery = !q || 
@@ -729,122 +830,92 @@ export default function ApplicationVerification() {
                     const matchesCategory = bankCategoryFilter === 'ALL' || bank.category === bankCategoryFilter;
                     return matchesQuery && matchesCategory;
                   }).map((bank) => {
-                    const isSelected = dispatchForm.bankName === bank.name;
+                    const isSelected = selectedLenders.some(l => l.name === bank.name);
                     return (
                       <div
                         key={bank.name}
-                        onClick={() => {
-                          setDispatchForm({
-                            ...dispatchForm,
-                            bankName: bank.name,
-                            bankCode: bank.code || bank.initials || bank.shortName,
-                            bankIfsc: `${(bank.code || bank.initials || 'BANK').toUpperCase().substring(0, 4)}0000101`,
-                            bankBranch: `${activeLeadForDispatch.zone} Zonal Credit Hub`
-                          });
-                        }}
-                        className={`p-2.5 rounded-xl border flex items-center gap-2.5 cursor-pointer transition ${
+                        onClick={() => toggleLenderSelection(bank)}
+                        className={`p-2 rounded-xl border flex items-center gap-2 cursor-pointer transition select-none ${
                           isSelected
-                            ? 'bg-white border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
-                            : 'bg-white/80 border-slate-200 hover:border-slate-300 hover:bg-white'
+                            ? 'bg-emerald-50/80 border-emerald-500 ring-2 ring-emerald-500/20 shadow-xs'
+                            : 'bg-white border-slate-200 hover:border-slate-300 hover:bg-slate-50/60'
                         }`}
                       >
+                        {/* Checkbox Icon */}
+                        <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 border transition ${
+                          isSelected ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-300'
+                        }`}>
+                          {isSelected && <Check size={12} strokeWidth={3} />}
+                        </div>
+
                         {/* Real Guaranteed Vector Brand Logo */}
-                        <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 shadow-xs flex items-center justify-center bg-white border border-slate-100 p-0.5">
+                        <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 shadow-2xs flex items-center justify-center bg-white border border-slate-100 p-0.5">
                           <BankBrandLogo code={bank.code || bank.initials} name={bank.shortName} className="w-full h-full object-contain" />
                         </div>
 
                         <div className="min-w-0 flex-1">
-                          <div className="font-extrabold text-slate-900 text-xs truncate leading-snug">{bank.shortName}</div>
+                          <div className="font-extrabold text-slate-900 text-xs truncate leading-tight">{bank.shortName}</div>
                           <div className="text-[10px] text-slate-400 font-medium truncate">{bank.category}</div>
                         </div>
-
-                        {isSelected && <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />}
                       </div>
                     );
                   })}
                 </div>
               </div>
 
-              {/* Selected Bank Basic Details */}
-              <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider">Bank Branch & Routing Details</span>
-                  <span className="text-[11px] font-extrabold text-blue-700">{dispatchForm.bankName}</span>
+              {/* Selected Lenders Summary Chip Pills */}
+              {selectedLenders.length > 0 && (
+                <div className="p-3 bg-emerald-50/60 rounded-2xl border border-emerald-200/60">
+                  <div className="text-[10px] font-bold uppercase text-emerald-800 tracking-wider mb-1.5 flex items-center justify-between">
+                    <span>Dispatched Pipeline Preview ({selectedLenders.length} Lenders Selected)</span>
+                    <span className="text-[10px] text-emerald-600 lowercase font-medium">click pill to remove</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto">
+                    {selectedLenders.map((lender) => (
+                      <span
+                        key={lender.name}
+                        onClick={() => toggleLenderSelection(lender)}
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold bg-white text-emerald-900 border border-emerald-300 shadow-2xs cursor-pointer hover:bg-rose-50 hover:text-rose-800 hover:border-rose-300 transition"
+                        title="Click to remove"
+                      >
+                        <span>{lender.shortName || lender.name}</span>
+                        <X size={10} className="text-slate-400 hover:text-rose-600" />
+                      </span>
+                    ))}
+                  </div>
                 </div>
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Branch Name *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Connaught Place Branch"
-                      value={dispatchForm.bankBranch}
-                      onChange={e => setDispatchForm({ ...dispatchForm, bankBranch: e.target.value })}
-                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                    />
-                  </div>
+              {/* Transmission Channel & Routing Configuration */}
+              <div className="p-3.5 bg-slate-50/90 rounded-2xl border border-slate-200 space-y-3">
+                <span className="font-bold text-slate-700 text-[11px] uppercase tracking-wider block">
+                  Transmission Channel & Routing Setup
+                </span>
 
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Bank IFSC Code *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. HDFC0000123"
-                      value={dispatchForm.bankIfsc}
-                      onChange={e => setDispatchForm({ ...dispatchForm, bankIfsc: e.target.value.toUpperCase() })}
-                      className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 font-mono uppercase focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Dispatch Channel *</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Bulk Dispatch Channel *</label>
                     <select
                       value={dispatchForm.channel}
                       onChange={e => setDispatchForm({ ...dispatchForm, channel: e.target.value })}
                       className="w-full p-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
                     >
-                      <option value="Email">Official Bank Email</option>
-                      <option value="WhatsApp">Bank Portal / WhatsApp</option>
-                      <option value="Direct Banking">Direct Banking Integration</option>
+                      <option value="Email & WhatsApp">Simultaneous Email & WhatsApp (Recommended)</option>
+                      <option value="Email">Official Partner Email (PDF Pack)</option>
+                      <option value="WhatsApp">Lender Credit WhatsApp Desk</option>
+                      <option value="Direct Banking">Direct Banking Integration / Portal</option>
                     </select>
                   </div>
-                </div>
-              </div>
 
-              {/* Bank Contact Officer Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Bank Officer Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Rajesh Sharma (Credit Mgr)"
-                    value={dispatchForm.bankContactName}
-                    onChange={e => setDispatchForm({ ...dispatchForm, bankContactName: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Officer Designation</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Area Credit Manager"
-                    value={dispatchForm.bankOfficerDesignation}
-                    onChange={e => setDispatchForm({ ...dispatchForm, bankOfficerDesignation: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Officer Email / Phone</label>
-                  <input
-                    type="text"
-                    placeholder="credit.desk@bank.com"
-                    value={dispatchForm.bankContactEmail}
-                    onChange={e => setDispatchForm({ ...dispatchForm, bankContactEmail: e.target.value })}
-                    className="w-full p-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium"
-                  />
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-0.5">Central Zonal Credit Hub</label>
+                    <input
+                      type="text"
+                      readOnly
+                      value={`${activeLeadForDispatch.zone || 'North'} Regional Hub Desk`}
+                      className="w-full p-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -860,22 +931,28 @@ export default function ApplicationVerification() {
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setIsDispatchModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={dispatching}
-                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-xs cursor-pointer whitespace-nowrap"
-                >
-                  {dispatching ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                  Confirm & Forward to {dispatchForm.bankName.split(' ')[0]}
-                </button>
+              <div className="flex items-center justify-between pt-2 border-t border-slate-100">
+                <div className="text-[11px] text-slate-500 font-medium">
+                  File will be sent simultaneously to <b className="text-slate-900">{selectedLenders.length}</b> Partner Lender{selectedLenders.length > 1 ? 's' : ''}.
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsDispatchModalOpen(false)}
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={dispatching || selectedLenders.length === 0}
+                    className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-xs cursor-pointer whitespace-nowrap"
+                  >
+                    {dispatching ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
+                    Bulk Dispatch to {selectedLenders.length} Lender{selectedLenders.length > 1 ? 's' : ''} &rarr;
+                  </button>
+                </div>
               </div>
             </form>
           </div>

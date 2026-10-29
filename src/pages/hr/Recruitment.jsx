@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Users, Briefcase, Plus, CheckCircle2, ChevronRight, Search, FileText, X, Eye, MapPin, Building, Calendar, Edit2, Trash2, ChevronDown, UserCheck, Copy, ExternalLink, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 // ── Static data for job form dropdowns ─────────────────────────────────────
 const JOB_TYPES = ['Full Time', 'Part Time', 'Contract', 'Internship', 'Freelance'];
@@ -318,6 +319,7 @@ export default function Recruitment() {
  
  const [showAppModal, setShowAppModal] = useState(false);
  const [selectedApp, setSelectedApp] = useState(null);
+ const [loading, setLoading] = useState(true);
 
  // Designation Modal & Form
  const [showAddDesigModal, setShowAddDesigModal] = useState(false);
@@ -350,11 +352,14 @@ export default function Recruitment() {
  });
 
  useEffect(() => {
- fetchJobs();
- fetchApplications();
- fetchEmployees();
- fetchDesignations();
- }, []);
+    setLoading(true);
+    Promise.allSettled([
+      fetchJobs(),
+      fetchApplications(),
+      fetchEmployees(),
+      fetchDesignations()
+    ]).finally(() => setLoading(false));
+  }, []);
 
  const fetchDesignations = async () => {
  try {
@@ -1040,7 +1045,15 @@ export default function Recruitment() {
  </tr>
  </thead>
  <tbody className="divide-y divide-gray-100 text-sm">
- {paginatedApplications.map(app => (
+ {loading ? (
+   <SkeletonTableRows rows={6} cols={8} />
+ ) : paginatedApplications.length === 0 ? (
+   <tr>
+     <td colSpan={8} className="py-12 text-center text-gray-400 font-medium">
+       No applications found.
+     </td>
+   </tr>
+ ) : paginatedApplications.map(app => (
  <tr key={app._id} className="hover:bg-blue-50/50 transition-colors">
  
  <td className="py-3 px-4 whitespace-nowrap">
@@ -1240,7 +1253,15 @@ export default function Recruitment() {
  </tr>
  </thead>
  <tbody className="divide-y divide-gray-100 text-sm">
- {paginatedJobs.map(job => (
+ {loading ? (
+   <SkeletonTableRows rows={6} cols={6} />
+ ) : paginatedJobs.length === 0 ? (
+   <tr>
+     <td colSpan={6} className="py-12 text-center text-gray-400 font-medium">
+       No jobs posted yet.
+     </td>
+   </tr>
+ ) : paginatedJobs.map(job => (
  <tr key={job._id} className="hover:bg-blue-50/50 transition-colors">
  <td className="py-3 px-4">
  <span className="font-bold text-gray-900 block">{job.title}</span>

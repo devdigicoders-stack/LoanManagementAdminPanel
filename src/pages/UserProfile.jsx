@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { hasPermission } from '../utils/permissions';
+import { Skeleton, SkeletonCard } from '../components/common/SkeletonLoader';
 import {
   ArrowLeft, Download, Edit, User, Mail, Phone, Calendar, Clock,
   ShieldCheck, CheckCircle2, FileText, Activity, MapPin, Globe,
@@ -68,9 +69,27 @@ export default function UserProfile() {
 
   if (loading) {
     return (
-      <div className="w-full h-[60vh] flex flex-col items-center justify-center text-slate-500">
-        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-xl font-bold text-slate-800">Loading profile data...</h2>
+      <div className="w-full space-y-6 pb-12 animate-in fade-in duration-200">
+        <div className="bg-white rounded-2xl border border-slate-100 p-6 flex flex-col md:flex-row items-center gap-6 shadow-xs">
+          <Skeleton className="w-24 h-24 rounded-full shrink-0" />
+          <div className="space-y-3 flex-1 text-center md:text-left">
+            <Skeleton className="h-7 w-48 rounded mx-auto md:mx-0" />
+            <Skeleton className="h-4 w-64 rounded mx-auto md:mx-0" />
+            <div className="flex gap-2 justify-center md:justify-start pt-1">
+              <Skeleton className="h-6 w-20 rounded-full" />
+              <Skeleton className="h-6 w-28 rounded-full" />
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="space-y-6">
+            <SkeletonCard height="h-48" />
+            <SkeletonCard height="h-48" />
+          </div>
+          <div className="md:col-span-2 space-y-6">
+            <SkeletonCard height="h-96" />
+          </div>
+        </div>
       </div>
     );
   }

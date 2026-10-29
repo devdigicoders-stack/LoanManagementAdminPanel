@@ -6,6 +6,7 @@ import {
   Search, Shield, Phone, Mail, MapPin, RefreshCw, ArrowLeft, Layers
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
@@ -213,12 +214,7 @@ export default function ZonalTeamTree() {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {loading ? (
-                  <tr>
-                    <td colSpan="7" className="text-center py-12 text-slate-400 whitespace-nowrap">
-                      <RefreshCw size={22} className="animate-spin mx-auto mb-2 text-indigo-600" />
-                      Loading staff for {selectedZone} Zone...
-                    </td>
-                  </tr>
+                  <SkeletonTableRows rows={6} cols={7} />
                 ) : (currentZoneData.staffList || []).filter(s => {
                   if (!searchQuery) return true;
                   const q = searchQuery.toLowerCase();

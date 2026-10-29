@@ -9,6 +9,7 @@ const priorities = ["All", "Normal", "Low", "Medium", "High", "Urgent"];
 
 import SupervisorStaffFilter from "../../components/SupervisorStaffFilter";
 import TablePagination from "../../components/TablePagination";
+import { SkeletonTableRows } from "../../components/common/SkeletonLoader";
 
 export default function MyLeads() {
   const [leadsData, setLeadsData] = useState([]);
@@ -134,12 +135,7 @@ export default function MyLeads() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center">
-                    <div className="flex justify-center mb-4"><RefreshCw className="animate-spin text-purple-600" size={32} /></div>
-                    <p className="font-bold text-gray-700 text-[16px]">Loading leads...</p>
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={6} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-16 text-center">

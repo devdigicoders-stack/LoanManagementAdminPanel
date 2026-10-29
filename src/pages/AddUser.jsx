@@ -153,7 +153,7 @@ export default function AddUser() {
  role: value,
  designation: value,
  department: match ? match.dept : prev.department,
- zone: value === 'HR Executive' ? 'NORTH' : (match ? match.zone : 'ALL')
+ zone: prev.zone || (match ? match.zone : 'ALL')
  }));
  setSelectedPermissions(getDefaultPermissionsForRole(value));
  } else {
@@ -242,7 +242,7 @@ export default function AddUser() {
  <h2 className="text-[15px] font-bold text-slate-800">1. Role, Department & Zone Setup</h2>
  </div>
 
- <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+ <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
  <div>
  <SearchableSelect
  label="Select Role / Designation"
@@ -253,7 +253,7 @@ export default function AddUser() {
  options={ROLE_OPTIONS.map(r => ({ value: r.role, label: r.label, sublabel: r.dept }))}
  placeholder="Choose role..."
  />
- <p className="text-[11px] text-slate-400 mt-1">Role assigned to this administrative user</p>
+ <p className="text-[11px] text-slate-400 mt-1">Role assigned to this administrative / field user</p>
  </div>
 
  <div>
@@ -265,12 +265,8 @@ export default function AddUser() {
  </div>
  <p className="text-[11px] text-slate-400 mt-1">Auto mapped according to selected role</p>
  </div>
- </div>
 
- {/* Conditional Zone & Reporting Manager for HR Executive / Team Members */}
- {formData.role === 'HR Executive' && (
- <div className="pt-3 border-t border-slate-100 animate-in fade-in duration-300">
- <div className="max-w-md">
+ <div>
  <SearchableSelect
  label="Assign Operating Zone"
  required
@@ -278,6 +274,7 @@ export default function AddUser() {
  value={formData.zone}
  onChange={handleChange}
  options={[
+ { value: 'ALL', label: 'ALL Zones (Pan-India HQ Access)' },
  { value: 'NORTH', label: 'NORTH Zone (Delhi, UP, Punjab, Haryana, J&K)' },
  { value: 'SOUTH', label: 'SOUTH Zone (Karnataka, Tamil Nadu, Kerala, AP, Telangana)' },
  { value: 'EAST', label: 'EAST Zone (WB, Bihar, Odisha, Jharkhand, Assam)' },
@@ -286,10 +283,9 @@ export default function AddUser() {
  ]}
  placeholder="Select operating zone..."
  />
- <p className="text-[11px] text-slate-400 mt-1">Applicants from this zone will route to this Executive</p>
+ <p className="text-[11px] text-slate-400 mt-1">Leads and team data will route according to this Zone</p>
  </div>
  </div>
- )}
 
  </div>
 

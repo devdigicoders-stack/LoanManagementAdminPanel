@@ -6,6 +6,7 @@ import {
   Users, Eye, Shield, CheckSquare, Phone, X, Check, Crown, ExternalLink
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 const API = API_BASE.replace('/api', '');
@@ -433,38 +434,40 @@ export default function Onboarding() {
       </div>
 
       {/* List */}
-      {loading ? (
-        <div className="text-center py-16 text-gray-500 font-semibold">Loading onboarding data...</div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-16 text-gray-400">
-          <Users size={40} className="mx-auto mb-3 opacity-30" />
-          <p className="font-semibold">No onboardings found in this view.</p>
-        </div>
-      ) : (
-        <div className="bg-white border border-gray-200/80 rounded-xl overflow-hidden shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left whitespace-nowrap">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/70">
-                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Employee / Head</th>
-                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status & Progress</th>
-                  <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+      <div className="bg-white border border-gray-200/80 rounded-xl overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left whitespace-nowrap">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/70">
+                <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Employee / Head</th>
+                <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider">Status & Progress</th>
+                <th className="py-3.5 px-4 text-[11px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <SkeletonTableRows rows={6} cols={3} />
+              ) : filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="text-center py-16 text-gray-400">
+                    <Users size={40} className="mx-auto mb-3 opacity-30" />
+                    <p className="font-semibold">No onboardings found in this view.</p>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {filtered.map(emp => (
+              ) : (
+                filtered.map(emp => (
                   <EmployeeTableRow 
                     key={emp._id} 
                     emp={emp} 
                     token={token} 
                     onRefresh={fetchData} 
                   />
-                ))}
-              </tbody>
-            </table>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Filter, Calendar, CheckCircle2, XCircle, Clock, UserCheck, Edit, Download, Lock } from 'lucide-react';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 export default function Attendance() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -291,24 +292,28 @@ export default function Attendance() {
 
         {/* Table */}
         <div className="overflow-x-auto">
-          {loading ? (
-             <div className="p-10 text-center"><p className="text-[14px] font-bold text-[var(--color-brand-text)]">Loading records...</p></div>
-          ) : (
-            <>
-              <table className="w-full text-left border-collapse min-w-[1000px]">
-                <thead>
-                  <tr className="border-b border-[var(--color-brand-border)]">
-                    <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Employee</th>
-                    <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Department</th>
-                    <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Check In</th>
-                    <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Check Out</th>
-                    <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Hours</th>
-                    <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Status</th>
-                    <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[var(--color-brand-border)]">
-                  {filteredData.map((record, idx) => (
+          <table className="w-full text-left border-collapse min-w-[1000px]">
+            <thead>
+              <tr className="border-b border-[var(--color-brand-border)]">
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Employee</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Department</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Check In</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Check Out</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Hours</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white">Status</th>
+                <th className="py-4 px-6 text-[12px] font-bold text-[var(--color-brand-text-secondary)] uppercase tracking-wider bg-white text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--color-brand-border)]">
+              {loading ? (
+                <SkeletonTableRows rows={6} cols={7} />
+              ) : filteredData.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-slate-400 font-medium text-xs">
+                    No attendance logs recorded for this date.
+                  </td>
+                </tr>
+              ) : filteredData.map((record, idx) => (
                     <tr key={idx} className="hover:bg-[var(--color-brand-hover-bg)] transition-colors group">
                       <td className="py-4 px-6">
                         <p className="text-[14px] font-bold text-[var(--color-brand-text)]">{record.name}</p>
@@ -344,14 +349,6 @@ export default function Attendance() {
                   ))}
                 </tbody>
               </table>
-              
-              {filteredData.length === 0 && (
-                <div className="p-10 text-center">
-                  <p className="text-[14px] font-bold text-[var(--color-brand-text)]">No attendance records found</p>
-                </div>
-              )}
-            </>
-          )}
         </div>
       </div>
     </div>

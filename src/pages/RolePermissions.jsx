@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { ROLE_SIDEBAR_PAGES } from '../utils/permissions';
 import SearchableSelect from '../components/common/SearchableSelect';
+import { SkeletonCard, Skeleton } from '../components/common/SkeletonLoader';
 
 // Role definitions with department leadership metadata
 const DEPARTMENT_HEAD_ROLES = [
@@ -400,14 +401,16 @@ export default function RolePermissions() {
  </div>
  </div>
 
- {isLoading ? (
- <div className="w-full flex items-center justify-center py-28 text-slate-500 font-medium">
- <div className="flex items-center gap-3">
- <Loader2 className="w-5 h-5 animate-spin text-[#489b0d]" />
- <span>Loading roles and employee permissions...</span>
- </div>
- </div>
- ) : (
+  {isLoading ? (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in duration-200">
+      <div className="lg:col-span-4 space-y-4">
+        <SkeletonCard height="h-96" />
+      </div>
+      <div className="lg:col-span-8 space-y-4">
+        <SkeletonCard height="h-96" />
+      </div>
+    </div>
+  ) : (
  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
  {/* ================= LEFT COLUMN: DEPARTMENT HEAD ROLES LIST ================= */}

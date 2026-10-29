@@ -33,6 +33,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import SearchableSelect from "../components/common/SearchableSelect";
+import { SkeletonTableRows, Skeleton } from "../components/common/SkeletonLoader";
 
 export default function ManageUsers() {
   const navigate = useNavigate();
@@ -505,11 +506,7 @@ export default function ManageUsers() {
             </thead>
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
-                <tr>
-                  <td colSpan="7" className="py-12 text-center text-slate-500 font-semibold text-[13px]">
-                    Loading team & staff records...
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={7} />
               ) : currentItems.length === 0 ? (
                 <tr>
                   <td colSpan="7" className="py-12 text-center text-slate-400 font-medium text-[13px]">

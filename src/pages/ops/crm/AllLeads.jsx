@@ -7,6 +7,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
+import { SkeletonTableRows } from '../../../components/common/SkeletonLoader';
 
 export default function AllLeads() {
   const navigate = useNavigate();
@@ -233,12 +234,7 @@ export default function AllLeads() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading ? (
-                <tr>
-                  <td colSpan={7} className="py-12 text-center text-gray-400">
-                    <Loader2 size={24} className="animate-spin mx-auto mb-2 text-[#489b0d]" />
-                    Loading live zonal leads...
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={7} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-gray-400 text-sm">

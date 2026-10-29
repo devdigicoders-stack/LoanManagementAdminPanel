@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 
 import { ALL_PARTNERS, ALL_LENDERS, LENDER_BANK_LIST, LENDER_NBFC_LIST, getLenderLogo, getLenderDetails } from '../../constants/lenders';
 import TablePagination from '../../components/TablePagination';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
@@ -281,12 +282,7 @@ export default function BankSubmissionsDesk() {
             </thead>
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
-                <tr>
-                  <td colSpan="6" className="text-center py-12 text-slate-400 whitespace-nowrap">
-                    <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-blue-500" />
-                    Loading submissions...
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={6} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan="6" className="text-center py-12 text-slate-400 whitespace-nowrap">

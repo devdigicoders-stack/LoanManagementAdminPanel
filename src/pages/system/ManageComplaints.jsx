@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import { SkeletonTableRows } from "../../components/common/SkeletonLoader";
 
 export default function ManageComplaints() {
   const [complaints, setComplaints] = useState([]);
@@ -682,7 +683,9 @@ export default function ManageComplaints() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {filteredComplaints.length > 0 ? filteredComplaints.map(complaint => (
+              {loading ? (
+                <SkeletonTableRows rows={6} cols={8} />
+              ) : filteredComplaints.length > 0 ? filteredComplaints.map(complaint => (
                 <tr key={complaint._id} className="hover:bg-slate-50/50 transition-colors group">
                   <td className="py-3 px-3">
                     <input

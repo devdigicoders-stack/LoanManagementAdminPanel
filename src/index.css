@@ -24,6 +24,12 @@
   }
 }
 
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
 body {
   background-color: var(--color-brand-page-bg);
   color: var(--color-brand-text);

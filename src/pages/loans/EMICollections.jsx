@@ -13,6 +13,7 @@ import {
   Loader2
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { SkeletonTableRows } from "../../components/common/SkeletonLoader";
 
 export default function EMICollections() {
   const [loans, setLoans] = useState([]);

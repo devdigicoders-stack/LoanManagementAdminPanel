@@ -9,6 +9,7 @@ import {
 import toast from 'react-hot-toast';
 import Swal from 'sweetalert2';
 import { hasPermission } from '../../utils/permissions';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 export default function Payroll() {
   const location = useLocation();
@@ -18,6 +19,7 @@ export default function Payroll() {
   const [activeTab, setActiveTab] = useState(initialTab); // 'employees', 'my-salary'
   const [employees, setEmployees] = useState([]);
   const [headings, setHeadings] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [canManageHeadings, setCanManageHeadings] = useState(false);
   const [searchTerm, setSearchTerm] = useState(location.state?.initialSearch || '');
   const [editingId, setEditingId] = useState(null);
@@ -64,6 +66,7 @@ export default function Payroll() {
 
   const fetchPayrollData = async () => {
     try {
+      setLoading(true);
       const token = localStorage.getItem('token');
       const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/payroll`, {
         headers: {
@@ -79,6 +82,8 @@ export default function Payroll() {
     } catch (error) {
       console.error(error);
       toast.error('Server error');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -523,7 +528,15 @@ export default function Payroll() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-50">
-                    {filteredStaff.map((emp) => {
+                    {loading ? (
+                      <SkeletonTableRows rows={6} cols={7 + customHeadings.length} />
+                    ) : filteredStaff.length === 0 ? (
+                      <tr>
+                        <td colSpan={7 + customHeadings.length} className="py-12 text-center text-gray-400 font-medium text-xs">
+                          No employee records found in payroll.
+                        </td>
+                      </tr>
+                    ) : filteredStaff.map((emp) => {
                       const isEditing = editingId === emp.id;
                       const isPending = emp.payroll?.approvalStatus === 'Pending Approval';
                       const canApprove = (isHrManager || isHrHead || isMasterAdmin) && isPending;

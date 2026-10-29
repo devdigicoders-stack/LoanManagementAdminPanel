@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { SkeletonTableRows } from "../components/common/SkeletonLoader";
 
 export default function CustomerManagement() {
  const navigate = useNavigate();
@@ -409,14 +410,10 @@ export default function CustomerManagement() {
  <th className="py-3.5 px-4 text-center">Actions</th>
  </tr>
  </thead>
- <tbody className="divide-y divide-slate-100">
- {isLoading ? (
- <tr>
- <td colSpan="7" className="py-12 text-center text-slate-500 font-semibold text-[13px]">
- Loading customer directory...
- </td>
- </tr>
- ) : currentItems.length === 0 ? (
+  <tbody className="divide-y divide-slate-100">
+  {isLoading ? (
+    <SkeletonTableRows rows={6} cols={7} />
+  ) : currentItems.length === 0 ? (
  <tr>
  <td colSpan="7" className="py-12 text-center text-slate-400 font-medium text-[13px]">
  No customers found matching the criteria.

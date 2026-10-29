@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import TablePagination from '../../components/TablePagination';
+import { SkeletonTableRows } from '../../components/common/SkeletonLoader';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'https://loan-management-backend-3a23.onrender.com/api';
 
@@ -212,12 +213,7 @@ export default function RMTelecallerDesk() {
  </thead>
  <tbody className="divide-y divide-slate-100">
  {loading ? (
- <tr>
- <td colSpan="6" className="py-12 text-center text-slate-400 font-medium">
- <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 text-indigo-500" />
- Loading telecaller progress...
- </td>
- </tr>
+   <SkeletonTableRows rows={6} cols={6} />
  ) : filteredLeads.length === 0 ? (
  <tr>
  <td colSpan="6" className="py-12 text-center text-slate-400 font-medium">

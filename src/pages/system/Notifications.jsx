@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Swal from "sweetalert2";
+import { Skeleton } from "../../components/common/SkeletonLoader";
 
 const getIcon = (type) => {
   switch(type) {
@@ -286,7 +287,20 @@ export default function Notifications() {
               {/* Inbox List */}
               <div className="flex-1 overflow-y-auto">
                 {isLoading ? (
-                  <div className="flex-1 flex items-center justify-center h-full pt-20 text-slate-400">Loading notifications...</div>
+                  <div className="divide-y divide-slate-100">
+                    {Array.from({ length: 5 }).map((_, i) => (
+                      <div key={i} className="p-5 flex items-start gap-4">
+                        <Skeleton className="w-10 h-10 rounded-full shrink-0" />
+                        <div className="flex-1 space-y-2">
+                          <div className="flex justify-between">
+                            <Skeleton className="h-4 w-40 rounded" />
+                            <Skeleton className="h-3 w-16 rounded" />
+                          </div>
+                          <Skeleton className="h-3 w-3/4 rounded" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : filteredNotifications.length > 0 ? (
                   <div className="divide-y divide-slate-100">
                     {filteredNotifications.map((notif) => (

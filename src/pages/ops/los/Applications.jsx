@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Filter, FileText, ChevronRight, CheckCircle2, Clock, XCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
+import { SkeletonTableRows } from '../../../components/common/SkeletonLoader';
 
 export default function Applications() {
   const navigate = useNavigate();
@@ -115,12 +116,7 @@ export default function Applications() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-gray-400">
-                    <Loader2 size={24} className="animate-spin mx-auto mb-2 text-blue-600" />
-                    Loading live loan applications...
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={8} />
               ) : filtered.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-8 text-center text-gray-400 text-sm">

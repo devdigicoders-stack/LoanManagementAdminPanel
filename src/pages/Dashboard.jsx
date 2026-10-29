@@ -11,6 +11,7 @@ import Highcharts from 'highcharts';
 import HighchartsReactPkg from 'highcharts-react-official';
 const HighchartsReact = HighchartsReactPkg.default || HighchartsReactPkg.HighchartsReact || HighchartsReactPkg;
 import { useNavigate } from 'react-router-dom';
+import { SkeletonDashboard } from '../components/common/SkeletonLoader';
 
 const Card = ({ children, className = "", noPadding = false }) => (
   <div className={`bg-white rounded-[20px] border border-slate-100 shadow-[0_8px_30px_rgb(0,0,0,0.04)] hover:shadow-[0_8px_30px_rgb(0,0,0,0.07)] transition-all duration-300 ${noPadding ? '' : 'p-6'} ${className}`}>
@@ -203,12 +204,7 @@ export default function Dashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-slate-500 font-bold text-sm">Loading Super Admin Master Command Center...</p>
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   return (

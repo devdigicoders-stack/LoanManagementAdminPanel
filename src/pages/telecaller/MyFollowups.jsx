@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { CalendarCheck, Eye, CheckCircle2, CalendarDays, MessageSquare, PhoneCall, Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
+import { SkeletonTableRows } from "../../components/common/SkeletonLoader";
 
 const tc = {
   card: "#FFFFFF", sky: "#DFF3FF", skyMid: "#BFE7F7",
@@ -159,12 +160,7 @@ export default function MyFollowups() {
             </thead>
             <tbody>
               {loading ? (
-                <tr>
-                  <td colSpan={9} className="py-8 text-center text-slate-400">
-                    <Loader2 size={20} className="animate-spin mx-auto mb-2 text-[#1e7ba8]" />
-                    Loading follow-up tasks...
-                  </td>
-                </tr>
+                <SkeletonTableRows rows={6} cols={9} />
               ) : followups.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-8 text-center text-slate-400">
