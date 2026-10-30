@@ -53,6 +53,12 @@ export default function ApplicationVerification() {
   const [activeLeadForDocs, setActiveLeadForDocs] = useState(null);
   const [isDocsModalOpen, setIsDocsModalOpen] = useState(false);
 
+  // Modal: Reject Doc & Return to Telecaller
+  const [activeLeadForReject, setActiveLeadForReject] = useState(null);
+  const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejecting, setRejecting] = useState(false);
+
   const getHeaders = () => ({
     headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
   });
@@ -60,8 +66,8 @@ export default function ApplicationVerification() {
   const fetchLeads = useCallback(async () => {
     try {
       setLoading(true);
-      const zoneParam = selectedZone !== 'ALL' ? `?zone=${selectedZone}` : '';
-      const res = await axios.get(`${API_BASE}/leads${zoneParam}`, getHeaders());
+      const zoneParam = selectedZone !== 'ALL' ? `&zone=${selectedZone}` : '';
+      const res = await axios.get(`${API_BASE}/leads?desk=operations${zoneParam}`, getHeaders());
       
       if (Array.isArray(res.data)) {
         // Map all relevant operational workflow files
@@ -134,6 +140,38 @@ export default function ApplicationVerification() {
       toast.error(err.response?.data?.message || 'Error submitting to Sales Head');
     } finally {
       setSubmittingToSalesHead(false);
+    }
+  };
+
+  // Handle Reject Doc & Return to Telecaller
+  const openRejectModal = (lead) => {
+    setActiveLeadForReject(lead);
+    setRejectReason('Aadhaar / PAN or Bank Statement is blurry or incomplete. Please re-call customer and get clear documents uploaded.');
+    setIsRejectModalOpen(true);
+  };
+
+  const handleRejectDoc = async (e) => {
+    e.preventDefault();
+    if (!activeLeadForReject) return;
+    try {
+      setRejecting(true);
+      const res = await axios.put(
+        `${API_BASE}/leads/${activeLeadForReject._id}/operations-reject-doc`,
+        { reason: rejectReason },
+        getHeaders()
+      );
+      if (res.data.success) {
+        toast.success('Document rejected! Lead returned to Telecaller calling queue.');
+        setIsRejectModalOpen(false);
+        setActiveLeadForReject(null);
+        fetchLeads();
+      } else {
+        toast.error(res.data.message || 'Failed to reject file');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error rejecting document');
+    } finally {
+      setRejecting(false);
     }
   };
 
@@ -249,7 +287,7 @@ export default function ApplicationVerification() {
 
     if (selectedStageFilter === 'ALL') return true;
     if (selectedStageFilter === 'KYC_PENDING') {
-      return ['Operations_KYC_Verification', 'RM_Telecaller_Review', 'Customer_Confirmed', 'Under Review', 'In Progress', 'New'].includes(l.workflowStage);
+      return l.workflowStage === 'Operations_KYC_Verification';
     }
     if (selectedStageFilter === 'SALES_HEAD_PENDING') {
       return l.workflowStage === 'Sales_Head_Approval_Pending';
@@ -264,7 +302,7 @@ export default function ApplicationVerification() {
   });
 
   // Counts for top cards
-  const kycPendingCount = leadsList.filter(l => ['Operations_KYC_Verification', 'RM_Telecaller_Review', 'Customer_Confirmed', 'Under Review', 'In Progress', 'New'].includes(l.workflowStage)).length;
+  const kycPendingCount = leadsList.filter(l => l.workflowStage === 'Operations_KYC_Verification').length;
   const salesPendingCount = leadsList.filter(l => l.workflowStage === 'Sales_Head_Approval_Pending').length;
   const salesApprovedCount = leadsList.filter(l => l.workflowStage === 'Sales_Head_Approved').length;
   const bankDispatchedCount = leadsList.filter(l => ['Bank_Dispatched', 'Bank_Sanctioned_Offer', 'Customer_Accepted', 'Disbursed'].includes(l.workflowStage)).length;
@@ -572,14 +610,23 @@ export default function ApplicationVerification() {
                             <FileText size={15} />
                           </button>
 
-                          {/* Stage 1: Submit to Sales Head */}
+                          {/* Stage 1: Submit to Sales Head OR Reject Doc */}
                           {isKycReady && (
-                            <button
-                              onClick={() => openSalesHeadModal(lead)}
-                              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer whitespace-nowrap shrink-0"
-                            >
-                              <ShieldCheck size={13} /> Verify & Submit to Sales Head &rarr;
-                            </button>
+                            <div className="flex items-center gap-1.5">
+                              <button
+                                onClick={() => openRejectModal(lead)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold rounded-xl text-xs transition cursor-pointer whitespace-nowrap shrink-0"
+                                title="Reject and return to Telecaller"
+                              >
+                                <X size={13} /> Reject Doc
+                              </button>
+                              <button
+                                onClick={() => openSalesHeadModal(lead)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl shadow-xs transition cursor-pointer whitespace-nowrap shrink-0"
+                              >
+                                <ShieldCheck size={13} /> Verify & Submit to Sales Head &rarr;
+                              </button>
+                            </div>
                           )}
 
                           {/* Stage 2: Waiting for Sales Head */}
@@ -627,6 +674,74 @@ export default function ApplicationVerification() {
         />
 
       </div>
+
+      {/* ── MODAL: REJECT DOC & RETURN TO TELECALLER ── */}
+      {isRejectModalOpen && activeLeadForReject && (
+        <div className="fixed inset-0 z-50 bg-slate-950/40 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-rose-600 text-white flex items-center justify-center shadow-md shadow-rose-500/20 shrink-0">
+                  <AlertCircle size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-slate-900">Reject Documents</h3>
+                  <p className="text-[11px] text-slate-400 font-medium">Return lead to Telecaller for re-calling</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsRejectModalOpen(false)}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 flex items-center justify-center text-slate-500"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleRejectDoc} className="space-y-4">
+              <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200 text-xs text-slate-600 space-y-1">
+                <p><span className="text-slate-400 font-medium">Customer:</span> <b className="text-slate-900">{activeLeadForReject.name}</b> (+91 {activeLeadForReject.mobile})</p>
+                <p><span className="text-slate-400 font-medium">Lead ID:</span> <span className="font-mono font-bold text-slate-800">{activeLeadForReject.leadId}</span> &bull; Zone: <b className="text-blue-700">{activeLeadForReject.zone}</b></p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                  Rejection Reason (Visible to Telecaller)
+                </label>
+                <textarea
+                  rows={3}
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  required
+                  placeholder="Specify what document is missing or invalid..."
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-rose-500/20 font-medium"
+                />
+              </div>
+
+              <div className="p-3 bg-rose-50 rounded-2xl border border-rose-200 text-[11px] text-rose-800 font-medium">
+                ⚠️ This will immediately enable calling for the Telecaller, notify them to call the customer, get the document re-uploaded, and forward again.
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setIsRejectModalOpen(false)}
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={rejecting}
+                  className="px-5 py-2 bg-rose-600 hover:bg-rose-700 text-white font-bold rounded-xl text-xs flex items-center gap-2 shadow-xs transition cursor-pointer"
+                >
+                  {rejecting ? <RefreshCw size={13} className="animate-spin" /> : <X size={13} />}
+                  Reject & Return File
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ── MODAL 1: SUBMIT KYC TO SALES HEAD ── */}
       {isSalesHeadModalOpen && activeLeadForSalesHead && (

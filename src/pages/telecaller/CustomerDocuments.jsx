@@ -68,6 +68,8 @@ export default function CustomerDocuments() {
             generatorType: l.generatorType || (l.createdByName ? "Employee" : "Customer"),
             createdByDesignation: l.createdByDesignation || l.createdByRole || "",
             createdByName: l.createdByName || "",
+            operationsRejectionRemark: l.operationsRejectionRemark || null,
+            operationsRejectedAt: l.operationsRejectedAt || null,
             documents: l.documents || []
           })),
           ...(lData.loanApplications || []).map(a => ({ 
@@ -338,6 +340,22 @@ export default function CustomerDocuments() {
                   </a>
                 </div>
               </div>
+
+              {/* Operations Rejection Alert Banner */}
+              {selectedLead.operationsRejectionRemark && (
+                <div className="p-4 rounded-2xl bg-rose-50 border border-rose-300 space-y-1">
+                  <p className="text-xs font-black text-rose-900 flex items-center gap-1.5">
+                    <AlertCircle size={15} className="text-rose-600 shrink-0" />
+                    Returned by Operations Desk for Document Correction
+                  </p>
+                  <p className="text-xs text-rose-800 font-semibold leading-relaxed">
+                    Reason: &ldquo;{selectedLead.operationsRejectionRemark}&rdquo;
+                  </p>
+                  <p className="text-[11px] text-rose-700 font-medium">
+                    Please call the customer immediately, assist them to re-upload clear documents via their portal link, and re-forward to Operations.
+                  </p>
+                </div>
+              )}
 
               {/* Status Notice */}
               {selectedLead.customerFormStatus === "Pending" ? (
