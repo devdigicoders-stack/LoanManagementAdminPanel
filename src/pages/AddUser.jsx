@@ -47,7 +47,8 @@ export default function AddUser() {
         { role: 'RRM', label: 'RRM (Regional Reporting Manager - Zone Head)', dept: 'Sales & Loans', zone: 'NORTH' },
         { role: 'ARM', label: 'ARM (Area Reporting Manager)', dept: 'Sales & Loans', zone: 'NORTH' },
         { role: 'RM', label: 'RM (Reporting Manager)', dept: 'Sales & Loans', zone: 'NORTH' },
-        { role: 'RO', label: 'RO / RE (Relationship Officer / Field Staff)', dept: 'Sales & Loans', zone: 'NORTH' },
+        { role: 'RO', label: 'RO (Relationship Officer - Field Staff)', dept: 'Sales & Loans', zone: 'NORTH' },
+        { role: 'RE', label: 'RE (Relationship Executive - Field Staff)', dept: 'Sales & Loans', zone: 'NORTH' },
         { role: 'Telecaller', label: 'Telecaller (Lead Verification)', dept: 'Sales & Loans', zone: 'ALL' }
       ];
     }
@@ -57,7 +58,8 @@ export default function AddUser() {
         { role: 'RRM', label: 'RRM (Regional Reporting Manager - Zone Head)', dept: 'Sales & Loans', zone: 'NORTH' },
         { role: 'ARM', label: 'ARM (Area Reporting Manager)', dept: 'Sales & Loans', zone: 'NORTH' },
         { role: 'RM', label: 'RM (Reporting Manager)', dept: 'Sales & Loans', zone: 'NORTH' },
-        { role: 'RO', label: 'RO / RE (Relationship Officer / Field Staff)', dept: 'Sales & Loans', zone: 'NORTH' },
+        { role: 'RO', label: 'RO (Relationship Officer - Field Staff)', dept: 'Sales & Loans', zone: 'NORTH' },
+        { role: 'RE', label: 'RE (Relationship Executive - Field Staff)', dept: 'Sales & Loans', zone: 'NORTH' },
         { role: 'Telecaller', label: 'Telecaller (Lead Verification)', dept: 'Sales & Loans', zone: 'ALL' }
       ];
     }
@@ -67,7 +69,8 @@ export default function AddUser() {
       { role: 'RRM', label: 'RRM (Regional Reporting Manager - 1 Per Zone)', dept: 'Sales & Loans', zone: 'NORTH' },
       { role: 'ARM', label: 'ARM (Area Reporting Manager - 3 Per RRM)', dept: 'Sales & Loans', zone: 'NORTH' },
       { role: 'RM', label: 'RM (Reporting Manager - 5 Per ARM)', dept: 'Sales & Loans', zone: 'NORTH' },
-      { role: 'RO', label: 'RO / RE (Relationship Officer - 25 Per RM)', dept: 'Sales & Loans', zone: 'NORTH' },
+      { role: 'RO', label: 'RO (Relationship Officer - Field Staff)', dept: 'Sales & Loans', zone: 'NORTH' },
+      { role: 'RE', label: 'RE (Relationship Executive - Field Staff)', dept: 'Sales & Loans', zone: 'NORTH' },
       { role: 'Telecaller', label: 'Telecaller (Lead Calling & Verification)', dept: 'Sales & Loans', zone: 'ALL' },
       { role: 'Operation Manager', label: 'Operation Manager / Operations Head', dept: 'Operations', zone: 'ALL' },
       { role: 'HR Head', label: 'HR Head (Central / Pan-India HR Authority)', dept: 'HR & Recruitment', zone: 'ALL' },
@@ -92,18 +95,59 @@ export default function AddUser() {
       if (res.ok) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : (data.users || []);
-        const eligible = list.filter(u => 
-          u.isDepartmentHead || 
-          (u.role || '').toLowerCase().includes('head') || 
-          (u.role || '').toLowerCase().includes('manager') ||
-          (u.role || '').toLowerCase().includes('admin')
-        );
-        setManagers(eligible);
+        setManagers(list);
       }
     } catch (err) {
       console.error('Error fetching managers:', err);
     }
   };
+
+  // Dynamic Senior Manager List strictly filtered by Role Hierarchy & Zone
+  const filteredManagers = useMemo(() => {
+    const r = (formData.role || '').trim().toUpperCase();
+    const currentZone = formData.zone || 'NORTH';
+
+    return managers.filter(m => {
+      const mRole = (m.role || '').trim().toUpperCase();
+      const mDesig = (m.designation || '').trim().toUpperCase();
+      const mZone = m.zone || 'ALL';
+
+      // Zone matching: Manager must be in the same zone OR Pan-India (ALL)
+      const zoneMatches = mZone === 'ALL' || mZone === currentZone;
+
+      // 1. RRM requires Sales Head
+      if (r === 'RRM') {
+        return mRole.includes('SALES HEAD') || mDesig.includes('SALES HEAD');
+      }
+      // 2. ARM requires RRM in the same Zone
+      if (r === 'ARM') {
+        const isRRM = mRole === 'RRM' || mDesig.includes('RRM') || mDesig.includes('REGIONAL');
+        return isRRM && zoneMatches;
+      }
+      // 3. RM requires ARM in the same Zone
+      if (r === 'RM') {
+        const isARM = mRole === 'ARM' || mDesig.includes('ARM') || mDesig.includes('AREA');
+        return isARM && zoneMatches;
+      }
+      // 4. RO and RE require RM in the same Zone
+      if (r === 'RO' || r === 'RE') {
+        const isRM = (mRole === 'RM' || mDesig.includes('RM') || mDesig.includes('REPORTING MANAGER')) && !mRole.includes('ARM') && !mRole.includes('RRM');
+        return isRM && zoneMatches;
+      }
+      // 5. HR Manager requires HR Head
+      if (r === 'HR MANAGER') {
+        return mRole.includes('HR HEAD') || mDesig.includes('HR HEAD');
+      }
+      // 6. HR Executive requires HR Manager in the same Zone
+      if (r === 'HR EXECUTIVE') {
+        const isHRMgr = mRole.includes('HR MANAGER') || mDesig.includes('HR MANAGER');
+        return isHRMgr && zoneMatches;
+      }
+
+      // Default: show senior staff in same zone or ALL
+      return zoneMatches && (m.isDepartmentHead || mRole.includes('HEAD') || mRole.includes('MANAGER') || mRole.includes('ADMIN'));
+    });
+  }, [managers, formData.role, formData.zone]);
 
   // Resolve matching role key from ROLE_SIDEBAR_PAGES
   const resolveRoleSidebarKey = (roleStr) => {
@@ -122,7 +166,8 @@ export default function AddUser() {
     if (r === 'rrm') return 'RRM';
     if (r === 'arm') return 'ARM';
     if (r === 'rm') return 'RM';
-    if (r === 'ro' || r === 're') return 'RO';
+    if (r === 'ro') return 'RO';
+    if (r === 're') return 'RE';
     return null;
   };
 
@@ -161,10 +206,14 @@ export default function AddUser() {
     if (name === 'role') {
       const match = ROLE_OPTIONS.find(r => r.role === value);
       const newRole = value;
+      let desig = newRole;
+      if (newRole === 'RO') desig = 'Relationship Officer';
+      else if (newRole === 'RE') desig = 'Relationship Executive';
+
       setFormData(prev => ({
         ...prev,
         role: newRole,
-        designation: newRole,
+        designation: desig,
         department: match ? match.dept : prev.department,
         zone: prev.zone || (match ? match.zone : 'ALL')
       }));
@@ -191,6 +240,22 @@ export default function AddUser() {
     }
     if (formData.password !== formData.confirmPassword) {
       toast.error('Passwords do not match');
+      return;
+    }
+
+    const rUpper = (formData.role || '').trim().toUpperCase();
+    const hierarchyRequirements = {
+      'RRM': 'Sales Head',
+      'ARM': 'RRM (Regional Head in ' + formData.zone + ' Zone)',
+      'RM': 'ARM (Area Manager in ' + formData.zone + ' Zone)',
+      'RO': 'RM (Reporting Manager in ' + formData.zone + ' Zone)',
+      'RE': 'RM (Reporting Manager in ' + formData.zone + ' Zone)',
+      'HR MANAGER': 'HR Head',
+      'HR EXECUTIVE': 'HR Manager'
+    };
+
+    if (hierarchyRequirements[rUpper] && !formData.reportingManagerId) {
+      toast.error(`Please select ${hierarchyRequirements[rUpper]} for ${formData.role} (* Mandatory)`);
       return;
     }
 
@@ -292,7 +357,19 @@ export default function AddUser() {
 
             <div>
               <label className="block text-[12px] font-bold text-slate-700 mb-1">
-                Reporting Head / Manager
+                Reporting Head / Manager {
+                  ['RRM', 'ARM', 'RM', 'RO', 'RE', 'HR MANAGER', 'HR EXECUTIVE'].includes((formData.role || '').toUpperCase()) && (
+                    <span className="text-red-500 font-black">
+                      * (Required: {
+                        formData.role === 'RRM' ? 'Sales Head' :
+                        formData.role === 'ARM' ? 'RRM of ' + formData.zone :
+                        formData.role === 'RM' ? 'ARM of ' + formData.zone :
+                        (formData.role === 'RO' || formData.role === 'RE') ? 'RM of ' + formData.zone :
+                        formData.role === 'HR Manager' ? 'HR Head' : 'HR Manager'
+                      })
+                    </span>
+                  )
+                }
               </label>
               <select
                 name="reportingManagerId"
@@ -306,15 +383,33 @@ export default function AddUser() {
                     reportsToHeadName: mgr ? mgr.name : ''
                   }));
                 }}
-                className="w-full px-3.5 py-2.5 bg-white border border-slate-200 rounded-lg text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] cursor-pointer"
+                className={`w-full px-3.5 py-2.5 bg-white border rounded-lg text-[13px] font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#489b0d]/20 focus:border-[#489b0d] cursor-pointer ${
+                  !formData.reportingManagerId && ['RRM', 'ARM', 'RM', 'RO', 'RE'].includes((formData.role || '').toUpperCase())
+                    ? 'border-red-300 bg-red-50/20'
+                    : 'border-slate-200'
+                }`}
               >
-                <option value="">-- No Direct Head (Self / Top Level) --</option>
-                {managers.map(m => (
+                <option value="">
+                  {['Sales Head', 'admin'].includes(formData.role) 
+                    ? '-- Direct Company Head (Super Admin) --' 
+                    : `-- Select Senior Manager for ${formData.role} (${formData.zone} Zone) --`}
+                </option>
+                {filteredManagers.map(m => (
                   <option key={m._id || m.id} value={m._id || m.id}>
                     {m.name} ({m.designation || m.role} - Zone: {m.zone || 'ALL'})
                   </option>
                 ))}
               </select>
+              {filteredManagers.length === 0 && !['Sales Head', 'admin'].includes(formData.role) && (
+                <p className="text-[11px] text-amber-600 font-bold mt-1">
+                  ⚠️ No senior {
+                    formData.role === 'RRM' ? 'Sales Head' :
+                    formData.role === 'ARM' ? 'RRM in ' + formData.zone :
+                    formData.role === 'RM' ? 'ARM in ' + formData.zone :
+                    'RM in ' + formData.zone
+                  } found! Please create the senior manager in this zone first.
+                </p>
+              )}
             </div>
           </div>
 

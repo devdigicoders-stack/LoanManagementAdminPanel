@@ -188,6 +188,11 @@ export const ROLE_SIDEBAR_PAGES = {
     { name: 'Lead Management', path: '/leads', description: 'My leads & customer visits' },
     { name: 'Status Management', path: '/leads', description: 'Update my lead statuses' },
     { name: 'Customer Follow-ups', path: '/leads', description: 'Follow-up reminders & customer callbacks' }
+  ],
+  'RE': [
+    { name: 'Lead Management', path: '/leads', description: 'My leads & customer visits' },
+    { name: 'Status Management', path: '/leads', description: 'Update my lead statuses' },
+    { name: 'Customer Follow-ups', path: '/leads', description: 'Follow-up reminders & customer callbacks' }
   ]
 };
 
