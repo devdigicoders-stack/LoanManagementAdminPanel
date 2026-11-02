@@ -90,6 +90,7 @@ import AdminProfile from './pages/system/AdminProfile';
 import Notifications from './pages/system/Notifications';
 import UnderConstruction from './pages/UnderConstruction';
 import UserProfile from './pages/UserProfile';
+import RoleHandoverPage from './pages/RoleHandoverPage';
 import ChangePassword from './pages/ChangePassword';
 
 // Operations Admin Imports
@@ -339,6 +340,7 @@ function App() {
           <Route path="users/:id/reset-password" element={<ResetPassword />} />
           <Route path="users/:id/activity" element={<UserActivityLog />} />
           <Route path="user-profile/:id" element={<UserProfile />} />
+          <Route path="users/:id/handover" element={<RoleHandoverPage />} />
 
           {/* Dedicated Customer Management Routes */}
           <Route path="customers" element={<CustomerManagement />} />
@@ -488,6 +490,7 @@ function App() {
 
           {/* Placeholder Routes for missing pages */}
           <Route path="user-profile/:id" element={<UserProfile />} />
+          <Route path="users/:id/handover" element={<RoleHandoverPage />} />
           <Route path="verify-documents" element={<VerifyDocuments />} />
           <Route path="verify-document/:userId/:docIndex" element={<DocumentViewer />} />
           <Route path="change-password" element={<ChangePassword />} />

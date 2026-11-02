@@ -243,43 +243,119 @@ export default function ManageUsers() {
     e.stopPropagation();
     const targetId = user._id || user.id;
     const isCurrentlyActive = user.status === "Active";
-    const newStatus = isCurrentlyActive ? "Inactive" : "Active";
-    const confirmMsg = isCurrentlyActive 
-      ? `Are you sure you want to deactivate ${user.name}?` 
-      : `Are you sure you want to activate ${user.name}?`;
 
-    Swal.fire({
-      title: 'Status Update',
-      text: confirmMsg,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonColor: isCurrentlyActive ? '#d33' : '#489b0d',
-      cancelButtonColor: '#64748b',
-      confirmButtonText: isCurrentlyActive ? 'Yes, Deactivate' : 'Yes, Activate'
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          const token = localStorage.getItem('token');
-          const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${targetId}/status`, {
-            method: 'PUT',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ status: newStatus })
-          });
-          const data = await response.json();
-          if (response.ok && data.success !== false) {
-            setUsers(prev => prev.map(u => (u.id === targetId || u._id === targetId || u.email === user.email) ? { ...u, status: newStatus } : u));
-            Swal.fire('Updated!', data.message || `Status changed to ${newStatus}.`, 'success');
-          } else {
-            Swal.fire('Error!', data.message || 'Failed to update status.', 'error');
+    if (isCurrentlyActive) {
+      // Deactivate with Reason / Resignation Remark
+      const { value: formValues } = await Swal.fire({
+        title: `Deactivate / Resign: ${user.name}`,
+        html: `
+          <div style="text-align: left; font-size: 13px; font-family: inherit;">
+            <p style="color: #64748b; margin-bottom: 12px;">Specify the reason or remarks for deactivating this staff member. If they are resigning, you can re-assign their team and active leads from their profile.</p>
+            <label style="display: block; font-weight: bold; margin-bottom: 4px; color: #334155;">Status Type</label>
+            <select id="swal-status" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; margin-bottom: 12px; font-size: 13px;">
+              <option value="Inactive">Inactive</option>
+              <option value="Resigned">Resigned</option>
+              <option value="Blocked">Blocked / Terminated</option>
+            </select>
+            <label style="display: block; font-weight: bold; margin-bottom: 4px; color: #334155;">Remark / Reason *</label>
+            <textarea id="swal-remarks" rows="3" placeholder="Enter resignation reason, handover details, or deactivation remark..." style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px;"></textarea>
+          </div>
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: 'Deactivate Staff',
+        confirmButtonColor: '#ef4444',
+        cancelButtonColor: '#64748b',
+        preConfirm: () => {
+          const status = document.getElementById('swal-status').value;
+          const remarks = document.getElementById('swal-remarks').value.trim();
+          if (!remarks) {
+            Swal.showValidationMessage('Please enter a remark or reason');
+            return false;
           }
-        } catch (error) {
-          Swal.fire('Error!', error.message || 'An error occurred.', 'error');
+          return { status, remarks };
         }
+      });
+
+      if (!formValues) return;
+
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${targetId}/status`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ 
+            status: formValues.status, 
+            remarks: formValues.remarks,
+            resignationDate: formValues.status === 'Resigned' ? new Date().toISOString() : null
+          })
+        });
+        const data = await response.json();
+        if (response.ok && data.success !== false) {
+          setUsers(prev => prev.map(u => (u.id === targetId || u._id === targetId || u.email === user.email) ? { ...u, status: formValues.status, statusRemarks: formValues.remarks } : u));
+          
+          const isManager = ['rm', 'arm', 'rrm', 'manager', 'head'].some(r => (user.role || user.designation || '').toLowerCase().includes(r));
+          if (isManager) {
+            Swal.fire({
+              title: 'Deactivated Successfully!',
+              text: `${user.name} is now ${formValues.status}. Do you want to open their Handover & Portfolio Transfer page to transfer their team & active leads to a target manager?`,
+              icon: 'success',
+              showCancelButton: true,
+              confirmButtonText: 'Yes, Open Handover Page',
+              confirmButtonColor: '#2563eb',
+              cancelButtonColor: '#64748b'
+            }).then((res) => {
+              if (res.isConfirmed) {
+                navigate(`/users/${targetId}/handover`);
+              }
+            });
+          } else {
+            Swal.fire('Updated!', data.message || `Status changed to ${formValues.status}.`, 'success');
+          }
+        } else {
+          Swal.fire('Error!', data.message || 'Failed to update status.', 'error');
+        }
+      } catch (error) {
+        Swal.fire('Error!', error.message || 'An error occurred.', 'error');
       }
-    });
+    } else {
+      // Activate Staff
+      Swal.fire({
+        title: 'Activate Staff Member',
+        text: `Are you sure you want to reactivate ${user.name}?`,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#489b0d',
+        cancelButtonColor: '#64748b',
+        confirmButtonText: 'Yes, Activate'
+      }).then(async (result) => {
+        if (result.isConfirmed) {
+          try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${targetId}/status`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify({ status: "Active", remarks: "Reactivated by admin" })
+            });
+            const data = await response.json();
+            if (response.ok && data.success !== false) {
+              setUsers(prev => prev.map(u => (u.id === targetId || u._id === targetId || u.email === user.email) ? { ...u, status: "Active" } : u));
+              Swal.fire('Activated!', `${user.name} is now Active.`, 'success');
+            } else {
+              Swal.fire('Error!', data.message || 'Failed to activate.', 'error');
+            }
+          } catch (error) {
+            Swal.fire('Error!', error.message || 'An error occurred.', 'error');
+          }
+        }
+      });
+    }
   };
 
   // Render Dynamic Avatar Helper (handles full URLs, base64, and backend relative uploads)
@@ -588,6 +664,13 @@ export default function ManageUsers() {
                     {/* Actions */}
                     <td className="py-3.5 px-4 text-center" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-2">
+                        <button
+                          onClick={() => navigate(`/users/${user._id || user.id}/handover`)}
+                          className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-md transition-colors"
+                          title="Role Handover & Portfolio Transfer"
+                        >
+                          <RefreshCw size={15} />
+                        </button>
                         <button
                           onClick={() => navigate(`/employees/${user._id || user.id}`)}
                           className="p-1.5 text-slate-500 hover:text-[#489b0d] hover:bg-slate-100 rounded-md transition-colors"

@@ -25,6 +25,15 @@ export default function UserProfile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Bulk Handover / Team Transfer State
+  const [selectedStaffIds, setSelectedStaffIds] = useState([]);
+  const [transferModalOpen, setTransferModalOpen] = useState(false);
+  const [targetManagerId, setTargetManagerId] = useState("");
+  const [availableManagers, setAvailableManagers] = useState([]);
+  const [isTransferring, setIsTransferring] = useState(false);
+  const [transferSearch, setTransferSearch] = useState("");
+  const [transferActiveLeads, setTransferActiveLeads] = useState(true);
+
   // Fetch the requested user
   useEffect(() => {
     const fetchUser = async () => {
@@ -56,6 +65,59 @@ export default function UserProfile() {
             setActiveTab("Overview & Ground Tracking");
           } else {
             setActiveTab("Personal Information");
+          }
+
+          // Fetch active peer managers in same zone / role for potential handover
+          try {
+            const empRes = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees`, {
+              headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (empRes.ok) {
+              const allEmps = await empRes.json();
+              const userZone = (loadedUser.zone || 'NORTH').toUpperCase();
+              const myRole = (loadedUser.role || loadedUser.zonalRole || loadedUser.designation || '').toLowerCase().trim();
+
+              // Match peers of the SAME role level (e.g. RM -> RM, ARM -> ARM, RRM -> RRM, Sales Head -> Sales Head, HR Manager -> HR Manager)
+              const eligible = allEmps.filter(e => {
+                const eId = (e._id || e.id || '').toString();
+                const currentId = (loadedUser._id || loadedUser.id || '').toString();
+                if (eId === currentId) return false;
+                if (e.status !== 'Active') return false;
+
+                const eRole = (e.role || e.zonalRole || e.designation || '').toLowerCase().trim();
+                
+                // Role-level match
+                let isRoleMatch = false;
+                if (myRole.includes('sales head')) {
+                  isRoleMatch = eRole.includes('sales head');
+                } else if (myRole === 'rrm' || myRole.includes('regional')) {
+                  isRoleMatch = eRole === 'rrm' || eRole.includes('rrm');
+                } else if (myRole === 'arm' || myRole.includes('area')) {
+                  isRoleMatch = eRole === 'arm' || eRole.includes('arm');
+                } else if (myRole === 'rm' || myRole.includes('relationship')) {
+                  isRoleMatch = eRole.includes('rm') || eRole.includes('relationship');
+                } else if (myRole.includes('hr manager')) {
+                  isRoleMatch = eRole.includes('hr manager') || eRole.includes('hr head');
+                } else if (myRole.includes('hr head')) {
+                  isRoleMatch = eRole.includes('hr head');
+                } else {
+                  // Fallback: match any active senior/peer in same department
+                  isRoleMatch = eRole === myRole || (e.department && e.department === loadedUser.department);
+                }
+
+                if (!isRoleMatch) return false;
+
+                // Zone match (Sales Head / HR Head can be ALL, Zonal roles match zone or ALL)
+                const isHeadLevel = myRole.includes('head') || myRole.includes('rrm');
+                if (isHeadLevel) return true;
+
+                const eZone = (e.zone || 'ALL').toUpperCase();
+                return eZone === 'ALL' || eZone === userZone;
+              });
+              setAvailableManagers(eligible);
+            }
+          } catch (e) {
+            console.error("Error fetching managers for transfer:", e);
           }
         }
       } catch (error) {
@@ -563,11 +625,21 @@ export default function UserProfile() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div>
                 <h2 className="text-lg font-bold text-slate-800">{isHR ? 'HR Executives & Recruiters' : 'Ground Field Staff & Officers'}</h2>
-                <p className="text-[12px] text-slate-500 font-medium">Team members reporting under this Head in {user.zone || 'Zone'}</p>
+                <p className="text-[12px] text-slate-500 font-medium">Team members reporting under this Manager in {user.zone || 'Zone'}</p>
               </div>
-              <button onClick={() => navigate('/add-user')} className="flex items-center gap-1.5 px-4 py-2 bg-[#489b0d] text-white rounded-lg text-[12px] font-bold hover:bg-[#3d830b] transition-colors shadow-sm cursor-pointer">
-                <Plus size={15} /> Add Team Member
-              </button>
+              <div className="flex items-center gap-2">
+                {user.subordinateStaff && user.subordinateStaff.length > 0 && (
+                  <button 
+                    onClick={() => setTransferModalOpen(true)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-lg text-[12px] font-bold hover:bg-blue-700 transition-colors shadow-sm cursor-pointer"
+                  >
+                    <RefreshCw size={15} /> Transfer Team ({selectedStaffIds.length > 0 ? `${selectedStaffIds.length} Selected` : 'All'})
+                  </button>
+                )}
+                <button onClick={() => navigate('/add-user')} className="flex items-center gap-1.5 px-4 py-2 bg-[#489b0d] text-white rounded-lg text-[12px] font-bold hover:bg-[#3d830b] transition-colors shadow-sm cursor-pointer">
+                  <Plus size={15} /> Add Team Member
+                </button>
+              </div>
             </div>
 
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -575,6 +647,20 @@ export default function UserProfile() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr className="bg-slate-50 border-b border-slate-200 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                      <th className="py-3.5 px-4 text-center">
+                        <input 
+                          type="checkbox" 
+                          checked={user.subordinateStaff?.length > 0 && selectedStaffIds.length === user.subordinateStaff.length}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedStaffIds(user.subordinateStaff.map(s => s._id || s.id));
+                            } else {
+                              setSelectedStaffIds([]);
+                            }
+                          }}
+                          className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </th>
                       <th className="py-3.5 px-6">Member Details</th>
                       <th className="py-3.5 px-6">Employee ID</th>
                       <th className="py-3.5 px-6">Role & Designation</th>
@@ -585,45 +671,63 @@ export default function UserProfile() {
                     </tr>
                   </thead>
                   <tbody className="text-[13px] divide-y divide-slate-100">
-                    {user.subordinateStaff && user.subordinateStaff.map((staff, idx) => (
-                      <tr key={idx} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="py-4 px-6">
-                          <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-black text-xs flex items-center justify-center uppercase shadow-sm">
-                              {(staff.name || 'S').slice(0, 2)}
+                    {user.subordinateStaff && user.subordinateStaff.map((staff, idx) => {
+                      const staffId = staff._id || staff.id;
+                      const isSelected = selectedStaffIds.includes(staffId);
+                      return (
+                        <tr key={idx} className={`hover:bg-slate-50/60 transition-colors ${isSelected ? 'bg-blue-50/40' : ''}`}>
+                          <td className="py-4 px-4 text-center">
+                            <input 
+                              type="checkbox" 
+                              checked={isSelected}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedStaffIds(prev => [...prev, staffId]);
+                                } else {
+                                  setSelectedStaffIds(prev => prev.filter(id => id !== staffId));
+                                }
+                              }}
+                              className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-black text-xs flex items-center justify-center uppercase shadow-sm">
+                                {(staff.name || 'S').slice(0, 2)}
+                              </div>
+                              <div>
+                                <div className="font-bold text-slate-800">{staff.name}</div>
+                                <div className="text-[11px] text-slate-400">{staff.email || 'N/A'}</div>
+                              </div>
                             </div>
-                            <div>
-                              <div className="font-bold text-slate-800">{staff.name}</div>
-                              <div className="text-[11px] text-slate-400">{staff.email || 'N/A'}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-4 px-6 font-mono text-[12px] font-bold text-slate-700">{staff.empId || 'EMP-100'}</td>
-                        <td className="py-4 px-6">
-                          <span className="font-bold text-slate-700">{staff.role || 'HR Executive'}</span>
-                          <p className="text-[11px] text-slate-500">{staff.designation || 'Staff'}</p>
-                        </td>
-                        <td className="py-4 px-6 text-slate-600 font-medium">{staff.mobile || staff.phone || 'N/A'}</td>
-                        <td className="py-4 px-6">
-                          <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">{staff.zone || user.zone || 'NORTH'}</span>
-                        </td>
-                        <td className="py-4 px-6">
-                          <span className={`px-2.5 py-1 rounded text-[11px] font-bold ${staff.status === 'Active' ? 'bg-[#489b0d]/10 text-[#489b0d]' : 'bg-red-100 text-red-600'}`}>
-                            {staff.status || 'Active'}
-                          </span>
-                        </td>
-                        <td className="py-4 px-6 text-right">
-                          <button onClick={() => navigate(`/user-profile/${staff._id || staff.empId}`)} className="text-blue-600 hover:text-blue-800 font-bold text-[12px] inline-flex items-center gap-1 cursor-pointer">
-                            <Eye size={14} /> View Member
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td className="py-4 px-6 font-mono text-[12px] font-bold text-slate-700">{staff.empId || 'EMP-100'}</td>
+                          <td className="py-4 px-6">
+                            <span className="font-bold text-slate-700">{staff.role || staff.zonalRole || 'Staff'}</span>
+                            <p className="text-[11px] text-slate-500">{staff.designation || 'Field Staff'}</p>
+                          </td>
+                          <td className="py-4 px-6 text-slate-600 font-medium">{staff.mobile || staff.phone || 'N/A'}</td>
+                          <td className="py-4 px-6">
+                            <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-slate-100 text-slate-700">{staff.zone || user.zone || 'NORTH'}</span>
+                          </td>
+                          <td className="py-4 px-6">
+                            <span className={`px-2.5 py-1 rounded text-[11px] font-bold ${staff.status === 'Active' ? 'bg-[#489b0d]/10 text-[#489b0d]' : 'bg-red-100 text-red-600'}`}>
+                              {staff.status || 'Active'}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 text-right">
+                            <button onClick={() => navigate(`/user-profile/${staff._id || staff.empId}`)} className="text-blue-600 hover:text-blue-800 font-bold text-[12px] inline-flex items-center gap-1 cursor-pointer">
+                              <Eye size={14} /> View Member
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                     {(!user.subordinateStaff || user.subordinateStaff.length === 0) && (
                       <tr>
-                        <td colSpan="7" className="py-12 text-center text-slate-400 font-medium">
+                        <td colSpan="8" className="py-12 text-center text-slate-400 font-medium">
                           <Users size={32} className="mx-auto mb-2 opacity-40" />
-                          No ground staff found assigned to this territory head.
+                          No ground staff found assigned to this territory manager.
                         </td>
                       </tr>
                     )}
@@ -1168,6 +1272,158 @@ export default function UserProfile() {
             </div>
             <div className="p-4 border-t border-slate-200 flex justify-end">
               <button onClick={() => setViewLoan(null)} className="px-5 py-2 bg-slate-800 text-white rounded-lg font-bold text-[13px]">Close</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transfer Team / Handover Modal */}
+      {transferModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setTransferModalOpen(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full flex flex-col max-h-[90vh] overflow-hidden" onClick={e => e.stopPropagation()}>
+            <div className="p-5 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h3 className="font-extrabold text-slate-800 text-lg flex items-center gap-2">
+                    <RefreshCw className="text-blue-600 w-5 h-5" /> Transfer & Handover Team
+                  </h3>
+                  <p className="text-[12px] text-slate-500 font-medium mt-1">
+                    Transfer selected members from <strong className="text-slate-700">{user.name}</strong> to a new or existing RM in <strong className="text-blue-700">{user.zone || 'NORTH'} Zone</strong>.
+                  </p>
+                </div>
+                <button onClick={() => setTransferModalOpen(false)} className="p-1 hover:bg-slate-200 rounded-lg text-slate-400 hover:text-slate-600 transition-colors">
+                  <X size={20} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4">
+              <div className="bg-blue-50/70 border border-blue-100 rounded-xl p-3.5 flex items-center justify-between text-[12px]">
+                <span className="text-slate-700 font-medium">Selected Members to Transfer:</span>
+                <span className="font-black text-blue-700 bg-white px-2.5 py-0.5 rounded-full border border-blue-200 shadow-2xs">
+                  {selectedStaffIds.length > 0 ? `${selectedStaffIds.length} Members` : `All (${user.subordinateStaff?.length || 0}) Members`}
+                </span>
+              </div>
+
+              <div>
+                <label className="block text-[12px] font-bold text-slate-700 mb-1.5">
+                  Select Target Manager ({user.role || user.zonalRole || 'Manager'} Peer) *
+                </label>
+                
+                {/* Search Bar for filtering Managers */}
+                <input 
+                  type="text"
+                  placeholder="Search target manager by name, email or employee ID..."
+                  value={transferSearch}
+                  onChange={(e) => setTransferSearch(e.target.value)}
+                  className="w-full mb-2 p-2.5 border border-slate-200 rounded-lg text-[12px] focus:outline-none focus:border-blue-500 bg-slate-50/50"
+                />
+
+                <div className="max-h-48 overflow-y-auto border border-slate-200 rounded-xl divide-y divide-slate-100">
+                  {availableManagers
+                    .filter(m => {
+                      if (!transferSearch.trim()) return true;
+                      const q = transferSearch.toLowerCase();
+                      return (m.name || '').toLowerCase().includes(q) || 
+                             (m.email || '').toLowerCase().includes(q) || 
+                             (m.empId || '').toLowerCase().includes(q);
+                    })
+                    .map(mgr => (
+                      <label 
+                        key={mgr._id || mgr.id}
+                        className={`flex items-center gap-3 p-3 cursor-pointer hover:bg-slate-50 transition-colors ${targetManagerId === (mgr._id || mgr.id) ? 'bg-blue-50/60 font-semibold' : ''}`}
+                      >
+                        <input 
+                          type="radio" 
+                          name="targetManager"
+                          value={mgr._id || mgr.id}
+                          checked={targetManagerId === (mgr._id || mgr.id)}
+                          onChange={() => setTargetManagerId(mgr._id || mgr.id)}
+                          className="text-blue-600 focus:ring-blue-500"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="text-[13px] text-slate-800 font-bold truncate">{mgr.name}</div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-2">
+                            <span>{mgr.empId || 'No Emp ID'}</span> &bull;
+                            <span className="text-blue-600 font-bold">{mgr.role || mgr.zonalRole || 'Manager'}</span> &bull;
+                            <span className="font-semibold text-slate-600">{mgr.zone || 'ALL'}</span>
+                          </div>
+                        </div>
+                      </label>
+                    ))}
+
+                  {availableManagers.length === 0 && (
+                    <div className="p-4 text-center text-slate-400 text-[12px]">
+                      No active {user.role || user.zonalRole || 'Managers'} found in {user.zone || 'NORTH'} Zone to transfer to. Add a new manager first.
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <label className="flex items-center gap-2.5 p-3 rounded-xl border border-slate-200 bg-slate-50/70 cursor-pointer">
+                  <input 
+                    type="checkbox"
+                    checked={transferActiveLeads}
+                    onChange={(e) => setTransferActiveLeads(e.target.checked)}
+                    className="rounded text-blue-600 focus:ring-blue-500"
+                  />
+                  <div className="text-[12px]">
+                    <span className="font-bold text-slate-800 block">Transfer Active Leads Portfolio</span>
+                    <span className="text-slate-500">Automatically re-route in-process leads created by these field members to the target RM's review desk.</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-200 flex justify-end gap-3 bg-slate-50">
+              <button 
+                onClick={() => setTransferModalOpen(false)} 
+                className="px-4 py-2 border border-slate-200 text-slate-600 rounded-lg font-bold text-[13px] hover:bg-slate-100 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                disabled={!targetManagerId || isTransferring}
+                onClick={async () => {
+                  try {
+                    setIsTransferring(true);
+                    const token = localStorage.getItem('token');
+                    const empIdsToTransfer = selectedStaffIds.length > 0 
+                      ? selectedStaffIds 
+                      : (user.subordinateStaff || []).map(s => s._id || s.id);
+
+                    const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/bulk-transfer-team`, {
+                      method: 'PUT',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({
+                        employeeIds: empIdsToTransfer,
+                        targetManagerId,
+                        transferActiveLeads
+                      })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.success !== false) {
+                      toast.success(data.message || 'Team and leads transferred successfully!');
+                      setTransferModalOpen(false);
+                      // Refresh profile
+                      setTimeout(() => window.location.reload(), 1200);
+                    } else {
+                      toast.error(data.message || 'Transfer failed');
+                    }
+                  } catch (err) {
+                    toast.error(err.message || 'Server error occurred');
+                  } finally {
+                    setIsTransferring(false);
+                  }
+                }} 
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-lg font-bold text-[13px] transition-colors shadow-sm flex items-center gap-2"
+              >
+                {isTransferring ? 'Transferring...' : 'Confirm Transfer & Notify Staff'}
+              </button>
             </div>
           </div>
         </div>
