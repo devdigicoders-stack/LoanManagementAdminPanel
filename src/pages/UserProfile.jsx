@@ -1006,56 +1006,6 @@ export default function UserProfile() {
                     <span className="text-[12px] font-medium text-slate-500">Address</span>
                     <span className="text-[13px] font-bold text-slate-800 text-right leading-relaxed">{user.address || 'N/A'}</span>
                   </div>
-                  {/* Map / Geo Location Coordinates */}
-                  {(user.latitude || user.longitude) ? (
-                    <div className="mt-3 p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MapPin size={16} className="text-emerald-600 shrink-0" />
-                        <div>
-                          <div className="text-[11px] font-bold text-emerald-900">Current GPS Coordinates</div>
-                          <div className="text-[11px] text-emerald-700 font-mono">
-                            {user.latitude?.toFixed?.(5) || user.latitude}, {user.longitude?.toFixed?.(5) || user.longitude}
-                          </div>
-                        </div>
-                      </div>
-                      <a
-                        href={`https://www.google.com/maps/search/?api=1&query=${user.latitude},${user.longitude}`}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded text-[11px] font-bold flex items-center gap-1 transition-colors"
-                      >
-                        <Globe size={12} /> Open Map
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="mt-2 p-2.5 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <MapPin size={15} className="text-slate-400" />
-                        <span className="text-[11px] text-slate-500 font-medium">GPS Location not captured</span>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (navigator.geolocation) {
-                            navigator.geolocation.getCurrentPosition(
-                              (pos) => {
-                                const lat = pos.coords.latitude;
-                                const lon = pos.coords.longitude;
-                                toast.success(`Location fetched: ${lat.toFixed(4)}, ${lon.toFixed(4)}`);
-                                window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lon}`, '_blank');
-                              },
-                              (err) => toast.error('Please allow location permission in browser')
-                            );
-                          } else {
-                            toast.error('Geolocation not supported by browser');
-                          }
-                        }}
-                        className="px-2 py-0.5 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded text-[10px] font-bold transition-colors"
-                      >
-                        Use Current Location
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
 
