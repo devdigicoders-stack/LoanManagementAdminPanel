@@ -29,7 +29,8 @@ import {
   Building2,
   Layers,
   Crown,
-  CheckCircle2
+  CheckCircle2,
+  RefreshCw
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import SearchableSelect from "../components/common/SearchableSelect";
@@ -593,7 +594,7 @@ export default function ManageUsers() {
                 currentItems.map((user) => (
                   <tr
                     key={user.id}
-                    onClick={() => navigate(`/user-profile/${user.id}`)}
+                    onClick={() => navigate(`/users/${user._id || user.id}/handover`)}
                     className="cursor-pointer transition-colors hover:bg-slate-50/80 group"
                   >
                     {/* Staff Member */}

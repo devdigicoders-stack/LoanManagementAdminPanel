@@ -50,6 +50,14 @@ export default function UserProfile() {
         });
 
         if (!response.ok) {
+          response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/employees/${id}`, {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        }
+
+        if (!response.ok) {
           response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/users/${id}/profile`, {
             headers: {
               'Authorization': `Bearer ${token}`
