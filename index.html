@@ -5,6 +5,100 @@
     <link rel="icon" type="image/png" href="/loanlogo.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>NGM Housing Admin Panel</title>
+
+    <!-- ============================================================== -->
+    <!-- SERVICE SUSPENSION CONTROLLER (PAYMENT DUE LOCK)                 -->
+    <!-- To suspend the site, set window.__SERVICE_SUSPENDED__ = true;    -->
+    <!-- To restore the site, set window.__SERVICE_SUSPENDED__ = false;   -->
+    <!-- ============================================================== -->
+    <script>
+      window.__SERVICE_SUSPENDED__ = false; // Set to true when you want to lock the site
+
+      (function checkServiceStatus() {
+        function showSuspensionNotice() {
+          var lockOverlay = document.createElement('div');
+          lockOverlay.id = 'service-suspension-overlay';
+          lockOverlay.style.cssText = [
+            'position: fixed',
+            'top: 0',
+            'left: 0',
+            'width: 100vw',
+            'height: 100vh',
+            'background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #020617 100%)',
+            'z-index: 2147483647',
+            'display: flex',
+            'align-items: center',
+            'justify-content: center',
+            'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+            'padding: 20px',
+            'box-sizing: border-box',
+            'color: #ffffff'
+          ].join(';');
+
+          lockOverlay.innerHTML = [
+            '<div style="max-width: 560px; width: 100%; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(16px); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 24px; padding: 40px 32px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7); text-align: center;">',
+            '  <div style="width: 76px; height: 76px; margin: 0 auto 20px; background: rgba(239, 68, 68, 0.12); border: 2px solid #ef4444; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 34px; box-shadow: 0 0 24px rgba(239, 68, 68, 0.35);">',
+            '    ⚠️',
+            '  </div>',
+            '  <span style="display: inline-block; background: rgba(239, 68, 68, 0.18); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.4); font-size: 11px; font-weight: 800; letter-spacing: 1.5px; padding: 4px 14px; border-radius: 20px; text-transform: uppercase; margin-bottom: 14px;">',
+            '    Service Suspended • Payment Overdue',
+            '  </span>',
+            '  <h1 style="font-size: 24px; font-weight: 800; color: #ffffff; margin: 0 0 14px; line-height: 1.3;">',
+            '    Website Temporarily Deactivated',
+            '  </h1>',
+            '  <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1; margin: 0 0 16px;">',
+            '    This application and associated services have been temporarily suspended due to pending development and maintenance dues.',
+            '  </p>',
+            '  <div style="background: rgba(30, 41, 59, 0.7); border-left: 4px solid #ef4444; border-radius: 8px; padding: 14px 16px; margin-bottom: 24px; text-align: left;">',
+            '    <p style="font-size: 13px; color: #e2e8f0; margin: 0; line-height: 1.5;">',
+            '      <strong>Notice:</strong> Services will be immediately reactivated and restored to normal operation once all outstanding payment dues are cleared with the development team.',
+            '    </p>',
+            '  </div>',
+            '  <div style="font-size: 11.5px; color: #94a3b8; border-top: 1px solid rgba(148, 163, 184, 0.15); pt: 16px; margin-top: 20px; padding-top: 16px;">',
+            '    Please contact the developer / technical administration team to complete payment settlement and obtain a No-Due confirmation.',
+            '  </div>',
+            '</div>'
+          ].join('\n');
+
+          // Prevent app from rendering beneath
+          function applyLock() {
+            var rootEl = document.getElementById('root');
+            if (rootEl) {
+              rootEl.style.display = 'none';
+            }
+            if (!document.getElementById('service-suspension-overlay')) {
+              document.body.appendChild(lockOverlay);
+            }
+          }
+
+          if (document.body) {
+            applyLock();
+          } else {
+            window.addEventListener('DOMContentLoaded', applyLock);
+          }
+        }
+
+        // Check local flag or URL query / backend flag
+        if (window.__SERVICE_SUSPENDED__ === true) {
+          showSuspensionNotice();
+          return;
+        }
+
+        // Also check optional live status endpoint if backend configured
+        try {
+          var apiUrl = (window.localStorage && window.localStorage.getItem('VITE_API_BASE_URL')) ||
+            'https://loanmanagement-sr1o.onrender.com/api';
+          fetch(apiUrl + '/system/status', { method: 'GET' })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+              if (data && data.isSuspended === true) {
+                showSuspensionNotice();
+              }
+            })
+            .catch(function() {});
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
